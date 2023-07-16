@@ -1,0 +1,3 @@
+[package]
+name = "my_depend"
+description = "A test dependency"

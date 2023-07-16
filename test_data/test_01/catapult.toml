@@ -1,0 +1,5 @@
+[package]
+name = "test_one"
+
+[dependencies]
+mydep = { path = "submodules/my_depend" }

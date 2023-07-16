@@ -1,0 +1,37 @@
+use core::{cmp, fmt, hash};
+use std::sync::{Arc, Weak};
+
+use allocative::Allocative;
+
+use super::{
+	project::Project, //
+	starlark_project::StarLinkTargetCache,
+	target::LinkTarget,
+};
+
+pub(super) trait StarLinkTarget: Send + Sync + fmt::Debug + Allocative {
+	fn as_link_target(
+		&self,
+		parent: Weak<Project>,
+		ptr: PtrLinkTarget,
+		link_map: &mut StarLinkTargetCache,
+	) -> Arc<dyn LinkTarget>;
+}
+
+#[derive(Clone)]
+pub(super) struct PtrLinkTarget(pub Arc<dyn StarLinkTarget>);
+
+impl cmp::PartialEq for PtrLinkTarget {
+	fn eq(&self, other: &PtrLinkTarget) -> bool {
+		core::ptr::eq(Arc::as_ptr(&self.0) as *const (), Arc::as_ptr(&other.0) as *const ())
+	}
+}
+impl cmp::Eq for PtrLinkTarget {}
+impl hash::Hash for PtrLinkTarget {
+	fn hash<H>(&self, hasher: &mut H)
+	where
+		H: std::hash::Hasher,
+	{
+		(Arc::as_ptr(&self.0) as *const ()).hash(hasher)
+	}
+}

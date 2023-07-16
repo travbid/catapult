@@ -1,0 +1,5 @@
+add_library(
+    name = "my_depend_lib",
+    sources = ["my_depend.cpp"],
+    include_dirs_public = ["."],
+)

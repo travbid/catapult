@@ -1,0 +1,9 @@
+# attr_fn_like_width = 120
+brace_style = "PreferSameLine"
+empty_item_single_line = true
+fn_call_width = 100
+fn_single_line = true
+hard_tabs = true
+max_width = 120
+struct_lit_width = 60
+tab_spaces = 4
