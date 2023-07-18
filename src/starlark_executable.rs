@@ -22,6 +22,7 @@ use starlark::{
 
 use super::{
 	executable::Executable,
+	misc::{is_c_source, is_cpp_source},
 	project::Project,
 	starlark_link_target::{PtrLinkTarget, StarLinkTarget},
 	starlark_project::{StarLinkTargetCache, StarProject},
@@ -80,7 +81,8 @@ impl StarExecutable {
 		Executable {
 			parent_project,
 			name: self.name.clone(),
-			sources: self.sources.clone(),
+			c_sources: self.sources.iter().filter(is_c_source).map(String::from).collect(),
+			cpp_sources: self.sources.iter().filter(is_cpp_source).map(String::from).collect(),
 			links,
 			include_dirs: self.include_dirs.clone(),
 			defines: self.defines.clone(),

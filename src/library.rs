@@ -10,7 +10,8 @@ use crate::{
 pub struct Library {
 	pub parent_project: Weak<Project>,
 	pub name: String,
-	pub sources: Vec<String>,
+	pub c_sources: Vec<String>,
+	pub cpp_sources: Vec<String>,
 	pub private_links: Vec<Arc<dyn LinkTarget>>,
 	pub include_dirs_public: Vec<String>,
 	pub include_dirs_private: Vec<String>,

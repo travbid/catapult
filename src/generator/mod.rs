@@ -18,7 +18,7 @@ impl Generator {
 			Generator::Msvc => msvc::Msvc::generate(project),
 			Generator::Ninja => {
 				let build_tools = BuildTools {
-					c_compiler: vec!["clang".to_owned()],
+					c_compiler: vec!["clang-16".to_owned()],
 					cpp_compiler: vec!["clang++-16".to_owned()],
 					static_linker: vec!["llvm-ar-16".to_owned(), "qc".to_owned()],
 					exe_linker: vec!["clang++-16".to_owned()],

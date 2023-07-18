@@ -8,6 +8,8 @@ use std::{
 
 use super::{BuildTools, Compiler, TargetPlatform};
 use crate::{
+	executable::Executable,
+	library::Library,
 	project::Project,
 	target::{LinkTarget, Target},
 };
@@ -155,62 +157,57 @@ impl NinjaBuild {
 	}
 }
 
+fn compile_c_object(compiler: &[String], out_flag: &str) -> NinjaRule {
+	let mut command = compiler.to_owned();
+	command.extend(vec!["$DEFINES".to_string(), "$INCLUDES".to_string(), "$FLAGS".to_string()]);
+	// command.extend(compiler.compiler_flags(msvc_runtime));
+	command.extend(vec![out_flag.to_owned(), "$out".to_owned()]);
+	command.extend(vec!["-c".to_string(), "$in".to_string()]);
+	NinjaRule {
+		name: String::from("compile_c_object"),
+		command,
+		..Default::default()
+	}
+}
+fn compile_cpp_object(compiler: &[String], out_flag: &str) -> NinjaRule {
+	let mut command = compiler.to_owned();
+	command.extend(vec!["$DEFINES".to_string(), "$INCLUDES".to_string(), "$FLAGS".to_string()]);
+	command.extend(vec![out_flag.to_owned(), "$out".to_owned()]);
+	command.extend(vec!["-c".to_string(), "$in".to_string()]);
+	NinjaRule {
+		name: String::from("compile_cpp_object"),
+		command,
+		..Default::default()
+	}
+}
+fn link_static_lib(static_linker: &[String]) -> NinjaRule {
+	let mut command = static_linker.to_owned();
+	command.extend(vec!["$TARGET_FILE".to_string(), "$LINK_FLAGS".to_string(), "$in".to_string()]);
+	NinjaRule {
+		name: String::from("link_static_lib"),
+		command,
+		..Default::default()
+	}
+}
+fn link_exe(exe_linker: &[String]) -> NinjaRule {
+	let mut command = exe_linker.to_owned();
+	command.extend(vec![
+		"$LINK_FLAGS".to_string(),
+		"$in".to_string(),
+		"-o".to_string(),
+		"$TARGET_FILE".to_string(),
+		"$LINK_PATH".to_string(),
+	]);
+	NinjaRule {
+		name: String::from("compile_exe"),
+		command,
+		..Default::default()
+	}
+}
+
 pub struct Ninja {}
 
 impl Ninja {
-	fn compile_c_object(compiler: Box<dyn Compiler>) -> NinjaRule {
-		let mut command = vec![
-			compiler.cmd(),
-			"$DEFINES".to_string(),
-			"$INCLUDES".to_string(),
-			"$FLAGS".to_string(),
-		];
-		// command.extend(compiler.compiler_flags(msvc_runtime));
-		command.extend(compiler.compile_object_out_flags("$out"));
-		command.extend(vec!["-c".to_string(), "$in".to_string()]);
-		NinjaRule {
-			name: String::from("compile_c_object"),
-			command,
-			..Default::default()
-		}
-	}
-	fn compile_cpp_object(compiler: &[String] /*Box<dyn Compiler>*/, out_flag: &str) -> NinjaRule {
-		let mut command = compiler.to_owned();
-		command.extend(vec!["$DEFINES".to_string(), "$INCLUDES".to_string(), "$FLAGS".to_string()]);
-		// command.extend(compiler.compiler_flags(msvc_runtime));
-		// command.extend(compiler.compile_object_out_flags("$out"));
-		command.extend(vec![out_flag.to_owned(), "$out".to_owned()]);
-		command.extend(vec!["-c".to_string(), "$in".to_string()]);
-		NinjaRule {
-			name: String::from("compile_cpp_object"),
-			command,
-			..Default::default()
-		}
-	}
-	fn link_static_lib(static_linker: &[String] /*Box<dyn StaticLinker>*/) -> NinjaRule {
-		let mut command = static_linker.to_owned(); //.cmd();
-		command.extend(vec!["$TARGET_FILE".to_string(), "$LINK_FLAGS".to_string(), "$in".to_string()]);
-		NinjaRule {
-			name: String::from("link_static_lib"),
-			command,
-			..Default::default()
-		}
-	}
-	fn link_exe(exe_linker: &[String] /*Box<dyn ExeLinker>*/) -> NinjaRule {
-		let mut command = exe_linker.to_owned(); //.cmd();
-		command.extend(vec![
-			"$LINK_FLAGS".to_string(),
-			"$in".to_string(),
-			"-o".to_string(),
-			"$TARGET_FILE".to_string(),
-			"$LINK_PATH".to_string(),
-		]);
-		NinjaRule {
-			name: String::from("compile_exe"),
-			command,
-			..Default::default()
-		}
-	}
 	pub fn generate(
 		project: Arc<Project>,
 		build_dir: PathBuf,
@@ -268,26 +265,32 @@ impl Ninja {
 		for subproject in &project.dependencies {
 			Ninja::generate_inner(
 				subproject,
-				&build_dir,
-				&build_tools,
-				&compile_options,
-				&target_platform,
+				build_dir,
+				build_tools,
+				compile_options,
+				target_platform,
 				rules,
 				out_str,
 			)?;
 		}
 
 		let project_name = &project.info.name;
+		if rules.link_static_lib.is_none() && !project.libraries.is_empty() {
+			rules.link_static_lib = Some(link_static_lib(&build_tools.static_linker));
+		}
 		for lib in &project.libraries {
-			if rules.link_static_lib.is_none() {
-				rules.link_static_lib = Some(Self::link_static_lib(&build_tools.static_linker));
-			}
 			let mut inputs = Vec::<String>::new();
-			for src in &lib.sources {
-				if rules.compile_cpp_object.is_none() {
-					rules.compile_cpp_object =
-						Some(Self::compile_cpp_object(&build_tools.cpp_compiler, &build_tools.out_flag));
-				}
+			fn add_lib_source(
+				src: &str,
+				lib: &Library,
+				build_dir: &Path,
+				project_name: &str,
+				target_platform: &TargetPlatform,
+				out_str: &mut String,
+				rule: NinjaRule,
+				compile_options: Vec<String>,
+				inputs: &mut Vec<String>,
+			) {
 				let input = input_path(src, &lib.parent_project.upgrade().unwrap().info.path);
 				let out_tgt = output_path(build_dir, project_name, src, &target_platform.obj_ext);
 				let mut includes = lib.public_includes_recursive();
@@ -298,7 +301,7 @@ impl Ninja {
 				*out_str += &NinjaBuild {
 					inputs: vec![input],
 					output_targets: vec![out_tgt.clone()],
-					rule: rules.compile_cpp_object.as_ref().unwrap().clone(),
+					rule,
 					keyval_set: HashMap::from([
 						("DEFINES".to_string(), defines),
 						("FLAGS".to_string(), compile_options),
@@ -307,6 +310,38 @@ impl Ninja {
 				}
 				.as_string();
 				inputs.push(out_tgt);
+			}
+			if rules.compile_c_object.is_none() && !lib.c_sources.is_empty() {
+				rules.compile_c_object = Some(compile_c_object(&build_tools.c_compiler, &build_tools.out_flag));
+			}
+			if rules.compile_cpp_object.is_none() && !lib.cpp_sources.is_empty() {
+				rules.compile_cpp_object = Some(compile_cpp_object(&build_tools.cpp_compiler, &build_tools.out_flag));
+			}
+			for src in &lib.c_sources {
+				add_lib_source(
+					src,
+					lib,
+					build_dir,
+					project_name,
+					target_platform,
+					out_str,
+					rules.compile_c_object.as_ref().unwrap().clone(),
+					compile_options.clone(),
+					&mut inputs,
+				);
+			}
+			for src in &lib.cpp_sources {
+				add_lib_source(
+					src,
+					lib,
+					build_dir,
+					project_name,
+					target_platform,
+					out_str,
+					rules.compile_cpp_object.as_ref().unwrap().clone(),
+					compile_options.clone(),
+					&mut inputs,
+				);
 			}
 			for link in lib.public_links_recursive() {
 				let link =
@@ -328,36 +363,69 @@ impl Ninja {
 			}
 			.as_string();
 		}
-		for exe in &project.executables {
-			if rules.link_exe.is_none() {
-				rules.link_exe = Some(Self::link_exe(&build_tools.exe_linker));
+		fn add_exe_source(
+			src: &str,
+			exe: &Executable,
+			build_dir: &Path,
+			project_name: &str,
+			target_platform: &TargetPlatform,
+			out_str: &mut String,
+			rule: NinjaRule,
+			compile_options: Vec<String>,
+			inputs: &mut Vec<String>,
+		) {
+			let input = input_path(src, &exe.parent_project.upgrade().unwrap().info.path);
+			let out_tgt = output_path(build_dir, project_name, src, &target_platform.obj_ext);
+			let includes = exe.public_includes_recursive();
+			let defines = exe
+				.public_defines_recursive()
+				.iter()
+				.map(|x| "-D".to_string() + x)
+				.collect();
+			*out_str += &NinjaBuild {
+				inputs: vec![input],
+				output_targets: vec![out_tgt.clone()],
+				rule,
+				keyval_set: HashMap::from([
+					("DEFINES".to_string(), defines),
+					("FLAGS".to_string(), compile_options),
+					("INCLUDES".to_owned(), includes.iter().map(|x| "-I".to_owned() + x).collect()),
+				]),
 			}
+			.as_string();
+			inputs.push(out_tgt);
+		}
+		if rules.link_exe.is_none() && !project.executables.is_empty() {
+			rules.link_exe = Some(link_exe(&build_tools.exe_linker));
+		}
+		for exe in &project.executables {
+			println!("   target: {}", exe.name);
 			let mut object_names = Vec::<String>::new();
-			for src in &exe.sources {
-				if rules.compile_cpp_object.is_none() {
-					rules.compile_cpp_object =
-						Some(Self::compile_cpp_object(&build_tools.cpp_compiler, &build_tools.out_flag));
-				}
-				let input = input_path(src, &exe.parent_project.upgrade().unwrap().info.path);
-				let out_tgt = output_path(build_dir, project_name, src, &target_platform.obj_ext);
-				let includes = exe.public_includes_recursive();
-				let defines = exe
-					.public_defines_recursive()
-					.iter()
-					.map(|x| "-D".to_string() + x)
-					.collect();
-				*out_str += &NinjaBuild {
-					inputs: vec![input],
-					output_targets: vec![out_tgt.clone()],
-					rule: rules.compile_cpp_object.as_ref().unwrap().clone(),
-					keyval_set: HashMap::from([
-						("DEFINES".to_string(), defines),
-						("FLAGS".to_string(), compile_options.clone()),
-						("INCLUDES".to_owned(), includes),
-					]),
-				}
-				.as_string();
-				object_names.push(out_tgt);
+			for src in &exe.c_sources {
+				add_exe_source(
+					src,
+					exe,
+					build_dir,
+					project_name,
+					target_platform,
+					out_str,
+					rules.compile_c_object.as_ref().unwrap().clone(),
+					compile_options.clone(),
+					&mut object_names,
+				);
+			}
+			for src in &exe.cpp_sources {
+				add_exe_source(
+					src,
+					exe,
+					build_dir,
+					project_name,
+					target_platform,
+					out_str,
+					rules.compile_cpp_object.as_ref().unwrap().clone(),
+					compile_options.clone(),
+					&mut object_names,
+				);
 			}
 			for link in &exe.links {
 				object_names.push(output_path(

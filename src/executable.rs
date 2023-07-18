@@ -14,7 +14,8 @@ pub struct Executable {
 	pub parent_project: Weak<Project>,
 
 	pub name: String,
-	pub sources: Vec<String>,
+	pub c_sources: Vec<String>,
+    pub cpp_sources: Vec<String>,
 	pub links: Vec<Arc<dyn LinkTarget>>,
 	pub include_dirs: Vec<String>,
 	pub defines: Vec<String>,
@@ -29,11 +30,13 @@ impl fmt::Display for Executable {
 			f,
 			r#"Executable{{
    name: {},
-   sources: [{}],
+   c_sources: [{}],
+   cpp_sources: [{}],
    links: [{}],
 }}"#,
 			self.name,
-			self.sources.join(", "),
+			self.c_sources.join(", "),
+            self.cpp_sources.join(", "),
 			self.links.iter().map(|x| x.name()).collect::<Vec<String>>().join(", ")
 		)
 	}

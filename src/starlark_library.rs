@@ -23,6 +23,7 @@ use starlark::{
 
 use super::{
 	library::Library, //
+	misc::{is_c_source, is_cpp_source},
 	project::Project,
 	starlark_link_target::{PtrLinkTarget, StarLinkTarget},
 	starlark_project::{StarLinkTargetCache, StarProject},
@@ -87,7 +88,8 @@ impl StarLibrary {
 		Library {
 			parent_project: parent_project.clone(),
 			name: self.name.clone(),
-			sources: self.sources.clone(),
+			c_sources: self.sources.iter().filter(is_c_source).map(String::from).collect(),
+			cpp_sources: self.sources.iter().filter(is_cpp_source).map(String::from).collect(),
 			include_dirs_private: self.include_dirs_private.clone(),
 			include_dirs_public: self.include_dirs_public.clone(),
 			private_links: self
