@@ -34,18 +34,13 @@ impl Target for Library {
 	}
 }
 
-fn canonicalize<'a>(
-	parent_path: &'a Path,
-	iter: impl Iterator<Item = &'a String> + 'a,
-) -> impl Iterator<Item = String> + 'a {
-	iter.map(|x| {
-		let path = PathBuf::from(x);
-		if path.is_absolute() {
-			x.to_owned()
-		} else {
-			parent_path.join(x).canonicalize().unwrap().to_str().unwrap().to_owned()
-		}
-	})
+fn canonicalize(parent_path: &Path, x: &String) -> String {
+	let path = PathBuf::from(x);
+	if path.is_absolute() {
+		x.to_owned()
+	} else {
+		parent_path.join(x).canonicalize().unwrap().to_str().unwrap().to_owned()
+	}
 }
 
 impl LinkTarget for Library {
@@ -53,14 +48,25 @@ impl LinkTarget for Library {
 		let mut includes = Vec::new();
 		let parent_path = &self.parent_project.upgrade().unwrap().info.path;
 		for link in &self.private_links {
-			includes.extend(link.public_includes_recursive())
+			for include in link.public_includes_recursive() {
+				if !includes.contains(&include) {
+					includes.push(include);
+				}
+			}
 		}
-		includes.extend(canonicalize(parent_path, self.include_dirs_public.iter()));
+		for include in self.include_dirs_public.iter().map(|x| canonicalize(parent_path, x)) {
+			if !includes.contains(&include) {
+				includes.push(include);
+			}
+		}
 		includes
 	}
 	fn private_includes(&self) -> Vec<String> {
 		let parent_path = &self.parent_project.upgrade().unwrap().info.path;
-		canonicalize(parent_path, self.include_dirs_private.iter()).collect()
+		self.include_dirs_private
+			.iter()
+			.map(|x| canonicalize(parent_path, x))
+			.collect()
 	}
 	fn public_links_recursive(&self) -> Vec<Arc<dyn LinkTarget>> {
 		let mut links: Vec<Arc<dyn LinkTarget>> = vec![];
