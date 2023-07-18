@@ -4,6 +4,7 @@ use std::{
 };
 
 use crate::{
+	misc::canonicalize,
 	project::Project,
 	target::{LinkTarget, Target},
 };
@@ -15,6 +16,9 @@ pub struct Executable {
 	pub name: String,
 	pub sources: Vec<String>,
 	pub links: Vec<Arc<dyn LinkTarget>>,
+	pub include_dirs: Vec<String>,
+	pub defines: Vec<String>,
+	pub link_flags: Vec<String>,
 
 	pub output_name: Option<String>,
 }
@@ -47,5 +51,58 @@ impl Target for Executable {
 	}
 	fn project(&self) -> Arc<Project> {
 		self.parent_project.upgrade().unwrap()
+	}
+}
+
+impl Executable {
+	pub(crate) fn public_includes_recursive(&self) -> Vec<String> {
+		let mut includes = Vec::new();
+		let parent_path = &self.parent_project.upgrade().unwrap().info.path;
+		for link in &self.links {
+			for include in link.public_includes_recursive() {
+				if !includes.contains(&include) {
+					includes.push(include);
+				}
+			}
+		}
+
+		for include in self.include_dirs.iter().map(|x| canonicalize(parent_path, x)) {
+			if !includes.contains(&include) {
+				includes.push(include);
+			}
+		}
+		includes
+	}
+	pub(crate) fn public_defines_recursive(&self) -> Vec<String> {
+		let mut defines = Vec::new();
+		for link in &self.links {
+			for def in link.public_defines_recursive() {
+				if !defines.contains(&def) {
+					defines.push(def);
+				}
+			}
+		}
+		for def in &self.defines {
+			if !defines.contains(&def) {
+				defines.push(def.clone());
+			}
+		}
+		defines
+	}
+	pub(crate) fn link_flags_recursive(&self) -> Vec<String> {
+		let mut flags = Vec::new();
+		for link in &self.links {
+			for flag in link.public_link_flags_recursive() {
+				if !flags.contains(&flag) {
+					flags.push(flag);
+				}
+			}
+		}
+		for flag in &self.link_flags {
+			if !flags.contains(&flag) {
+				flags.push(flag.clone());
+			}
+		}
+		flags
 	}
 }

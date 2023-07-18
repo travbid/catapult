@@ -35,6 +35,9 @@ pub(super) struct StarExecutable {
 	pub name: String,
 	pub sources: Vec<String>,
 	pub links: Vec<Arc<dyn StarLinkTarget>>,
+	pub include_dirs: Vec<String>,
+	pub defines: Vec<String>,
+	pub link_flags: Vec<String>,
 
 	pub output_name: Option<String>,
 }
@@ -79,6 +82,9 @@ impl StarExecutable {
 			name: self.name.clone(),
 			sources: self.sources.clone(),
 			links,
+			include_dirs: self.include_dirs.clone(),
+			defines: self.defines.clone(),
+			link_flags: self.link_flags.clone(),
 			output_name: self.output_name.clone(),
 		}
 	}

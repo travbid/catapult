@@ -89,6 +89,9 @@ impl ImplAddLibrary {
 		link_private: Vec<Value>,
 		include_dirs_public: Vec<&str>,
 		include_dirs_private: Vec<&str>,
+		defines_public: Vec<&str>,
+		link_flags_public: Vec<&str>,
+		// list_or_lambda: Arc<ListOrLambdaFrozen>,
 	) -> anyhow::Result<Arc<StarLibrary>> {
 		let mut private_links = Vec::<Arc<dyn StarLinkTarget>>::with_capacity(link_private.len());
 		for link in link_private {
@@ -113,6 +116,8 @@ impl ImplAddLibrary {
 			private_links,
 			include_dirs_public: to_path_strs(&include_dirs_public, &project.path),
 			include_dirs_private: to_path_strs(&include_dirs_private, &project.path),
+			defines_public: defines_public.into_iter().map(String::from).collect(),
+			link_flags_public: link_flags_public.into_iter().map(String::from).collect(),
 			output_name: None, // TODO(Travers)
 		});
 		project.libraries.push(lib.clone());
@@ -126,13 +131,15 @@ impl starlark::values::function::NativeFunc for ImplAddLibrary {
 		eval: &mut starlark::eval::Evaluator<'v, '_>,
 		parameters: &Arguments<'v, '_>,
 	) -> anyhow::Result<starlark::values::Value<'v>> {
-		let args: [Cell<Option<Value<'v>>>; 5] = self.signature.collect_into(parameters, eval.heap())?;
+		let args: [Cell<Option<Value<'v>>>; 7] = self.signature.collect_into(parameters, eval.heap())?;
 		let v = self.add_library_impl(
 			Arguments::check_required("name", args[0].get())?,
 			Arguments::check_required("sources", args[1].get())?,
 			Arguments::check_optional("link_private", args[2].get())?.unwrap_or_default(),
 			Arguments::check_optional("include_dirs_public", args[3].get())?.unwrap_or_default(),
 			Arguments::check_optional("include_dirs_private", args[4].get())?.unwrap_or_default(),
+			Arguments::check_optional("defines_public", args[5].get())?.unwrap_or_default(),
+			Arguments::check_optional("link_flags_public", args[6].get())?.unwrap_or_default(),
 			// listorlambda,
 		)?;
 		Ok(eval.heap().alloc(StarLibraryWrapper(v)))
@@ -149,6 +156,9 @@ impl ImplAddExecutable {
 		name: &str,
 		sources: Vec<&str>,
 		links: Vec<Value>,
+		include_dirs: Vec<String>,
+		defines: Vec<String>,
+		link_flags: Vec<String>,
 	) -> anyhow::Result<StarExecutableWrapper> {
 		let mut exe_links = Vec::<Arc<dyn StarLinkTarget>>::with_capacity(sources.len());
 		for link in links {
@@ -169,6 +179,9 @@ impl ImplAddExecutable {
 			name: String::from(name),
 			sources: to_path_strs(&sources, &project.path),
 			links: exe_links,
+			include_dirs,
+			defines,
+			link_flags,
 			output_name: None, // TODO(Travers)
 		});
 		project.executables.push(exe.clone());
@@ -181,11 +194,14 @@ impl starlark::values::function::NativeFunc for ImplAddExecutable {
 		eval: &mut starlark::eval::Evaluator<'v, '_>,
 		parameters: &Arguments<'v, '_>,
 	) -> anyhow::Result<starlark::values::Value<'v>> {
-		let args: [_; 3] = self.signature.collect_into(parameters, eval.heap())?;
+		let args: [_; 6] = self.signature.collect_into(parameters, eval.heap())?;
 		let v = self.add_executable_impl(
 			Arguments::check_required("name", args[0].get())?,
 			Arguments::check_required("sources", args[1].get())?,
 			Arguments::check_optional("links", args[2].get())?.unwrap_or_default(),
+			Arguments::check_optional("include_dirs", args[3].get())?.unwrap_or_default(),
+			Arguments::check_optional("defines", args[4].get())?.unwrap_or_default(),
+			Arguments::check_optional("link_flags", args[5].get())?.unwrap_or_default(),
 		)?;
 		Ok(eval.heap().alloc(v))
 	}
@@ -203,6 +219,8 @@ pub(crate) fn build_api(
 		sig_builder.optional("link_private");
 		sig_builder.optional("include_dirs_public");
 		sig_builder.optional("include_dirs_private");
+		sig_builder.optional("defines_public");
+		sig_builder.optional("link_flags_public");
 		let signature = sig_builder.finish();
 		let documentation = {
 			let parameter_types = HashMap::from([
@@ -211,6 +229,8 @@ pub(crate) fn build_api(
 				(2, DocType { raw_type: <&str>::starlark_type_repr() }),
 				(3, DocType { raw_type: <Value>::starlark_type_repr() }),
 				(4, DocType { raw_type: <Vec<&str>>::starlark_type_repr() }),
+				(5, DocType { raw_type: <Vec<&str>>::starlark_type_repr() }),
+				(6, DocType { raw_type: <Vec<&str>>::starlark_type_repr() }),
 			]);
 			starlark::values::function::NativeCallableRawDocs {
 				rust_docstring: None,
@@ -237,6 +257,9 @@ pub(crate) fn build_api(
 		sig_builder.required("name");
 		sig_builder.required("sources");
 		sig_builder.optional("links");
+		sig_builder.optional("include_dirs");
+		sig_builder.optional("defines");
+		sig_builder.optional("link_flags");
 		let signature = sig_builder.finish();
 
 		let documentation = {
@@ -244,6 +267,9 @@ pub(crate) fn build_api(
 				(0, DocType { raw_type: <&str>::starlark_type_repr() }),
 				(1, DocType { raw_type: <Vec<&str>>::starlark_type_repr() }),
 				(2, DocType { raw_type: <Value>::starlark_type_repr() }),
+				(3, DocType { raw_type: <Vec<String>>::starlark_type_repr() }),
+				(4, DocType { raw_type: <Vec<String>>::starlark_type_repr() }),
+				(5, DocType { raw_type: <Vec<String>>::starlark_type_repr() }),
 			]);
 			starlark::values::function::NativeCallableRawDocs {
 				rust_docstring: None,

@@ -37,6 +37,9 @@ pub(super) struct StarLibrary {
 	pub private_links: Vec<Arc<dyn StarLinkTarget>>,
 	pub include_dirs_public: Vec<String>,
 	pub include_dirs_private: Vec<String>,
+	pub defines_public: Vec<String>,
+	pub link_flags_public: Vec<String>,
+
 	pub output_name: Option<String>,
 }
 
@@ -99,6 +102,8 @@ impl StarLibrary {
 					}
 				})
 				.collect(),
+			defines_public: self.defines_public.clone(),
+			link_flags_public: self.link_flags_public.clone(),
 			output_name: self.output_name.clone(),
 		}
 	}

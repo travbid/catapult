@@ -292,12 +292,16 @@ impl Ninja {
 				let out_tgt = output_path(build_dir, project_name, src, &target_platform.obj_ext);
 				let mut includes = lib.public_includes_recursive();
 				includes.extend_from_slice(&lib.private_includes());
+				let mut defines = lib.public_defines_recursive();
+				defines.extend_from_slice(&lib.private_defines());
+				let defines = defines.iter().map(|x| "-D".to_string() + x).collect();
 				*out_str += &NinjaBuild {
 					inputs: vec![input],
 					output_targets: vec![out_tgt.clone()],
 					rule: rules.compile_cpp_object.as_ref().unwrap().clone(),
 					keyval_set: HashMap::from([
-						("FLAGS".to_string(), compile_options.clone()),
+						("DEFINES".to_string(), defines),
+						("FLAGS".to_string(), compile_options),
 						("INCLUDES".to_owned(), includes.iter().map(|x| "-I".to_owned() + x).collect()),
 					]),
 				}
@@ -310,13 +314,16 @@ impl Ninja {
 				inputs.push(link);
 			}
 			let out_name = output_path(build_dir, project_name, &lib.output_name(), &target_platform.static_lib_ext);
+			let link_flags = Vec::new(); // TODO(Travers): Only for shared libs
+							 // let mut link_flags = lib.public_link_flags_recursive();
+							 // link_flags.extend_from_slice(&lib.private_link_flags());
 			*out_str += &NinjaBuild {
 				inputs,
 				output_targets: vec![out_name.clone()],
 				rule: rules.link_static_lib.as_ref().unwrap().clone(),
 				keyval_set: HashMap::from([
 					("TARGET_FILE".to_string(), vec![out_name]),
-					("LINK_FLAGS".to_string(), vec![]),
+					("LINK_FLAGS".to_string(), link_flags),
 				]),
 			}
 			.as_string();
@@ -333,12 +340,18 @@ impl Ninja {
 				}
 				let input = input_path(src, &exe.parent_project.upgrade().unwrap().info.path);
 				let out_tgt = output_path(build_dir, project_name, src, &target_platform.obj_ext);
-				let includes = Vec::new(); // TODO(Travers)
+				let includes = exe.public_includes_recursive();
+				let defines = exe
+					.public_defines_recursive()
+					.iter()
+					.map(|x| "-D".to_string() + x)
+					.collect();
 				*out_str += &NinjaBuild {
 					inputs: vec![input],
 					output_targets: vec![out_tgt.clone()],
 					rule: rules.compile_cpp_object.as_ref().unwrap().clone(),
 					keyval_set: HashMap::from([
+						("DEFINES".to_string(), defines),
 						("FLAGS".to_string(), compile_options.clone()),
 						("INCLUDES".to_owned(), includes),
 					]),
@@ -354,6 +367,7 @@ impl Ninja {
 					&target_platform.static_lib_ext,
 				));
 			}
+			let link_flags = exe.link_flags_recursive();
 			let out_name = output_path(build_dir, project_name, &exe.name, &target_platform.exe_ext);
 			*out_str += &NinjaBuild {
 				inputs: object_names,
@@ -361,7 +375,7 @@ impl Ninja {
 				rule: rules.link_exe.as_ref().unwrap().clone(),
 				keyval_set: HashMap::from([
 					("TARGET_FILE".to_string(), vec![out_name]),
-					("LINK_FLAGS".to_string(), vec![]),
+					("LINK_FLAGS".to_string(), link_flags),
 				]),
 			}
 			.as_string();
