@@ -141,11 +141,7 @@ impl StarProject {
 		let project = Arc::<Project>::new_cyclic(|weak_parent| {
 			Project {
 				info: Arc::new(ProjectInfo { name: self.name.clone(), path: self.path.clone() }),
-				dependencies: self
-					.dependencies
-					.iter()
-					.map(|x| x.as_project_inner(link_map))
-					.collect(),
+				dependencies: self.dependencies.iter().map(|x| x.as_project_inner(link_map)).collect(),
 				executables: self
 					.executables
 					.iter()
