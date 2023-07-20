@@ -1,0 +1,48 @@
+name: ci
+on:
+  push:
+    branches:
+      - master
+      - ci
+    paths-ignore:
+      - '**.md'  # Ignore README changes
+  pull_request:
+    paths-ignore:
+      - '**.md'
+
+permissions:
+  contents: read
+
+env:
+  RUST_BACKTRACE: '1'  # Make debugging easier if catapult fails at runtime
+
+jobs:
+  ubuntu-ninja:
+    name: Build and Run (Ubuntu / Ninja)
+    runs-on: ubuntu-latest
+    steps:
+      - run: >
+          sudo apt-get install -y
+          llvm
+          ninja-build
+      - name: Checkout
+        uses: actions/checkout@v3
+      - run: cargo build
+      - run: ./target/debug/catapult -S test_data/test_01 -B build -G Ninja
+      - run: tree build
+      - run: ninja -C build -j1 -v
+      - run: tree build
+      - run: ./build/test_one/myexe abc def
+
+  # windows-msvc:
+  #   name: Build and Run (Windows / MSVC)
+  #   runs-on: windows-latest
+  #   steps:
+  #     - name: Checkout
+  #       uses: actions/checkout@v3
+  #     - run: cargo build
+  #     - run: ./target/debug/catapult -S test_data/test_01 -B build -G MSVC
+  #     - run: Get-ChildItem build
+  #     - run: ninja -C build -j1 -v
+  #     - run: Get-ChildItem build
+  #     - run: ./build/test_one/myexe.exe abc def
