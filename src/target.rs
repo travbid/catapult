@@ -9,8 +9,11 @@ pub trait Target: Debug + Send + Sync {
 }
 
 pub trait LinkTarget: Target {
+	fn public_includes(&self) -> Vec<String>;
 	fn public_includes_recursive(&self) -> Vec<String>;
+	fn public_defines(&self) -> Vec<String>;
 	fn public_defines_recursive(&self) -> Vec<String>;
+	fn public_link_flags(&self) -> Vec<String>;
 	fn public_link_flags_recursive(&self) -> Vec<String>;
 	fn public_links_recursive(&self) -> Vec<Arc<dyn LinkTarget>>;
 }

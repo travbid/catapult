@@ -70,6 +70,7 @@ impl Executable {
 		}
 
 		for include in self.include_dirs.iter().map(|x| canonicalize(parent_path, x)) {
+			let include = include.unwrap();
 			if !includes.contains(&include) {
 				includes.push(include);
 			}

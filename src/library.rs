@@ -13,6 +13,7 @@ pub struct Library {
 	pub c_sources: Vec<String>,
 	pub cpp_sources: Vec<String>,
 	pub private_links: Vec<Arc<dyn LinkTarget>>,
+	// pub public_links: Vec<Arc<dyn LinkTarget>>,
 	pub include_dirs_public: Vec<String>,
 	pub include_dirs_private: Vec<String>,
 	pub defines_public: Vec<String>,
@@ -37,6 +38,13 @@ impl Target for Library {
 }
 
 impl LinkTarget for Library {
+	fn public_includes(&self) -> Vec<String> {
+		let parent_path = &self.parent_project.upgrade().unwrap().info.path;
+		self.include_dirs_public
+			.iter()
+			.map(|x| canonicalize(parent_path, x).unwrap())
+			.collect()
+	}
 	fn public_includes_recursive(&self) -> Vec<String> {
 		let mut includes = Vec::new();
 		let parent_path = &self.parent_project.upgrade().unwrap().info.path;
@@ -48,14 +56,25 @@ impl LinkTarget for Library {
 			}
 		}
 		for include in self.include_dirs_public.iter().map(|x| canonicalize(parent_path, x)) {
+			let include = include.unwrap();
 			if !includes.contains(&include) {
 				includes.push(include);
 			}
 		}
 		includes
 	}
+	fn public_defines(&self) -> Vec<String> {
+		self.defines_public.clone()
+	}
 	fn public_defines_recursive(&self) -> Vec<String> {
 		let mut defines = Vec::new();
+		for link in &self.private_links {
+			for def in link.public_defines() {
+				if !defines.contains(&def) {
+					defines.push(def);
+				}
+			}
+		}
 		for link in &self.private_links {
 			for def in link.public_defines_recursive() {
 				if !defines.contains(&def) {
@@ -70,15 +89,25 @@ impl LinkTarget for Library {
 		}
 		defines
 	}
+	fn public_link_flags(&self) -> Vec<String> {
+		self.link_flags_public.clone()
+	}
 	fn public_link_flags_recursive(&self) -> Vec<String> {
 		let mut flags = Vec::new();
 		for link in &self.private_links {
-			for flag in link.public_link_flags_recursive() {
+			for flag in link.public_link_flags() {
 				if !flags.contains(&flag) {
 					flags.push(flag);
 				}
 			}
 		}
+		// for link in &self.public_links {
+		// 	for flag in link.public_link_flags_recursive() {
+		// 		if !flags.contains(&flag) {
+		// 			flags.push(flag);
+		// 		}
+		// 	}
+		// }
 		for flag in &self.link_flags_public {
 			if !flags.contains(&flag) {
 				flags.push(flag.clone());
@@ -100,7 +129,7 @@ impl Library {
 		let parent_path = &self.parent_project.upgrade().unwrap().info.path;
 		self.include_dirs_private
 			.iter()
-			.map(|x| canonicalize(parent_path, x))
+			.map(|x| canonicalize(parent_path, x).unwrap())
 			.collect()
 	}
 	pub(crate) fn private_defines(&self) -> Vec<String> {

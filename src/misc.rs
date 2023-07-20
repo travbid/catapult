@@ -1,11 +1,16 @@
-use std::path::{Path, PathBuf};
+use std::{
+	io,
+	path::{Path, PathBuf},
+};
 
-pub(crate) fn canonicalize(parent_path: &Path, x: &String) -> String {
+pub(crate) fn canonicalize(parent_path: &Path, x: &String) -> io::Result<String> {
 	let path = PathBuf::from(x);
 	if path.is_absolute() {
-		x.to_owned()
+		Ok(x.to_owned())
 	} else {
-		parent_path.join(x).canonicalize().unwrap().to_str().unwrap().to_owned()
+		let canon = parent_path.join(x).canonicalize()?;
+		let str = canon.to_str().unwrap();
+		Ok(str.to_owned())
 	}
 }
 
