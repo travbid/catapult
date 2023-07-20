@@ -357,11 +357,12 @@ impl Ninja {
 				output_targets: vec![out_name.clone()],
 				rule: rules.link_static_lib.as_ref().unwrap().clone(),
 				keyval_set: HashMap::from([
-					("TARGET_FILE".to_string(), vec![out_name]),
+					("TARGET_FILE".to_string(), vec![out_name.clone()]),
 					("LINK_FLAGS".to_string(), link_flags),
 				]),
 			}
 			.as_string();
+			*out_str += &format!("build {}: phony {}\n\n", lib.name, out_name);
 		}
 		fn add_exe_source(
 			src: &str,
@@ -442,11 +443,12 @@ impl Ninja {
 				output_targets: vec![out_name.clone()],
 				rule: rules.link_exe.as_ref().unwrap().clone(),
 				keyval_set: HashMap::from([
-					("TARGET_FILE".to_string(), vec![out_name]),
+					("TARGET_FILE".to_string(), vec![out_name.clone()]),
 					("LINK_FLAGS".to_string(), link_flags),
 				]),
 			}
 			.as_string();
+			*out_str += &format!("build {}: phony {}\n\n", exe.name, out_name);
 		}
 		Ok(())
 	}
