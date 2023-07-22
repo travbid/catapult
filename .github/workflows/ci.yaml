@@ -34,15 +34,18 @@ jobs:
       - run: tree build
       - run: ./build/test_one/myexe abc def
 
-  # windows-msvc:
-  #   name: Build and Run (Windows / MSVC)
-  #   runs-on: windows-latest
-  #   steps:
-  #     - name: Checkout
-  #       uses: actions/checkout@v3
-  #     - run: cargo build
-  #     - run: ./target/debug/catapult -S test_data/test_01 -B build -G MSVC
-  #     - run: Get-ChildItem build
-  #     - run: ninja -C build -j1 -v
-  #     - run: Get-ChildItem build
-  #     - run: ./build/test_one/myexe.exe abc def
+  windows-msvc:
+    name: Build and Run (Windows / MSVC)
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      - run: cargo build
+      - run: ./target/debug/catapult -S test_data/test_01 -B build -G MSVC
+      - run: tree /f build
+      - shell: cmd
+        run: >
+          call "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Auxiliary\Build\vcvars64.bat"
+          && MSBuild build/test_one.sln
+      - run: tree /f build
+      - run: ./build/test_one/Debug/myexe.exe abc def

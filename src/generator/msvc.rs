@@ -1,11 +1,461 @@
-use std::sync::Arc;
+use std::{
+	collections::HashMap, //
+	fmt,
+	fs,
+	io::Write,
+	path::{Path, PathBuf},
+	sync::Arc,
+};
 
-use crate::project::Project;
+use uuid::Uuid;
+
+use crate::{
+	project::{Project, ProjectInfo},
+	target::{LinkTarget, LinkTargetPtr, Target},
+};
+
+const VS_CPP_GUID: &str = "8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942";
+
+#[derive(Clone)]
+struct VsProject {
+	name: String,
+	guid: String,
+	vcxproj_path: String,
+	dependencies: Vec<VsProject>,
+}
+
+fn input_path(src: &str, project_path: &Path) -> String {
+	let src_path = PathBuf::from(src);
+	if src_path.is_relative() {
+		project_path.join(src)
+	} else {
+		src_path
+	}
+	.to_str()
+	.unwrap()
+	.to_owned()
+}
+
+#[derive(PartialEq)]
+enum ConfigType {
+	Debug,
+	Release,
+	MinSizeRel,
+	RelWithDebInfo,
+}
+
+impl ConfigType {
+	fn optimization(&self) -> &str {
+		match self {
+			ConfigType::Debug => "Disabled",
+			ConfigType::Release => "MaxSpeed",
+			ConfigType::MinSizeRel => "MinSpace",
+			ConfigType::RelWithDebInfo => "MaxSpeed",
+		}
+	}
+}
+
+impl fmt::Display for ConfigType {
+	fn fmt(&self, f: &mut fmt::Formatter<'_>) -> Result<(), fmt::Error> {
+		let s = match self {
+			ConfigType::Debug => "Debug",
+			ConfigType::Release => "Release",
+			ConfigType::MinSizeRel => "MinSizeRel",
+			ConfigType::RelWithDebInfo => "RelWithDebInfo",
+		};
+		write!(f, "{}", s)
+	}
+}
+
+impl VsProject {
+	fn to_sln_project_section(&self) -> String {
+		let proj_name = &self.name;
+		let vcxproj_path = &self.vcxproj_path;
+		let guid = self.guid.to_string().to_ascii_uppercase();
+		let mut ret = format!(
+			r#"Project("{{{VS_CPP_GUID}}}") = "{proj_name}", "{vcxproj_path}", "{{{guid}}}"
+"#
+		);
+		if !self.dependencies.is_empty() {
+			ret += "	ProjectSection(ProjectDependencies) = postProject\n";
+		}
+		for dep in &self.dependencies {
+			let dep_guid = &dep.guid.to_string().to_ascii_uppercase();
+			ret += &format!("		{{{dep_guid}}} = {{{dep_guid}}}\n");
+		}
+		if !self.dependencies.is_empty() {
+			ret += "	EndProjectSection\n";
+		}
+		ret += "EndProject\n";
+		ret
+	}
+}
+
+fn item_definition_group(config_type: ConfigType, include_dirs: &[String], compile_flags: &[String]) -> String {
+	let mut ret = format!(
+		r#"  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='{config_type}|x64'">
+    <ClCompile>
+      <AdditionalIncludeDirectories>"#
+	);
+	ret += &include_dirs.join(";");
+	ret += r#"%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalOptions>%(AdditionalOptions)"#;
+	ret += &compile_flags.join(";");
+	// flags.contains("/permissive-")
+	ret += r#"</AdditionalOptions>
+      <AssemblerListingLocation>$(IntDir)</AssemblerListingLocation>
+      <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
+      <ConformanceMode>true</ConformanceMode>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <ExceptionHandling>Sync</ExceptionHandling>
+      <InlineFunctionExpansion>Disabled</InlineFunctionExpansion>
+      <LanguageStandard>"#;
+	ret += "stdcpp17"; // TODO(Travers)
+	ret += r#"</LanguageStandard>
+      <Optimization>"#;
+	ret += config_type.optimization();
+	ret += r#"</Optimization>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <RuntimeLibrary>"#;
+	// TODO(Travers): msvc runtime
+	ret += if config_type == ConfigType::Debug {
+		"MultiThreadedDebug"
+	} else {
+		"MultiThreaded"
+	};
+	ret += r#"</RuntimeLibrary>
+      <TreatWarningAsError>true</TreatWarningAsError>
+      <UseFullPaths>false</UseFullPaths>
+      <WarningLevel>Level4</WarningLevel>
+      <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_WINDOWS</PreprocessorDefinitions>
+      <ObjectFileName>$(IntDir)</ObjectFileName>
+    </ClCompile>
+    <ResourceCompile>
+      <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_DEBUG;_WINDOWS</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>"#;
+	ret += &include_dirs.join(";");
+	ret += r#"%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ResourceCompile>
+    <Midl>
+      <AdditionalIncludeDirectories>"#;
+	ret += &include_dirs.join(";");
+	ret += r#"%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <OutputDirectory>$(ProjectDir)/$(IntDir)</OutputDirectory>
+      <HeaderFileName>%(Filename).h</HeaderFileName>
+      <TypeLibraryName>%(Filename).tlb</TypeLibraryName>
+      <InterfaceIdentifierFileName>%(Filename)_i.c</InterfaceIdentifierFileName>
+      <ProxyFileName>%(Filename)_p.c</ProxyFileName>
+    </Midl>
+    <Lib>
+      <AdditionalOptions>%(AdditionalOptions) /machine:x64</AdditionalOptions>
+    </Lib>
+  </ItemDefinitionGroup>
+"#;
+
+	ret
+}
 
 pub struct Msvc {}
 
 impl Msvc {
-	pub fn generate(project: Arc<Project>) -> Result<(), String> {
-		todo!();
+	pub fn generate(project: Arc<Project>, build_dir: PathBuf) -> Result<(), String> {
+		let mut guid_map = HashMap::<LinkTargetPtr, VsProject>::new();
+		let mut project_vec = Vec::new();
+		Self::generate_inner(&project, &build_dir, &mut guid_map, &mut project_vec)?;
+
+		let mut sln_content = r#"Microsoft Visual Studio Solution File, Format Version 12.00
+"#
+		.to_string();
+
+		// Reverse iterate to put the most important projects at the top of the Solution Explorer
+		for proj in project_vec.iter().rev() {
+			sln_content += &proj.to_sln_project_section();
+		}
+		sln_content += r#"Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|x64 = Debug|x64
+		MinSizeRel|x64 = MinSizeRel|x64
+		Release|x64 = Release|x64
+		RelWithDebInfo|x64 = RelWithDebInfo|x64
+	EndGlobalSection
+"#;
+
+		sln_content += "	GlobalSection(ProjectConfigurationPlatforms) = postSolution\n";
+		for proj in &project_vec {
+			let guid = &proj.guid.to_string().to_ascii_uppercase();
+			sln_content += &format!(
+				r#"		{{{guid}}}.Debug|x64.ActiveCfg = Debug|x64
+		{{{guid}}}.Debug|x64.Build.0 = Debug|x64
+		{{{guid}}}.MinSizeRel|x64.ActiveCfg = MinSizeRel|x64
+		{{{guid}}}.MinSizeRel|x64.Build.0 = MinSizeRel|x64
+		{{{guid}}}.Release|x64.ActiveCfg = Release|x64
+		{{{guid}}}.Release|x64.Build.0 = Release|x64
+		{{{guid}}}.RelWithDebInfo|x64.ActiveCfg = RelWithDebInfo|x64
+		{{{guid}}}.RelWithDebInfo|x64.Build.0 = RelWithDebInfo|x64
+"#
+			);
+		}
+		sln_content += "	EndGlobalSection\n";
+
+		let sln_guid = Uuid::new_v4().to_string().to_ascii_uppercase();
+		sln_content += &format!(
+			r#"	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {{{sln_guid}}}
+	EndGlobalSection
+"#
+		);
+		// GlobalSection(ExtensibilityAddIns) = postSolution
+		// EndGlobalSection
+		sln_content += "EndGlobal\n";
+
+		let sln_pathbuf = build_dir.join(project.info.name.clone() + ".sln");
+
+		if let Err(e) = fs::create_dir_all(sln_pathbuf.parent().unwrap()) {
+			return Err(format!("Error creating directory for \"{}\": {}", sln_pathbuf.to_string_lossy(), e));
+		};
+		let mut f = match fs::File::create(sln_pathbuf.clone()) {
+			Ok(x) => x,
+			Err(e) => return Err(format!("Error creating sln at \"{}\": {}", sln_pathbuf.to_string_lossy(), e)),
+		};
+		if let Err(e) = f.write_all(sln_content.as_bytes()) {
+			return Err(format!("Error writing to sln: {}", e));
+		}
+
+		Ok(())
 	}
+	fn generate_inner(
+		project: &Arc<Project>,
+		build_dir: &PathBuf,
+		guid_map: &mut HashMap<LinkTargetPtr, VsProject>,
+		project_vec: &mut Vec<VsProject>,
+	) -> Result<(), String> {
+		for subproject in &project.dependencies {
+			Self::generate_inner(subproject, build_dir, guid_map, project_vec)?;
+		}
+
+		for lib in &project.libraries {
+			let target_name = &lib.name;
+			let configuration_type = "StaticLibrary";
+			let target_ext = ".lib";
+			let project_info = &lib.project().info;
+			let mut includes = lib.public_includes_recursive();
+			includes.extend_from_slice(&lib.private_includes());
+			// Visual Studio doesn't seem to support extended-length name syntax
+			let includes = includes
+				.into_iter()
+				.map(|x| x.trim_start_matches(r"\\?\").to_owned())
+				.collect::<Vec<String>>();
+			let vsproj = make_vcxproj(
+				build_dir,
+				&guid_map,
+				target_name,
+				configuration_type,
+				target_ext,
+				project_info,
+				&includes,
+				&lib.c_sources,
+				&lib.cpp_sources,
+				&lib.private_links,
+			)?;
+			guid_map.insert(LinkTargetPtr(lib.clone()), vsproj.clone());
+			project_vec.push(vsproj);
+		}
+		for exe in &project.executables {
+			let target_name = &exe.name;
+			let configuration_type = "Application";
+			let target_ext = ".exe";
+			let project_info = &exe.project().info;
+			let includes = exe.public_includes_recursive();
+			// Visual Studio doesn't seem to support extended-length name syntax
+			let includes = includes
+				.into_iter()
+				.map(|x| x.trim_start_matches(r"\\?\").to_owned())
+				.collect::<Vec<String>>();
+			let vsproj = make_vcxproj(
+				build_dir,
+				&guid_map,
+				target_name,
+				configuration_type,
+				target_ext,
+				project_info,
+				&includes,
+				&exe.c_sources,
+				&exe.cpp_sources,
+				&exe.links,
+			)?;
+			project_vec.push(vsproj);
+		}
+		Ok(())
+	}
+}
+
+fn make_vcxproj(
+	build_dir: &PathBuf,
+	guid_map: &HashMap<LinkTargetPtr, VsProject>,
+	target_name: &str,
+	configuration_type: &str,
+	target_ext: &str,
+	project_info: &ProjectInfo,
+	includes: &[String],
+	c_sources: &[String],
+	cpp_sources: &[String],
+	private_links: &Vec<Arc<dyn LinkTarget>>,
+) -> Result<VsProject, String> {
+	const PLATFORM_TOOLSET: &str = "v143";
+	let target_guid = Uuid::new_v4().to_string().to_ascii_uppercase();
+	let output_dir = build_dir.join(&project_info.name);
+	let out_dir_debug = output_dir.join("Debug").to_string_lossy().to_string();
+	let out_dir_release = output_dir.join("Release").to_string_lossy().to_string();
+	let out_dir_relwdebinfo = output_dir.join("RelWithDebInfo").to_string_lossy().to_string();
+	let out_dir_minsizerel = output_dir.join("MinSizeRel").to_string_lossy().to_string();
+	let mut out_str = format!(
+		r#"<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="MinSizeRel|x64">
+      <Configuration>MinSizeRel</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="RelWithDebInfo|x64">
+      <Configuration>RelWithDebInfo</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{{{target_guid}}}</ProjectGuid>
+    <Platform>x64</Platform>
+    <ProjectName>{target_name}</ProjectName>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+    <ConfigurationType>{configuration_type}</ConfigurationType>
+    <PlatformToolset>{PLATFORM_TOOLSET}</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+    <ConfigurationType>{configuration_type}</ConfigurationType>
+    <PlatformToolset>{PLATFORM_TOOLSET}</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'" Label="Configuration">
+    <ConfigurationType>{configuration_type}</ConfigurationType>
+    <PlatformToolset>{PLATFORM_TOOLSET}</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'" Label="Configuration">
+    <ConfigurationType>{configuration_type}</ConfigurationType>
+    <PlatformToolset>{PLATFORM_TOOLSET}</PlatformToolset>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings" />
+  <ImportGroup Label="PropertySheets" />
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup>
+    <_ProjectFileVersion>10.0.20506.1</_ProjectFileVersion>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">{out_dir_debug}\\</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">{target_name}.dir\Debug\</IntDir>
+    <TargetName Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">{target_name}</TargetName>
+    <TargetExt Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">{target_ext}</TargetExt>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Release|x64'">{out_dir_release}\\</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Release|x64'">{target_name}.dir\Release\</IntDir>
+    <TargetName Condition="'$(Configuration)|$(Platform)'=='Release|x64'">{target_name}</TargetName>
+    <TargetExt Condition="'$(Configuration)|$(Platform)'=='Release|x64'">{target_ext}</TargetExt>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">{out_dir_minsizerel}\\</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">{target_name}.dir\MinSizeRel\</IntDir>
+    <TargetName Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">{target_name}</TargetName>
+    <TargetExt Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">{target_ext}</TargetExt>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">{out_dir_relwdebinfo}\\</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">{target_name}.dir\RelWithDebInfo\</IntDir>
+    <TargetName Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">{target_name}</TargetName>
+    <TargetExt Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">{target_ext}</TargetExt>
+  </PropertyGroup>
+"#
+	);
+
+	// let include_dirs = include_dirs.iter().map(|x| input_path(x, &project_path)).collect::<Vec<String>>();
+	let compile_flags = Vec::new(); // TODO(Travers)
+	out_str += &item_definition_group(ConfigType::Debug, &includes, &compile_flags);
+	out_str += &item_definition_group(ConfigType::Release, &includes, &compile_flags);
+	out_str += &item_definition_group(ConfigType::MinSizeRel, &includes, &compile_flags);
+	out_str += &item_definition_group(ConfigType::RelWithDebInfo, &includes, &compile_flags);
+	out_str += "  <ItemGroup>\n";
+	for src in c_sources {
+		let input = input_path(src, &project_info.path);
+		out_str += &format!(
+			r#"    <ClCompile Include="{input}" />
+"#
+		);
+	}
+	out_str += r#"  </ItemGroup>
+  <ItemGroup>
+"#;
+	for src in cpp_sources {
+		let input = input_path(src, &project_info.path);
+		out_str += &format!(
+			r#"    <ClCompile Include="{input}" />
+"#
+		);
+	}
+	out_str += r#"  </ItemGroup>
+  <ItemGroup>
+"#;
+	let mut dependencies = Vec::new();
+	for link in private_links {
+		let proj_ref = match guid_map.get(&LinkTargetPtr(link.clone())) {
+			Some(x) => x,
+			None => return Err(format!("Could not find link: {}", link.name())),
+		};
+		dependencies.push(proj_ref.clone());
+		let proj_ref_include = build_dir.join(&proj_ref.vcxproj_path);
+		out_str += &format!(
+			r#"    <ProjectReference Include="{}">
+      <Project>{{{}}}</Project>
+      <Name>{}</Name>
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </ProjectReference>
+"#,
+			proj_ref_include.to_string_lossy(),
+			proj_ref.guid,
+			link.name()
+		);
+	}
+	out_str += &format!(
+		r#"  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets" />
+</Project>"#
+	);
+	let vcxproj_pathbuf = PathBuf::from(&project_info.name).join(target_name.to_owned() + ".vcxproj");
+	let vcxproj_pathbuf_abs = build_dir.join(&vcxproj_pathbuf);
+	let vcxproj_path = vcxproj_pathbuf.to_string_lossy().into_owned();
+	let vsproj = VsProject {
+		name: target_name.to_owned(),
+		guid: target_guid,
+		vcxproj_path,
+		dependencies,
+	};
+
+	// match fs::OpenOptions::new()
+	// .create(true)
+	// .write(true)
+	// .open(vcxproj_pathbuf.clone())
+	if let Err(e) = fs::create_dir_all(vcxproj_pathbuf_abs.parent().unwrap()) {
+		return Err(format!("Error creating direcotyr for \"{}\": {}", vcxproj_pathbuf.to_string_lossy(), e));
+	};
+	let mut f = match fs::File::create(vcxproj_pathbuf_abs.clone()) {
+		Ok(x) => x,
+		Err(e) => return Err(format!("Error creating vcxproj at \"{}\": {}", vcxproj_pathbuf.to_string_lossy(), e)),
+	};
+	if let Err(e) = f.write_all(out_str.as_bytes()) {
+		return Err(format!("Error writing to vcxproj: {}", e));
+	}
+	Ok(vsproj)
 }
