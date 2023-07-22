@@ -15,7 +15,7 @@ pub enum Generator {
 impl Generator {
 	pub fn generate(&self, project: Arc<Project>, build_dir: PathBuf) -> Result<(), String> {
 		match self {
-			Generator::Msvc => msvc::Msvc::generate(project),
+			Generator::Msvc => msvc::Msvc::generate(project, build_dir),
 			Generator::Ninja => {
 				let build_tools = BuildTools {
 					c_compiler: vec!["clang".to_owned()],
