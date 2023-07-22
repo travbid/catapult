@@ -3,7 +3,7 @@ mod ninja;
 
 use crate::project::Project;
 use std::{
-	path::PathBuf,
+	path::PathBuf, //
 	sync::Arc,
 };
 

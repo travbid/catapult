@@ -6,7 +6,7 @@ use std::{
 	sync::Arc,
 };
 
-use super::{BuildTools, Compiler, TargetPlatform};
+use super::{BuildTools, TargetPlatform};
 use crate::{
 	executable::Executable,
 	library::Library,
@@ -14,7 +14,7 @@ use crate::{
 	target::{LinkTarget, Target},
 };
 
-fn input_path<'a>(src: &str, project_path: &Path) -> String {
+fn input_path(src: &str, project_path: &Path) -> String {
 	let src_path = PathBuf::from(src);
 	if src_path.is_relative() {
 		project_path.join(src)
@@ -278,39 +278,39 @@ impl Ninja {
 		if rules.link_static_lib.is_none() && !project.libraries.is_empty() {
 			rules.link_static_lib = Some(link_static_lib(&build_tools.static_linker));
 		}
+		fn add_lib_source(
+			src: &str,
+			lib: &Library,
+			build_dir: &Path,
+			project_name: &str,
+			target_platform: &TargetPlatform,
+			out_str: &mut String,
+			rule: NinjaRule,
+			compile_options: Vec<String>,
+			inputs: &mut Vec<String>,
+		) {
+			let input = input_path(src, &lib.project().info.path);
+			let out_tgt = output_path(build_dir, project_name, src, &target_platform.obj_ext);
+			let mut includes = lib.public_includes_recursive();
+			includes.extend_from_slice(&lib.private_includes());
+			let mut defines = lib.public_defines_recursive();
+			defines.extend_from_slice(&lib.private_defines());
+			let defines = defines.iter().map(|x| "-D".to_string() + x).collect();
+			*out_str += &NinjaBuild {
+				inputs: vec![input],
+				output_targets: vec![out_tgt.clone()],
+				rule,
+				keyval_set: HashMap::from([
+					("DEFINES".to_string(), defines),
+					("FLAGS".to_string(), compile_options),
+					("INCLUDES".to_owned(), includes.iter().map(|x| "-I".to_owned() + x).collect()),
+				]),
+			}
+			.as_string();
+			inputs.push(out_tgt);
+		}
 		for lib in &project.libraries {
 			let mut inputs = Vec::<String>::new();
-			fn add_lib_source(
-				src: &str,
-				lib: &Library,
-				build_dir: &Path,
-				project_name: &str,
-				target_platform: &TargetPlatform,
-				out_str: &mut String,
-				rule: NinjaRule,
-				compile_options: Vec<String>,
-				inputs: &mut Vec<String>,
-			) {
-				let input = input_path(src, &lib.parent_project.upgrade().unwrap().info.path);
-				let out_tgt = output_path(build_dir, project_name, src, &target_platform.obj_ext);
-				let mut includes = lib.public_includes_recursive();
-				includes.extend_from_slice(&lib.private_includes());
-				let mut defines = lib.public_defines_recursive();
-				defines.extend_from_slice(&lib.private_defines());
-				let defines = defines.iter().map(|x| "-D".to_string() + x).collect();
-				*out_str += &NinjaBuild {
-					inputs: vec![input],
-					output_targets: vec![out_tgt.clone()],
-					rule,
-					keyval_set: HashMap::from([
-						("DEFINES".to_string(), defines),
-						("FLAGS".to_string(), compile_options),
-						("INCLUDES".to_owned(), includes.iter().map(|x| "-I".to_owned() + x).collect()),
-					]),
-				}
-				.as_string();
-				inputs.push(out_tgt);
-			}
 			if rules.compile_c_object.is_none() && !lib.c_sources.is_empty() {
 				rules.compile_c_object = Some(compile_c_object(&build_tools.c_compiler, &build_tools.out_flag));
 			}
@@ -375,7 +375,7 @@ impl Ninja {
 			compile_options: Vec<String>,
 			inputs: &mut Vec<String>,
 		) {
-			let input = input_path(src, &exe.parent_project.upgrade().unwrap().info.path);
+			let input = input_path(src, &exe.project().info.path);
 			let out_tgt = output_path(build_dir, project_name, src, &target_platform.obj_ext);
 			let includes = exe.public_includes_recursive();
 			let defines = exe
