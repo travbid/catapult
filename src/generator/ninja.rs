@@ -92,7 +92,7 @@ impl NinjaRule {
 			ret += "  rspfilecontent = ";
 			ret += &rspfile.rspfilecontent;
 		}
-		ret += "\n\n";
+		ret += "\n";
 		ret
 	}
 }
@@ -152,7 +152,7 @@ impl NinjaBuild {
 				ret += &format!("  {key} = {}\n", values.join(" "));
 			}
 		}
-		ret += "\n\n";
+		ret += "\n";
 		ret
 	}
 }
