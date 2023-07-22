@@ -1,6 +1,6 @@
+use core::fmt;
 use std::{
 	collections::HashMap, //
-	fmt,
 	fs,
 	io::Write,
 	path::{Path, PathBuf},
@@ -250,7 +250,7 @@ impl Msvc {
 				.collect::<Vec<String>>();
 			let vsproj = make_vcxproj(
 				build_dir,
-				&guid_map,
+				guid_map,
 				target_name,
 				configuration_type,
 				target_ext,
@@ -276,7 +276,7 @@ impl Msvc {
 				.collect::<Vec<String>>();
 			let vsproj = make_vcxproj(
 				build_dir,
-				&guid_map,
+				guid_map,
 				target_name,
 				configuration_type,
 				target_ext,
@@ -381,58 +381,61 @@ fn make_vcxproj(
 
 	// let include_dirs = include_dirs.iter().map(|x| input_path(x, &project_path)).collect::<Vec<String>>();
 	let compile_flags = Vec::new(); // TODO(Travers)
-	out_str += &item_definition_group(ConfigType::Debug, &includes, &compile_flags);
-	out_str += &item_definition_group(ConfigType::Release, &includes, &compile_flags);
-	out_str += &item_definition_group(ConfigType::MinSizeRel, &includes, &compile_flags);
-	out_str += &item_definition_group(ConfigType::RelWithDebInfo, &includes, &compile_flags);
-	out_str += "  <ItemGroup>\n";
-	for src in c_sources {
-		let input = input_path(src, &project_info.path);
-		out_str += &format!(
-			r#"    <ClCompile Include="{input}" />
-"#
-		);
+	out_str += &item_definition_group(ConfigType::Debug, includes, &compile_flags);
+	out_str += &item_definition_group(ConfigType::Release, includes, &compile_flags);
+	out_str += &item_definition_group(ConfigType::MinSizeRel, includes, &compile_flags);
+	out_str += &item_definition_group(ConfigType::RelWithDebInfo, includes, &compile_flags);
+	if !c_sources.is_empty() {
+		out_str += "  <ItemGroup>\n";
+		for src in c_sources {
+			let input = input_path(src, &project_info.path);
+			out_str += &format!(
+				r#"    <ClCompile Include="{input}" />
+    "#
+			);
+		}
+		out_str += "  </ItemGroup>\n";
 	}
-	out_str += r#"  </ItemGroup>
-  <ItemGroup>
-"#;
-	for src in cpp_sources {
-		let input = input_path(src, &project_info.path);
-		out_str += &format!(
-			r#"    <ClCompile Include="{input}" />
-"#
-		);
+	if !cpp_sources.is_empty() {
+		out_str += "  <ItemGroup>\n";
+		for src in cpp_sources {
+			let input = input_path(src, &project_info.path);
+			out_str += &format!(
+				r#"    <ClCompile Include="{input}" />
+    "#
+			);
+		}
+		out_str += "  </ItemGroup>\n";
 	}
-	out_str += r#"  </ItemGroup>
-  <ItemGroup>
-"#;
 	let mut dependencies = Vec::new();
-	for link in private_links {
-		let proj_ref = match guid_map.get(&LinkTargetPtr(link.clone())) {
-			Some(x) => x,
-			None => return Err(format!("Could not find link: {}", link.name())),
-		};
-		dependencies.push(proj_ref.clone());
-		let proj_ref_include = build_dir.join(&proj_ref.vcxproj_path);
-		out_str += &format!(
-			r#"    <ProjectReference Include="{}">
+	if !private_links.is_empty() {
+		out_str += "  <ItemGroup>\n";
+
+		for link in private_links {
+			let proj_ref = match guid_map.get(&LinkTargetPtr(link.clone())) {
+				Some(x) => x,
+				None => return Err(format!("Could not find link: {}", link.name())),
+			};
+			dependencies.push(proj_ref.clone());
+			let proj_ref_include = build_dir.join(&proj_ref.vcxproj_path);
+			out_str += &format!(
+				r#"    <ProjectReference Include="{}">
       <Project>{{{}}}</Project>
       <Name>{}</Name>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </ProjectReference>
 "#,
-			proj_ref_include.to_string_lossy(),
-			proj_ref.guid,
-			link.name()
-		);
+				proj_ref_include.to_string_lossy(),
+				proj_ref.guid,
+				link.name()
+			);
+		}
+		out_str += "  </ItemGroup>\n";
 	}
-	out_str += &format!(
-		r#"  </ItemGroup>
-  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+	out_str += r#"  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets" />
-</Project>"#
-	);
+</Project>"#;
 	let vcxproj_pathbuf = PathBuf::from(&project_info.name).join(target_name.to_owned() + ".vcxproj");
 	let vcxproj_pathbuf_abs = build_dir.join(&vcxproj_pathbuf);
 	let vcxproj_path = vcxproj_pathbuf.to_string_lossy().into_owned();

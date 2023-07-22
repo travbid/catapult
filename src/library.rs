@@ -83,7 +83,7 @@ impl LinkTarget for Library {
 			}
 		}
 		for def in &self.defines_public {
-			if !defines.contains(&def) {
+			if !defines.contains(def) {
 				defines.push(def.clone());
 			}
 		}
@@ -109,7 +109,7 @@ impl LinkTarget for Library {
 		// 	}
 		// }
 		for flag in &self.link_flags_public {
-			if !flags.contains(&flag) {
+			if !flags.contains(flag) {
 				flags.push(flag.clone());
 			}
 		}

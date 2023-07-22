@@ -15,7 +15,7 @@ pub struct Executable {
 
 	pub name: String,
 	pub c_sources: Vec<String>,
-    pub cpp_sources: Vec<String>,
+	pub cpp_sources: Vec<String>,
 	pub links: Vec<Arc<dyn LinkTarget>>,
 	pub include_dirs: Vec<String>,
 	pub defines: Vec<String>,
@@ -36,7 +36,7 @@ impl fmt::Display for Executable {
 }}"#,
 			self.name,
 			self.c_sources.join(", "),
-            self.cpp_sources.join(", "),
+			self.cpp_sources.join(", "),
 			self.links.iter().map(|x| x.name()).collect::<Vec<String>>().join(", ")
 		)
 	}
@@ -87,7 +87,7 @@ impl Executable {
 			}
 		}
 		for def in &self.defines {
-			if !defines.contains(&def) {
+			if !defines.contains(def) {
 				defines.push(def.clone());
 			}
 		}
@@ -103,7 +103,7 @@ impl Executable {
 			}
 		}
 		for flag in &self.link_flags {
-			if !flags.contains(&flag) {
+			if !flags.contains(flag) {
 				flags.push(flag.clone());
 			}
 		}
