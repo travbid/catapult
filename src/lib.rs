@@ -148,13 +148,12 @@ fn download_from_registry(
 		Ok(x) => x,
 		Err(e) => return Err(anyhow!(e)),
 	};
-	let cache_path =
-		PathBuf::from(env::var("XDG_CONFIG_HOME").or_else(|_| env::var("HOME").map(|home| home + "/.config"))?)
-			.join("catapult")
-			.join("cache")
-			.join(name)
-			.join(channel);
-	println!("cache_path: {:?}", cache_path);
+	let cache_dir = match dirs::cache_dir() {
+		Some(x) => x,
+		None => return Err(anyhow!("Could not find a HOME directory")),
+	};
+	let pkg_cache_path = cache_dir.join("catapult").join("cache").join(name).join(channel);
+	println!("pkg_cache_path: {:?}", pkg_cache_path);
 	let manifest_bytes = base64::engine::general_purpose::STANDARD_NO_PAD.decode(resp_json.manifest)?;
 	let manifest_str = std::str::from_utf8(&manifest_bytes)?;
 	let manifest = match toml::from_str::<Manifest>(manifest_str) {
@@ -171,22 +170,22 @@ fn download_from_registry(
 	};
 	let tar = GzDecoder::new(src_data_resp);
 	let mut archive = Archive::new(tar);
-	archive.unpack(&cache_path)?;
+	archive.unpack(&pkg_cache_path)?;
 
-	let manifest_path = cache_path.join("catapult.toml");
+	let manifest_path = pkg_cache_path.join("catapult.toml");
 
 	match fs::write(manifest_path, manifest_bytes) {
 		Ok(x) => x,
 		Err(e) => return Err(anyhow!(e)),
 	};
-	let recipe_path = cache_path.join("build.catapult");
+	let recipe_path = pkg_cache_path.join("build.catapult");
 	let recipe_bytes = base64::engine::general_purpose::STANDARD_NO_PAD.decode(resp_json.recipe)?;
 	match fs::write(recipe_path, recipe_bytes) {
 		Ok(x) => x,
 		Err(e) => return Err(anyhow!(e)),
 	};
 
-	Ok(cache_path)
+	Ok(pkg_cache_path)
 }
 
 fn parse_project_inner<P: AsRef<Path> + ?Sized>(
