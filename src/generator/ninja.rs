@@ -13,6 +13,7 @@ use crate::{
 	project::Project,
 	static_library::StaticLibrary,
 	target::{LinkTarget, Target},
+	GlobalOptions,
 };
 
 fn input_path(src: &str, project_path: &Path) -> String {
@@ -158,6 +159,28 @@ impl NinjaBuild {
 	}
 }
 
+// TODO(Travers): Do this for each compiler (un-hardcode clang, implement toolchain)
+fn str_to_cstd(s: &str) -> Result<String, String> {
+	match s {
+		"17" => Ok("-std=c17".to_owned()),
+		"11" => Ok("-std=c11".to_owned()),
+		_ => Err(format!(
+			"Unrecognized value for c_standard: \"{s}\". Accepted values for this generator are \"17\", \"11\""
+		)),
+	}
+}
+fn str_to_cppstd(s: &str) -> Result<String, String> {
+	match s {
+		"20" => Ok("-std=c++20".to_owned()),
+		"17" => Ok("-std=c++17".to_owned()),
+		"14" => Ok("-std=c++14".to_owned()),
+		"11" => Ok("-std=c++11".to_owned()),
+		_ => Err(format!(
+			"Unrecognized value for c_standard: \"{s}\". Accepted values for this generator are \"17\", \"11\""
+		)),
+	}
+}
+
 fn compile_c_object(compiler: &[String], out_flag: &str) -> NinjaRule {
 	let mut command = compiler.to_owned();
 	command.extend(vec!["$DEFINES".to_string(), "$INCLUDES".to_string(), "$FLAGS".to_string()]);
@@ -213,6 +236,7 @@ impl Ninja {
 		project: Arc<Project>,
 		build_dir: PathBuf,
 		build_tools: BuildTools,
+		global_opts: GlobalOptions,
 		compile_options: Vec<String>,
 		target_platform: TargetPlatform,
 	) -> Result<(), String> {
@@ -222,6 +246,7 @@ impl Ninja {
 			&project,
 			&build_dir,
 			&build_tools,
+			&global_opts,
 			&compile_options,
 			&target_platform,
 			&mut rules,
@@ -258,6 +283,7 @@ impl Ninja {
 		project: &Arc<Project>,
 		build_dir: &Path,
 		build_tools: &BuildTools,
+		global_opts: &GlobalOptions,
 		compile_options: &Vec<String>,
 		target_platform: &TargetPlatform,
 		rules: &mut NinjaRules,
@@ -268,6 +294,7 @@ impl Ninja {
 				subproject,
 				build_dir,
 				build_tools,
+				global_opts,
 				compile_options,
 				target_platform,
 				rules,
@@ -278,6 +305,14 @@ impl Ninja {
 		let project_name = &project.info.name;
 		if rules.link_static_lib.is_none() && !project.static_libraries.is_empty() {
 			rules.link_static_lib = Some(link_static_lib(&build_tools.static_linker));
+		}
+		let mut c_compile_opts = compile_options.clone();
+		if let Some(c_std) = &global_opts.c_standard {
+			c_compile_opts.push(str_to_cstd(c_std)?);
+		}
+		let mut cpp_compile_opts = compile_options.clone();
+		if let Some(cpp_std) = &global_opts.c_standard {
+			cpp_compile_opts.push(str_to_cppstd(cpp_std)?);
 		}
 		fn add_lib_source(
 			src: &str,
@@ -327,7 +362,7 @@ impl Ninja {
 					target_platform,
 					out_str,
 					rules.compile_c_object.as_ref().unwrap().clone(),
-					compile_options.clone(),
+					c_compile_opts.clone(),
 					&mut inputs,
 				);
 			}
@@ -340,7 +375,7 @@ impl Ninja {
 					target_platform,
 					out_str,
 					rules.compile_cpp_object.as_ref().unwrap().clone(),
-					compile_options.clone(),
+					cpp_compile_opts.clone(),
 					&mut inputs,
 				);
 			}
@@ -412,7 +447,7 @@ impl Ninja {
 					target_platform,
 					out_str,
 					rules.compile_c_object.as_ref().unwrap().clone(),
-					compile_options.clone(),
+					c_compile_opts.clone(),
 					&mut object_names,
 				);
 			}
@@ -425,7 +460,7 @@ impl Ninja {
 					target_platform,
 					out_str,
 					rules.compile_cpp_object.as_ref().unwrap().clone(),
-					compile_options.clone(),
+					cpp_compile_opts.clone(),
 					&mut object_names,
 				);
 			}

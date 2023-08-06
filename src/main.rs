@@ -98,7 +98,7 @@ fn main() -> ExitCode {
 		}
 	}
 
-	let project = match catapult::parse_project() {
+	let (project, global_opts) = match catapult::parse_project() {
 		Ok(x) => x,
 		Err(e) => {
 			println!("{}", e);
@@ -106,7 +106,7 @@ fn main() -> ExitCode {
 		}
 	};
 
-	match generator.generate(project, build_dir_path) {
+	match generator.generate(project, global_opts, build_dir_path) {
 		Ok(x) => x,
 		Err(e) => {
 			println!("{}", e);

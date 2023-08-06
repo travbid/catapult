@@ -53,6 +53,7 @@ const BUILD_CATAPULT: &str = "build.catapult";
 struct Manifest {
 	package: PackageManifest,
 	dependencies: Option<BTreeMap<String, DependencyManifest>>,
+	options: Option<ManifestOptions>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -76,6 +77,19 @@ struct DependencyManifest {
 	// rev: Option<String>,
 }
 
+#[derive(Debug, Default, Deserialize)]
+struct ManifestOptions {
+	c_standard: Option<String>,
+	cpp_standard: Option<String>,
+	position_independent_code: Option<bool>,
+}
+
+pub struct GlobalOptions {
+	pub c_standard: Option<String>,
+	pub cpp_standard: Option<String>,
+	pub position_independent_code: Option<bool>,
+}
+
 fn read_manifest() -> Result<Manifest, anyhow::Error> {
 	let catapult_toml = match fs::read_to_string(CATAPULT_TOML) {
 		Ok(x) => x,
@@ -94,11 +108,17 @@ fn read_manifest() -> Result<Manifest, anyhow::Error> {
 	Ok(manifest)
 }
 
-pub fn parse_project() -> Result<Arc<Project>, anyhow::Error> {
+pub fn parse_project() -> Result<(Arc<Project>, GlobalOptions), anyhow::Error> {
+	let manifest_options = read_manifest()?.options.unwrap_or_default();
+	let global_options = GlobalOptions {
+		c_standard: manifest_options.c_standard,
+		cpp_standard: manifest_options.cpp_standard,
+		position_independent_code: manifest_options.position_independent_code,
+	};
 	let mut combined_deps = BTreeMap::new();
 	let project = parse_project_inner(".", &mut combined_deps)?; //, &globals)?;
 
-	Ok(project.into_project())
+	Ok((project.into_project(), global_options))
 }
 
 #[derive(Deserialize)]
