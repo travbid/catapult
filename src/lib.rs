@@ -23,6 +23,7 @@ use std::{
 use anyhow::anyhow;
 use base64::Engine;
 use flate2::read::GzDecoder;
+use reqwest::StatusCode;
 use serde::Deserialize;
 use starlark::{
 	environment::{
@@ -144,6 +145,10 @@ fn download_from_registry(
 		Ok(resp) => resp,
 		Err(err) => return Err(anyhow!("Error trying to fetch \"{}\" from {}:\n    {}", name, url, err)),
 	};
+	match resp.status() {
+		StatusCode::OK => (),
+		x => return Err(anyhow!("Request GET \"{}\" returned status {}", url, x)),
+	}
 	let resp_json = match resp.json::<PackageRecord>() {
 		Ok(x) => x,
 		Err(e) => return Err(anyhow!(e)),
@@ -164,10 +169,14 @@ fn download_from_registry(
 		Some(x) => x,
 		None => return Err(anyhow!("Dependency manifest did not contain source. ({})", name)),
 	};
-	let src_data_resp = match reqwest::blocking::get(pkg_source_url) {
+	let src_data_resp = match reqwest::blocking::get(&pkg_source_url) {
 		Ok(resp) => resp,
 		Err(err) => panic!("Error: {}", err),
 	};
+	match src_data_resp.status() {
+		StatusCode::OK => (),
+		x => return Err(anyhow!("Request GET \"{}\" returned status {}", pkg_source_url, x)),
+	}
 	let tar = GzDecoder::new(src_data_resp);
 	let mut archive = Archive::new(tar);
 	archive.unpack(&pkg_cache_path)?;
