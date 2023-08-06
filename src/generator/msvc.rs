@@ -13,6 +13,7 @@ use crate::{
 	link_type::LinkPtr,
 	project::{Project, ProjectInfo},
 	target::{LinkTarget, Target},
+	GlobalOptions,
 };
 
 const VS_CPP_GUID: &str = "8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942";
@@ -68,6 +69,43 @@ impl fmt::Display for ConfigType {
 	}
 }
 
+enum CStd {
+	C11,
+	C17,
+}
+
+impl CStd {
+	fn as_str(&self) -> &str {
+		match self {
+			CStd::C11 => "stdc11",
+			CStd::C17 => "stdc17",
+		}
+	}
+}
+
+enum CppStd {
+	Cpp11,
+	Cpp14,
+	Cpp17,
+	Cpp20,
+}
+
+impl CppStd {
+	fn as_str(&self) -> &str {
+		match self {
+			CppStd::Cpp11 => "stdcpp11",
+			CppStd::Cpp14 => "stdcpp14",
+			CppStd::Cpp17 => "stdcpp17",
+			CppStd::Cpp20 => "stdcpp20",
+		}
+	}
+}
+
+struct Options {
+	c_standard: Option<CStd>,
+	cpp_standard: Option<CppStd>,
+}
+
 impl VsProject {
 	fn to_sln_project_section(&self) -> String {
 		let proj_name = &self.name;
@@ -96,6 +134,7 @@ fn item_definition_group(
 	config_type: ConfigType,
 	include_dirs: &[String],
 	compile_flags: &[String],
+	opts: &Options,
 	compile_as_c: bool,
 ) -> String {
 	let mut ret = format!(
@@ -115,9 +154,17 @@ fn item_definition_group(
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <ExceptionHandling>Sync</ExceptionHandling>
       <InlineFunctionExpansion>Disabled</InlineFunctionExpansion>
-      <LanguageStandard>"#;
-	ret += "stdcpp17"; // TODO(Travers)
-	ret += "</LanguageStandard>\n";
+"#;
+	if let Some(c_std) = &opts.c_standard {
+		ret += "      <LanguageStandard_C>";
+		ret += c_std.as_str();
+		ret += "</LanguageStandard_C>\n";
+	}
+	if let Some(cpp_std) = &opts.cpp_standard {
+		ret += "      <LanguageStandard>";
+		ret += cpp_std.as_str();
+		ret += "</LanguageStandard>\n";
+	}
 	if compile_as_c {
 		ret += "      <CompileAs>CompileAsC</CompileAs>\n";
 	}
@@ -167,10 +214,37 @@ fn item_definition_group(
 pub struct Msvc {}
 
 impl Msvc {
-	pub fn generate(project: Arc<Project>, build_dir: PathBuf) -> Result<(), String> {
+	pub fn generate(project: Arc<Project>, build_dir: PathBuf, global_opts: GlobalOptions) -> Result<(), String> {
 		let mut guid_map = HashMap::<LinkPtr, VsProject>::new();
 		let mut project_vec = Vec::new();
-		Self::generate_inner(&project, &build_dir, &mut guid_map, &mut project_vec)?;
+		let c_standard = match global_opts.c_standard {
+			None => None,
+			Some(x) => match x.as_str() {
+				"11" => Some(CStd::C11),
+				"17" => Some(CStd::C17),
+				_ => {
+					return Err(format!(
+						"Unrecognized value for option for \"c_standard\": \"{x}\". Accepted values are \"17\", \"11\"",
+					))
+				}
+			},
+		};
+		let cpp_standard = match global_opts.cpp_standard {
+			None => None,
+			Some(x) => match x.as_str() {
+				"11" => Some(CppStd::Cpp11),
+				"14" => Some(CppStd::Cpp14),
+				"17" => Some(CppStd::Cpp17),
+				"20" => Some(CppStd::Cpp20),
+				_ => {
+					return Err(format!(
+						"Unrecognized value for option for \"cpp_standard\": \"{x}\". Accepted values are \"20\", \"17\", \"14\", \"11\"",
+					))
+				}
+			},
+		};
+		let opts = Options { c_standard, cpp_standard };
+		Self::generate_inner(&project, &build_dir, &mut guid_map, &mut project_vec, &opts)?;
 
 		let mut sln_content = r#"Microsoft Visual Studio Solution File, Format Version 12.00
 "#
@@ -240,9 +314,10 @@ impl Msvc {
 		build_dir: &PathBuf,
 		guid_map: &mut HashMap<LinkPtr, VsProject>,
 		project_vec: &mut Vec<VsProject>,
+		opts: &Options,
 	) -> Result<(), String> {
 		for subproject in &project.dependencies {
-			Self::generate_inner(subproject, build_dir, guid_map, project_vec)?;
+			Self::generate_inner(subproject, build_dir, guid_map, project_vec, opts)?;
 		}
 
 		for lib in &project.static_libraries {
@@ -265,6 +340,7 @@ impl Msvc {
 				configuration_type,
 				target_ext,
 				project_info,
+				opts,
 				&includes,
 				&lib.c_sources,
 				&lib.cpp_sources,
@@ -291,6 +367,7 @@ impl Msvc {
 				configuration_type,
 				target_ext,
 				project_info,
+				opts,
 				&includes,
 				&exe.c_sources,
 				&exe.cpp_sources,
@@ -309,6 +386,7 @@ fn make_vcxproj(
 	configuration_type: &str,
 	target_ext: &str,
 	project_info: &ProjectInfo,
+	opts: &Options,
 	includes: &[String],
 	c_sources: &[String],
 	cpp_sources: &[String],
@@ -395,10 +473,10 @@ fn make_vcxproj(
 	// let include_dirs = include_dirs.iter().map(|x| input_path(x, &project_path)).collect::<Vec<String>>();
 	let compile_flags = Vec::new(); // TODO(Travers)
 	let compile_as_c = cpp_sources.is_empty() && !c_sources.is_empty();
-	out_str += &item_definition_group(ConfigType::Debug, includes, &compile_flags, compile_as_c);
-	out_str += &item_definition_group(ConfigType::Release, includes, &compile_flags, compile_as_c);
-	out_str += &item_definition_group(ConfigType::MinSizeRel, includes, &compile_flags, compile_as_c);
-	out_str += &item_definition_group(ConfigType::RelWithDebInfo, includes, &compile_flags, compile_as_c);
+	out_str += &item_definition_group(ConfigType::Debug, includes, &compile_flags, opts, compile_as_c);
+	out_str += &item_definition_group(ConfigType::Release, includes, &compile_flags, opts, compile_as_c);
+	out_str += &item_definition_group(ConfigType::MinSizeRel, includes, &compile_flags, opts, compile_as_c);
+	out_str += &item_definition_group(ConfigType::RelWithDebInfo, includes, &compile_flags, opts, compile_as_c);
 	if !c_sources.is_empty() {
 		out_str += "  <ItemGroup>\n";
 		for src in c_sources {

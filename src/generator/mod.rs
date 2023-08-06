@@ -1,7 +1,7 @@
 mod msvc;
 mod ninja;
 
-use crate::project::Project;
+use crate::{project::Project, GlobalOptions};
 use std::{
 	path::PathBuf, //
 	sync::Arc,
@@ -13,9 +13,14 @@ pub enum Generator {
 }
 
 impl Generator {
-	pub fn generate(&self, project: Arc<Project>, build_dir: PathBuf) -> Result<(), String> {
+	pub fn generate(
+		&self,
+		project: Arc<Project>,
+		global_opts: GlobalOptions,
+		build_dir: PathBuf,
+	) -> Result<(), String> {
 		match self {
-			Generator::Msvc => msvc::Msvc::generate(project, build_dir),
+			Generator::Msvc => msvc::Msvc::generate(project, build_dir, global_opts),
 			Generator::Ninja => {
 				let build_tools = BuildTools {
 					c_compiler: vec!["clang".to_owned()],
@@ -38,7 +43,7 @@ impl Generator {
 						exe_ext: "".to_owned(),
 					}
 				};
-				ninja::Ninja::generate(project, build_dir, build_tools, compile_options, target_platform)
+				ninja::Ninja::generate(project, build_dir, build_tools, global_opts, compile_options, target_platform)
 			}
 		}
 	}
