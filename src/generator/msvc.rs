@@ -91,7 +91,12 @@ impl VsProject {
 	}
 }
 
-fn item_definition_group(config_type: ConfigType, include_dirs: &[String], compile_flags: &[String]) -> String {
+fn item_definition_group(
+	config_type: ConfigType,
+	include_dirs: &[String],
+	compile_flags: &[String],
+	compile_as_c: bool,
+) -> String {
 	let mut ret = format!(
 		r#"  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='{config_type}|x64'">
     <ClCompile>
@@ -111,8 +116,11 @@ fn item_definition_group(config_type: ConfigType, include_dirs: &[String], compi
       <InlineFunctionExpansion>Disabled</InlineFunctionExpansion>
       <LanguageStandard>"#;
 	ret += "stdcpp17"; // TODO(Travers)
-	ret += r#"</LanguageStandard>
-      <Optimization>"#;
+	ret += "</LanguageStandard>\n";
+	if compile_as_c {
+		ret += "      <CompileAs>CompileAsC</CompileAs>\n";
+	}
+	ret += "      <Optimization>";
 	ret += config_type.optimization();
 	ret += r#"</Optimization>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
@@ -304,6 +312,9 @@ fn make_vcxproj(
 	cpp_sources: &[String],
 	private_links: &Vec<Arc<dyn LinkTarget>>,
 ) -> Result<VsProject, String> {
+	if !c_sources.is_empty() && !cpp_sources.is_empty() {
+		return Err(format!("This generator does not support mixing C and C++ sources. Consider splitting them into separate libraries. Target: {target_name}"));
+	}
 	const PLATFORM_TOOLSET: &str = "v143";
 	let target_guid = Uuid::new_v4().to_string().to_ascii_uppercase();
 	let output_dir = build_dir.join(&project_info.name);
@@ -381,10 +392,11 @@ fn make_vcxproj(
 
 	// let include_dirs = include_dirs.iter().map(|x| input_path(x, &project_path)).collect::<Vec<String>>();
 	let compile_flags = Vec::new(); // TODO(Travers)
-	out_str += &item_definition_group(ConfigType::Debug, includes, &compile_flags);
-	out_str += &item_definition_group(ConfigType::Release, includes, &compile_flags);
-	out_str += &item_definition_group(ConfigType::MinSizeRel, includes, &compile_flags);
-	out_str += &item_definition_group(ConfigType::RelWithDebInfo, includes, &compile_flags);
+	let compile_as_c = cpp_sources.is_empty() && !c_sources.is_empty();
+	out_str += &item_definition_group(ConfigType::Debug, includes, &compile_flags, compile_as_c);
+	out_str += &item_definition_group(ConfigType::Release, includes, &compile_flags, compile_as_c);
+	out_str += &item_definition_group(ConfigType::MinSizeRel, includes, &compile_flags, compile_as_c);
+	out_str += &item_definition_group(ConfigType::RelWithDebInfo, includes, &compile_flags, compile_as_c);
 	if !c_sources.is_empty() {
 		out_str += "  <ItemGroup>\n";
 		for src in c_sources {
