@@ -140,16 +140,16 @@ struct NinjaBuild {
 
 impl NinjaBuild {
 	fn as_string(&self) -> String {
-		let inputs = self
-			.inputs
-			.iter()
-			.map(|i| i.replace(':', "&:"))
-			.collect::<Vec<String>>();
 		let mut ret = String::new();
-		ret += &format!("build {}: {} {}\n", self.output_targets.join(" "), self.rule.name, inputs.join(" "));
+		ret += &format!(
+			"build {}: {} {}\n",
+			self.output_targets.join(" ").replace(':', "$:"),
+			self.rule.name,
+			self.inputs.join(" ").replace(':', "$:"),
+		);
 		for (key, values) in &self.keyval_set {
 			if !values.is_empty() {
-				ret += &format!("  {key} = {}\n", values.join(" "));
+				ret += &format!("  {key} = {}\n", values.join(" ").replace(':', "$:"));
 			}
 		}
 		ret += "\n";
@@ -362,7 +362,7 @@ impl Ninja {
 				]),
 			}
 			.as_string();
-			*out_str += &format!("build {}: phony {}\n\n", lib.name, out_name);
+			*out_str += &format!("build {}: phony {}\n\n", lib.name, out_name.replace(':', "$:"));
 		}
 		fn add_exe_source(
 			src: &str,
@@ -448,7 +448,7 @@ impl Ninja {
 				]),
 			}
 			.as_string();
-			*out_str += &format!("build {}: phony {}\n\n", exe.name, out_name);
+			*out_str += &format!("build {}: phony {}\n\n", exe.name, out_name.replace(':', "$:"));
 		}
 		Ok(())
 	}
