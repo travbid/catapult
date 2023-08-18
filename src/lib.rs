@@ -55,7 +55,7 @@ struct Manifest {
 #[derive(Debug, Deserialize)]
 struct PackageManifest {
 	name: String,
-	version: Option<String>,
+	// version: Option<String>,
 	source: Option<String>,
 }
 
@@ -68,9 +68,9 @@ struct DependencyManifest {
 	path: Option<String>,
 	// ---
 	git: Option<String>,
-	branch: Option<String>,
-	tag: Option<String>,
-	rev: Option<String>,
+	// branch: Option<String>,
+	// tag: Option<String>,
+	// rev: Option<String>,
 }
 
 fn read_manifest() -> Result<Manifest, anyhow::Error> {
