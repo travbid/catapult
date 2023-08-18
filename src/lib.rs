@@ -1,10 +1,12 @@
 mod executable;
 pub mod generator;
+mod interface_library;
 mod link_type;
 mod misc;
 pub mod project;
 mod starlark_api;
 mod starlark_executable;
+mod starlark_interface_library;
 mod starlark_library;
 mod starlark_link_target;
 mod starlark_project;

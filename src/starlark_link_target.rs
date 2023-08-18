@@ -16,6 +16,8 @@ pub(super) trait StarLinkTarget: Send + Sync + fmt::Debug + Allocative {
 		ptr: PtrLinkTarget,
 		link_map: &mut StarLinkTargetCache,
 	) -> LinkPtr;
+
+	fn public_includes_recursive(&self) -> Vec<String>;
 }
 
 #[derive(Clone)]
