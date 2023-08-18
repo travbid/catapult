@@ -25,10 +25,18 @@ impl Generator {
 					out_flag: "-o".to_owned(),
 				};
 				let compile_options = Vec::new(); // TODO(Travers)
-				let target_platform = TargetPlatform {
-					obj_ext: ".o".to_owned(),
-					static_lib_ext: ".a".to_owned(),
-					exe_ext: "".to_owned(),
+				let target_platform = if cfg!(windows) {
+					TargetPlatform {
+						obj_ext: ".obj".to_owned(),
+						static_lib_ext: ".lib".to_owned(),
+						exe_ext: ".exe".to_owned(),
+					}
+				} else {
+					TargetPlatform {
+						obj_ext: ".o".to_owned(),
+						static_lib_ext: ".a".to_owned(),
+						exe_ext: "".to_owned(),
+					}
 				};
 				ninja::Ninja::generate(project, build_dir, build_tools, compile_options, target_platform)
 			}
