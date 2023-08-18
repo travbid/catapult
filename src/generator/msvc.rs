@@ -389,10 +389,7 @@ fn make_vcxproj(
 		out_str += "  <ItemGroup>\n";
 		for src in c_sources {
 			let input = input_path(src, &project_info.path);
-			out_str += &format!(
-				r#"    <ClCompile Include="{input}" />
-    "#
-			);
+			out_str += &format!("    <ClCompile Include=\"{input}\" />\n");
 		}
 		out_str += "  </ItemGroup>\n";
 	}
@@ -400,10 +397,7 @@ fn make_vcxproj(
 		out_str += "  <ItemGroup>\n";
 		for src in cpp_sources {
 			let input = input_path(src, &project_info.path);
-			out_str += &format!(
-				r#"    <ClCompile Include="{input}" />
-    "#
-			);
+			out_str += &format!("    <ClCompile Include=\"{input}\" />\n");
 		}
 		out_str += "  </ItemGroup>\n";
 	}
@@ -451,7 +445,7 @@ fn make_vcxproj(
 	// .write(true)
 	// .open(vcxproj_pathbuf.clone())
 	if let Err(e) = fs::create_dir_all(vcxproj_pathbuf_abs.parent().unwrap()) {
-		return Err(format!("Error creating direcotyr for \"{}\": {}", vcxproj_pathbuf.to_string_lossy(), e));
+		return Err(format!("Error creating directory for \"{}\": {}", vcxproj_pathbuf.to_string_lossy(), e));
 	};
 	let mut f = match fs::File::create(vcxproj_pathbuf_abs.clone()) {
 		Ok(x) => x,

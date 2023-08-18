@@ -34,13 +34,8 @@ pub(super) fn err_msg<T>(msg: String) -> Result<T, anyhow::Error> {
 }
 
 fn to_path_strs(paths: &[&str], project_path: &Path) -> Vec<String> {
-	paths
-		.iter()
-		.copied()
-		.map(String::from)
-		.collect()
+	paths.iter().copied().map(String::from).collect()
 }
-
 
 #[derive(Debug, Clone, ProvidesStaticType, NoSerialize, Allocative)]
 pub struct Context {
@@ -207,10 +202,7 @@ impl starlark::values::function::NativeFunc for ImplAddExecutable {
 	}
 }
 
-pub(crate) fn build_api(
-	project: &Arc<Mutex<StarProject>>,
-	builder: &mut GlobalsBuilder,
-) {
+pub(crate) fn build_api(project: &Arc<Mutex<StarProject>>, builder: &mut GlobalsBuilder) {
 	{
 		let mut sig_builder = starlark::eval::ParametersSpec::new("add_library".to_owned());
 		sig_builder.no_more_positional_only_args();
@@ -289,4 +281,3 @@ pub(crate) fn build_api(
 		);
 	}
 }
-

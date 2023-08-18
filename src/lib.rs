@@ -302,4 +302,3 @@ pub(crate) fn parse_module(
 	};
 	Ok(project)
 }
-
