@@ -22,73 +22,59 @@ use starlark::{
 };
 
 use super::{
+	interface_library::InterfaceLibrary, //
 	link_type::LinkPtr,
-	misc::{is_c_source, is_cpp_source},
 	project::Project,
 	starlark_link_target::{PtrLinkTarget, StarLinkTarget},
 	starlark_project::{StarLinkTargetCache, StarProject},
-	static_library::StaticLibrary,
 };
 
 #[derive(Clone, Debug, ProvidesStaticType, Allocative)]
-pub(super) struct StarLibrary {
+pub(super) struct StarIfaceLibrary {
 	pub parent_project: Weak<Mutex<StarProject>>,
 	pub name: String,
-	pub sources: Vec<String>,
-	pub private_links: Vec<Arc<dyn StarLinkTarget>>,
-	pub include_dirs_public: Vec<String>,
-	pub include_dirs_private: Vec<String>,
-	pub defines_public: Vec<String>,
-	pub link_flags_public: Vec<String>,
-
-	pub output_name: Option<String>,
+	pub links: Vec<Arc<dyn StarLinkTarget>>,
+	pub include_dirs: Vec<String>,
+	pub defines: Vec<String>,
+	pub link_flags: Vec<String>,
 }
 
-impl fmt::Display for StarLibrary {
+impl fmt::Display for StarIfaceLibrary {
 	fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-		let mut sources = self.sources.join(",\n      ");
-		if self.sources.len() > 1 {
-			sources = String::from("\n      ") + &sources + ",\n   "
-		}
 		write!(
 			f,
-			r#"StarLibrary{{
+			r#"StarIfaceLibrary{{
    name: {},
-   sources: [{:?}],
 }}"#,
-			self.name, sources
+			self.name
 		)
 	}
 }
 
-impl StarLinkTarget for StarLibrary {
+impl StarLinkTarget for StarIfaceLibrary {
 	fn as_link_target(&self, parent: Weak<Project>, ptr: PtrLinkTarget, link_map: &mut StarLinkTargetCache) -> LinkPtr {
 		let arc = Arc::new(self.as_library(parent, link_map));
 		// let ptr = PtrLinkTarget(arc.clone());
-		link_map.insert_static(ptr, arc.clone());
-		LinkPtr::Static(arc)
+		link_map.insert_interface(ptr, arc.clone());
+		LinkPtr::Interface(arc)
 	}
-
 	fn public_includes_recursive(&self) -> Vec<String> {
-		let public_includes = self.include_dirs_private.clone();
-		// for link in &self.link_public {
-		// 	public_includes.extend(link.public_includes_recursive());
-		// }
+		let mut public_includes = self.include_dirs.clone();
+		for link in &self.links {
+			public_includes.extend(link.public_includes_recursive());
+		}
 		public_includes
 	}
 }
 
-impl StarLibrary {
-	pub fn as_library(&self, parent_project: Weak<Project>, link_map: &mut StarLinkTargetCache) -> StaticLibrary {
-		StaticLibrary {
+impl StarIfaceLibrary {
+	pub fn as_library(&self, parent_project: Weak<Project>, link_map: &mut StarLinkTargetCache) -> InterfaceLibrary {
+		InterfaceLibrary {
 			parent_project: parent_project.clone(),
 			name: self.name.clone(),
-			c_sources: self.sources.iter().filter(is_c_source).map(String::from).collect(),
-			cpp_sources: self.sources.iter().filter(is_cpp_source).map(String::from).collect(),
-			include_dirs_private: self.include_dirs_private.clone(),
-			include_dirs_public: self.include_dirs_public.clone(),
-			private_links: self
-				.private_links
+			include_dirs: self.include_dirs.clone(),
+			links: self
+				.links
 				.iter()
 				.map(|x| {
 					let ptr = PtrLinkTarget(x.clone());
@@ -99,25 +85,24 @@ impl StarLibrary {
 					}
 				})
 				.collect(),
-			defines_public: self.defines_public.clone(),
-			link_flags_public: self.link_flags_public.clone(),
-			output_name: self.output_name.clone(),
+			defines: self.defines.clone(),
+			link_flags: self.link_flags.clone(),
 		}
 	}
 }
 
 #[derive(Clone, Debug, ProvidesStaticType, NoSerialize, Allocative)]
-pub(super) struct StarLibraryWrapper(pub(super) Arc<StarLibrary>);
+pub(super) struct StarIfaceLibraryWrapper(pub(super) Arc<StarIfaceLibrary>);
 
-impl fmt::Display for StarLibraryWrapper {
+impl fmt::Display for StarIfaceLibraryWrapper {
 	fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
 		self.0.fmt(f)
 	}
 }
 
 // #[starlark_value(type = "Library")] //, UnpackValue, StarlarkTypeRepr)]
-impl<'v> StarlarkValue<'v> for StarLibraryWrapper {
-	starlark_type!("Library");
+impl<'v> StarlarkValue<'v> for StarIfaceLibraryWrapper {
+	starlark_type!("InterfaceLibrary");
 	fn get_methods() -> Option<&'static Methods> {
 		library_methods()
 	}
@@ -137,11 +122,11 @@ impl<'v> StarlarkValue<'v> for StarLibraryWrapper {
 	}
 }
 
-starlark_simple_value!(StarLibraryWrapper);
+starlark_simple_value!(StarIfaceLibraryWrapper);
 
 #[starlark_module]
 fn library_methods_impl(builder: &mut MethodsBuilder) {
-	fn name<'v>(this: &'v StarLibraryWrapper, heap: &'v Heap) -> anyhow::Result<StringValue<'v>> {
+	fn name<'v>(this: &'v StarIfaceLibraryWrapper, heap: &'v Heap) -> anyhow::Result<StringValue<'v>> {
 		Ok(heap.alloc_str(&format!(":{}", this.0.name)))
 	}
 }

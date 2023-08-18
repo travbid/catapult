@@ -439,6 +439,7 @@ impl Ninja {
 							&target_platform.static_lib_ext,
 						));
 					}
+					LinkPtr::Interface(_) => {}
 				}
 			}
 			let link_flags = exe.link_flags_recursive();

@@ -24,6 +24,7 @@ use starlark::{
 
 use crate::{
 	starlark_executable::{StarExecutable, StarExecutableWrapper},
+	starlark_interface_library::{StarIfaceLibrary, StarIfaceLibraryWrapper},
 	starlark_library::{StarLibrary, StarLibraryWrapper},
 	starlark_link_target::StarLinkTarget,
 	starlark_project::StarProject,
@@ -72,6 +73,24 @@ impl<'v> StarlarkValue<'v> for Context {
 	}
 }
 
+fn get_link_targets(links: Vec<Value>) -> Result<Vec<Arc<dyn StarLinkTarget>>, anyhow::Error> {
+	let mut link_targets = Vec::<Arc<dyn StarLinkTarget>>::with_capacity(links.len());
+	for link in links {
+		match link.get_type() {
+			"InterfaceLibrary" => match StarIfaceLibraryWrapper::from_value(link) {
+				Some(x) => link_targets.push(x.0.clone()),
+				None => return err_msg(format!("Could not unpack \"link\" {}", link.get_type())),
+			},
+			"Library" => match StarLibraryWrapper::from_value(link) {
+				Some(x) => link_targets.push(x.0.clone()),
+				None => return err_msg(format!("Could not unpack \"link\" {}", link.get_type())),
+			},
+			_ => return err_msg(format!("Could not match \"link\" {}: {}", link.to_str(), link.get_type())),
+		}
+	}
+	Ok(link_targets)
+}
+
 struct ImplAddLibrary {
 	signature: starlark::eval::ParametersSpec<starlark::values::FrozenValue>,
 	project: Arc<Mutex<StarProject>>,
@@ -88,16 +107,7 @@ impl ImplAddLibrary {
 		link_flags_public: Vec<&str>,
 		// list_or_lambda: Arc<ListOrLambdaFrozen>,
 	) -> anyhow::Result<Arc<StarLibrary>> {
-		let mut private_links = Vec::<Arc<dyn StarLinkTarget>>::with_capacity(link_private.len());
-		for link in link_private {
-			match link.get_type() {
-				"Library" => match StarLibraryWrapper::from_value(link) {
-					Some(x) => private_links.push(x.0.clone()),
-					None => return err_msg(format!("Could not unpack \"link\" {}", link.get_type())),
-				},
-				_ => return err_msg(format!("Could not match \"link\" {}: {}", link.to_str(), link.get_type())),
-			}
-		}
+		let private_links = get_link_targets(link_private)?;
 		let mut project = match self.project.lock() {
 			Ok(x) => x,
 			Err(e) => return err_msg(e.to_string()),
@@ -141,6 +151,56 @@ impl starlark::values::function::NativeFunc for ImplAddLibrary {
 	}
 }
 
+struct ImplAddInterfaceLibrary {
+	signature: starlark::eval::ParametersSpec<starlark::values::FrozenValue>,
+	project: Arc<Mutex<StarProject>>,
+}
+impl ImplAddInterfaceLibrary {
+	fn add_interface_library_impl(
+		&self,
+		name: &str,
+		links: Vec<Value>,
+		include_dirs: Vec<&str>,
+		defines: Vec<&str>,
+		link_flags: Vec<&str>,
+	) -> anyhow::Result<Arc<StarIfaceLibrary>> {
+		let links = get_link_targets(links)?;
+		let mut project = match self.project.lock() {
+			Ok(x) => x,
+			Err(e) => return err_msg(e.to_string()),
+		};
+		let lib = Arc::new(StarIfaceLibrary {
+			parent_project: Arc::downgrade(&self.project),
+			name: String::from(name),
+			links,
+			include_dirs: to_path_strs(&include_dirs, &project.path),
+			defines: defines.into_iter().map(String::from).collect(),
+			link_flags: link_flags.into_iter().map(String::from).collect(),
+		});
+		project.interface_libraries.push(lib.clone());
+		Ok(lib)
+	}
+}
+
+impl starlark::values::function::NativeFunc for ImplAddInterfaceLibrary {
+	fn invoke<'v>(
+		&self,
+		eval: &mut starlark::eval::Evaluator<'v, '_>,
+		parameters: &Arguments<'v, '_>,
+	) -> anyhow::Result<starlark::values::Value<'v>> {
+		let args: [Cell<Option<Value<'v>>>; 5] = self.signature.collect_into(parameters, eval.heap())?;
+		let v = self.add_interface_library_impl(
+			Arguments::check_required("name", args[0].get())?,
+			Arguments::check_optional("link", args[1].get())?.unwrap_or_default(),
+			Arguments::check_optional("include_dirs", args[2].get())?.unwrap_or_default(),
+			Arguments::check_optional("defines", args[3].get())?.unwrap_or_default(),
+			Arguments::check_optional("link_flags", args[4].get())?.unwrap_or_default(),
+			// listorlambda,
+		)?;
+		Ok(eval.heap().alloc(StarIfaceLibraryWrapper(v)))
+	}
+}
+
 struct ImplAddExecutable {
 	signature: starlark::eval::ParametersSpec<starlark::values::FrozenValue>,
 	project: Arc<Mutex<StarProject>>,
@@ -155,16 +215,7 @@ impl ImplAddExecutable {
 		defines: Vec<String>,
 		link_flags: Vec<String>,
 	) -> anyhow::Result<StarExecutableWrapper> {
-		let mut exe_links = Vec::<Arc<dyn StarLinkTarget>>::with_capacity(sources.len());
-		for link in links {
-			match link.get_type() {
-				"Library" => match StarLibraryWrapper::from_value(link) {
-					Some(x) => exe_links.push(x.0.clone()),
-					None => return err_msg(format!("Could not unpack \"link\" {}", link.get_type())),
-				},
-				_ => return err_msg(format!("Could not match \"link\" {}: {}", link.to_str(), link.get_type())),
-			}
-		}
+		let exe_links = get_link_targets(links)?;
 		let mut project = match self.project.lock() {
 			Ok(x) => x,
 			Err(e) => return err_msg(e.to_string()),
@@ -237,10 +288,40 @@ pub(crate) fn build_api(project: &Arc<Mutex<StarProject>>, builder: &mut Globals
 			false,
 			documentation,
 			None,
-			ImplAddLibrary {
-				signature,
-				project: project.clone(),
-			},
+			ImplAddLibrary { signature, project: project.clone() },
+		);
+	}
+	{
+		let mut sig_builder = starlark::eval::ParametersSpec::new("add_interface_library".to_owned());
+		sig_builder.no_more_positional_only_args();
+		sig_builder.required("name");
+		sig_builder.optional("link");
+		sig_builder.optional("include_dirs");
+		sig_builder.optional("defines");
+		sig_builder.optional("link_flags");
+		let signature = sig_builder.finish();
+		let documentation = {
+			let parameter_types = HashMap::from([
+				(0, DocType { raw_type: <&str>::starlark_type_repr() }),
+				(1, DocType { raw_type: <Value>::starlark_type_repr() }),
+				(2, DocType { raw_type: <Vec<&str>>::starlark_type_repr() }),
+				(3, DocType { raw_type: <Vec<&str>>::starlark_type_repr() }),
+				(4, DocType { raw_type: <Vec<&str>>::starlark_type_repr() }),
+			]);
+			starlark::values::function::NativeCallableRawDocs {
+				rust_docstring: None,
+				signature: signature.clone(),
+				parameter_types,
+				return_type: Some(DocType { raw_type: <Value>::starlark_type_repr() }),
+				dot_type: None,
+			}
+		};
+		builder.set_function(
+			"add_interface_library",
+			false,
+			documentation,
+			None,
+			ImplAddInterfaceLibrary { signature, project: project.clone() },
 		);
 	}
 	{

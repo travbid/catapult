@@ -415,14 +415,21 @@ fn make_vcxproj(
 		}
 		out_str += "  </ItemGroup>\n";
 	}
-	let mut dependencies = Vec::new();
-	if !private_links.is_empty() {
-		out_str += "  <ItemGroup>\n";
 
+	fn add_project_references(
+		private_links: &Vec<LinkPtr>,
+		guid_map: &HashMap<LinkPtr, VsProject>,
+		dependencies: &mut Vec<VsProject>,
+		build_dir: &Path,
+	) -> String {
+		let mut out_str = String::new();
 		for link in private_links {
 			let proj_ref = match guid_map.get(&link) {
 				Some(x) => x,
-				None => return Err(format!("Could not find link: {}", link.name())),
+				None => {
+					out_str += &add_project_references(&link.public_links(), guid_map, dependencies, build_dir);
+					continue;
+				}
 			};
 			match link {
 				LinkPtr::Static(x) => {
@@ -441,8 +448,15 @@ fn make_vcxproj(
 						x.name()
 					);
 				}
+				LinkPtr::Interface(_) => {}
 			}
 		}
+		out_str
+	}
+	let mut dependencies = Vec::new();
+	if !private_links.is_empty() {
+		out_str += "  <ItemGroup>\n";
+		out_str += &add_project_references(private_links, guid_map, &mut dependencies, &build_dir);
 		out_str += "  </ItemGroup>\n";
 	}
 	out_str += r#"  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

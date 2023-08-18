@@ -26,6 +26,7 @@ pub trait LinkTarget: Target {
 	fn public_link_flags(&self) -> Vec<String>;
 	fn public_link_flags_recursive(&self) -> Vec<String>;
 
+	fn public_links(&self) -> Vec<LinkPtr>;
 	fn public_links_recursive(&self) -> Vec<LinkPtr>;
 }
 
