@@ -251,10 +251,11 @@ impl Msvc {
 			let project_info = &lib.project().info;
 			let mut includes = lib.public_includes_recursive();
 			includes.extend_from_slice(&lib.private_includes());
-			// Visual Studio doesn't seem to support extended-length name syntax
 			let includes = includes
 				.into_iter()
-				.map(|x| x.trim_start_matches(r"\\?\").to_owned())
+				// Visual Studio doesn't seem to support extended-length name syntax
+				// .map(|x| x.trim_start_matches(r"\\?\").to_owned())
+				.map(|x| x.to_owned())
 				.collect::<Vec<String>>();
 			let vsproj = make_vcxproj(
 				build_dir,
