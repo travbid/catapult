@@ -22,6 +22,4 @@ pub struct Project {
 	pub libraries: Vec<Arc<Library>>,
 }
 
-impl Project {
-}
-
+impl Project {}

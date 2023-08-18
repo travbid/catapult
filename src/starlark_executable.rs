@@ -61,11 +61,7 @@ impl fmt::Display for StarExecutable {
 }
 
 impl StarExecutable {
-	pub fn as_executable(
-		&self,
-		parent_project: Weak<Project>,
-		link_map: &mut StarLinkTargetCache,
-	) -> Executable {
+	pub fn as_executable(&self, parent_project: Weak<Project>, link_map: &mut StarLinkTargetCache) -> Executable {
 		let mut links = Vec::<Arc<dyn LinkTarget>>::new();
 		for link in &self.links {
 			let ptr = PtrLinkTarget(link.clone());
@@ -94,10 +90,7 @@ impl StarExecutable {
 
 #[starlark_module]
 fn executable_methods_impl(builder: &mut MethodsBuilder) {
-	fn name<'v>(
-		this: &'v StarExecutableWrapper,
-		heap: &'v Heap,
-	) -> anyhow::Result<StringValue<'v>> {
+	fn name<'v>(this: &'v StarExecutableWrapper, heap: &'v Heap) -> anyhow::Result<StringValue<'v>> {
 		Ok(heap.alloc_str(&format!(":{}", this.0.name)))
 	}
 }
@@ -106,7 +99,6 @@ fn executable_methods() -> Option<&'static Methods> {
 	static RES: MethodsStatic = MethodsStatic::new();
 	RES.methods(executable_methods_impl)
 }
-
 
 #[derive(Debug, Allocative, ProvidesStaticType, NoSerialize)]
 pub(super) struct StarExecutableWrapper(pub(super) Arc<StarExecutable>);

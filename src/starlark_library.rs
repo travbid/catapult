@@ -61,7 +61,6 @@ impl fmt::Display for StarLibrary {
 	}
 }
 
-
 impl StarLinkTarget for StarLibrary {
 	fn as_link_target(
 		&self,
@@ -146,10 +145,7 @@ starlark_simple_value!(StarLibraryWrapper);
 
 #[starlark_module]
 fn library_methods_impl(builder: &mut MethodsBuilder) {
-	fn name<'v>(
-		this: &'v StarLibraryWrapper,
-		heap: &'v Heap,
-	) -> anyhow::Result<StringValue<'v>> {
+	fn name<'v>(this: &'v StarLibraryWrapper, heap: &'v Heap) -> anyhow::Result<StringValue<'v>> {
 		Ok(heap.alloc_str(&format!(":{}", this.0.name)))
 	}
 }

@@ -136,9 +136,4 @@ impl Library {
 		// TODO(Travers)
 		Vec::new()
 	}
-	pub(crate) fn private_link_flags(&self) -> Vec<String> {
-		// TODO(Travers)
-		Vec::new()
-	}
 }
-

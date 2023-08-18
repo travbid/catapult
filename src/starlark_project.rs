@@ -50,8 +50,7 @@ impl fmt::Display for StarProject {
 }
 
 #[starlark_module]
-fn project_methods_impl(builder: &mut MethodsBuilder) {
-}
+fn project_methods_impl(builder: &mut MethodsBuilder) {}
 
 fn project_methods() -> Option<&'static Methods> {
 	static RES: MethodsStatic = MethodsStatic::new();
