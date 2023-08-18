@@ -9,7 +9,8 @@ pub(crate) fn canonicalize(parent_path: &Path, x: &String) -> io::Result<String>
 		Ok(x.to_owned())
 	} else {
 		let canon = parent_path.join(x).canonicalize()?;
-		let str = canon.to_str().unwrap();
+		// TODO(Travers): Check if there's a way to make clang/gcc/msvc support UNC paths
+		let str = canon.to_str().unwrap().trim_start_matches(r"\\?\");
 		Ok(str.to_owned())
 	}
 }
