@@ -1,0 +1,4 @@
+c_compiler = ["gcc"]
+cpp_compiler = ["g++"]
+static_linker = ["ar", "qc"]
+exe_linker = ["g++"]

@@ -1,6 +1,7 @@
 use std::{
 	env, //
 	fs,
+	path,
 	process::ExitCode,
 };
 
@@ -24,11 +25,13 @@ fn main() -> ExitCode {
 	const SOURCE_DIR: &str = "source-dir";
 	const BUILD_DIR: &str = "build-dir";
 	const GENERATOR: &str = "generator";
+	const TOOLCHAIN: &str = "toolchain";
 
 	let mut opts = Options::new();
 	opts.optopt("S", SOURCE_DIR, "Specify the source directory", "<path-to-source>");
 	opts.optopt("B", BUILD_DIR, "Specify the build directory", "<path-to-build>");
 	opts.optopt("G", GENERATOR, "Specify a build system generator", "<generator-name>");
+	opts.optopt("T", TOOLCHAIN, "Specify a path to a toolchain file", "<path-to-toolchain-file>");
 	opts.optflag("h", "help", "print this help menu");
 	let matches = match opts.parse(&args[1..]) {
 		Ok(m) => m,
@@ -62,9 +65,36 @@ fn main() -> ExitCode {
 		return ExitCode::FAILURE;
 	}
 
+	let toolchain_path = match matches.opt_str(TOOLCHAIN) {
+		Some(x) => path::PathBuf::from(x),
+		None => {
+			let cache_dir = match dirs::config_dir() {
+				Some(x) => x,
+				None => {
+					println!("Could not find a config directory");
+					return ExitCode::FAILURE;
+				}
+			};
+			let tc_path = cache_dir.join("default_toolchain.toml");
+			if !tc_path.exists() {
+				// Create a default toolchain file if one doesn't already exist
+				match fs::File::create(&tc_path) {
+					Ok(_) => { // TODO(Travers)
+					}
+					Err(e) => {
+						println!("Could not create a default toolchain file: {}", e);
+						return ExitCode::FAILURE;
+					}
+				};
+			}
+			tc_path
+		}
+	};
+
 	println!("source-dir: {}", src_dir);
 	println!(" build-dir: {}", build_dir);
 	println!(" generator: {}", generator_str);
+	println!(" toolchain: {}", toolchain_path.display());
 
 	let generator = match generator_str.as_str() {
 		"Ninja" => Generator::Ninja,
@@ -102,6 +132,20 @@ fn main() -> ExitCode {
 		}
 	}
 
+	// Check toolchain before fetching dependencies
+	let toolchain_path = if toolchain_path.is_absolute() {
+		toolchain_path
+	} else {
+		original_dir.join(toolchain_path)
+	};
+	let toolchain = match Generator::read_toolchain(&toolchain_path) {
+		Ok(x) => x,
+		Err(e) => {
+			println!("Toolchain error: {}", e);
+			return ExitCode::FAILURE;
+		}
+	};
+
 	let (project, global_opts) = match catapult::parse_project() {
 		Ok(x) => x,
 		Err(e) => {
@@ -110,7 +154,7 @@ fn main() -> ExitCode {
 		}
 	};
 
-	match generator.generate(project, global_opts, &build_dir_path) {
+	match generator.generate(project, global_opts, &build_dir_path, toolchain) {
 		Ok(x) => x,
 		Err(e) => {
 			println!("{}", e);

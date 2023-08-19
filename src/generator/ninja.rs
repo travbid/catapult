@@ -6,7 +6,7 @@ use std::{
 	sync::Arc,
 };
 
-use super::{BuildTools, TargetPlatform};
+use super::{compiler::Compiler, TargetPlatform, Toolchain};
 use crate::{
 	executable::Executable,
 	link_type::LinkPtr,
@@ -181,11 +181,11 @@ fn str_to_cppstd(s: &str) -> Result<String, String> {
 	}
 }
 
-fn compile_c_object(compiler: &[String], out_flag: &str) -> NinjaRule {
-	let mut command = compiler.to_owned();
+fn compile_c_object(compiler: &Box<dyn Compiler>) -> NinjaRule {
+	let mut command = compiler.cmd();
 	command.extend(vec!["$DEFINES".to_string(), "$INCLUDES".to_string(), "$FLAGS".to_string()]);
 	// command.extend(compiler.compiler_flags(msvc_runtime));
-	command.extend(vec![out_flag.to_owned(), "$out".to_owned()]);
+	command.extend(vec![compiler.out_flag(), "$out".to_owned()]);
 	command.extend(vec!["-c".to_string(), "$in".to_string()]);
 	NinjaRule {
 		name: String::from("compile_c_object"),
@@ -193,10 +193,10 @@ fn compile_c_object(compiler: &[String], out_flag: &str) -> NinjaRule {
 		..Default::default()
 	}
 }
-fn compile_cpp_object(compiler: &[String], out_flag: &str) -> NinjaRule {
-	let mut command = compiler.to_owned();
+fn compile_cpp_object(compiler: &Box<dyn Compiler>) -> NinjaRule {
+	let mut command = compiler.cmd();
 	command.extend(vec!["$DEFINES".to_string(), "$INCLUDES".to_string(), "$FLAGS".to_string()]);
-	command.extend(vec![out_flag.to_owned(), "$out".to_owned()]);
+	command.extend(vec![compiler.out_flag(), "$out".to_owned()]);
 	command.extend(vec!["-c".to_string(), "$in".to_string()]);
 	NinjaRule {
 		name: String::from("compile_cpp_object"),
@@ -235,7 +235,7 @@ impl Ninja {
 	pub fn generate(
 		project: Arc<Project>,
 		build_dir: &Path,
-		build_tools: BuildTools,
+		toolchain: Toolchain,
 		global_opts: GlobalOptions,
 		target_platform: TargetPlatform,
 	) -> Result<(), String> {
@@ -244,7 +244,7 @@ impl Ninja {
 		Ninja::generate_inner(
 			&project,
 			build_dir,
-			&build_tools,
+			&toolchain,
 			&global_opts,
 			&target_platform,
 			&mut rules,
@@ -280,19 +280,19 @@ impl Ninja {
 		// projects: BTreeMap<String, Arc<Project>>,
 		project: &Arc<Project>,
 		build_dir: &Path,
-		build_tools: &BuildTools,
+		toolchain: &Toolchain,
 		global_opts: &GlobalOptions,
 		target_platform: &TargetPlatform,
 		rules: &mut NinjaRules,
 		out_str: &mut String,
 	) -> Result<(), String> {
 		for subproject in &project.dependencies {
-			Ninja::generate_inner(subproject, build_dir, build_tools, global_opts, target_platform, rules, out_str)?;
+			Ninja::generate_inner(subproject, build_dir, toolchain, global_opts, target_platform, rules, out_str)?;
 		}
 
 		let project_name = &project.info.name;
 		if rules.link_static_lib.is_none() && !project.static_libraries.is_empty() {
-			rules.link_static_lib = Some(link_static_lib(&build_tools.static_linker));
+			rules.link_static_lib = Some(link_static_lib(&toolchain.static_linker));
 		}
 		let mut c_compile_opts = Vec::new();
 		if let Some(c_std) = &global_opts.c_standard {
@@ -336,10 +336,10 @@ impl Ninja {
 		for lib in &project.static_libraries {
 			let mut inputs = Vec::<String>::new();
 			if rules.compile_c_object.is_none() && !lib.c_sources.is_empty() {
-				rules.compile_c_object = Some(compile_c_object(&build_tools.c_compiler, &build_tools.out_flag));
+				rules.compile_c_object = Some(compile_c_object(&toolchain.c_compiler));
 			}
 			if rules.compile_cpp_object.is_none() && !lib.cpp_sources.is_empty() {
-				rules.compile_cpp_object = Some(compile_cpp_object(&build_tools.cpp_compiler, &build_tools.out_flag));
+				rules.compile_cpp_object = Some(compile_cpp_object(&toolchain.cpp_compiler));
 			}
 			for src in &lib.c_sources {
 				add_lib_source(
@@ -430,7 +430,7 @@ impl Ninja {
 			inputs.push(out_tgt);
 		}
 		if rules.link_exe.is_none() && !project.executables.is_empty() {
-			rules.link_exe = Some(link_exe(&build_tools.exe_linker));
+			rules.link_exe = Some(link_exe(&toolchain.exe_linker));
 		}
 		for exe in &project.executables {
 			println!("   target: {}", exe.name);
