@@ -5,7 +5,10 @@ use core::{
 };
 use std::sync::Arc;
 
-use crate::project::Project;
+use crate::{
+	link_type::LinkPtr, //
+	project::Project,
+};
 
 pub trait Target: fmt::Debug + Send + Sync {
 	fn name(&self) -> String;
@@ -23,7 +26,7 @@ pub trait LinkTarget: Target {
 	fn public_link_flags(&self) -> Vec<String>;
 	fn public_link_flags_recursive(&self) -> Vec<String>;
 
-	fn public_links_recursive(&self) -> Vec<Arc<dyn LinkTarget>>;
+	fn public_links_recursive(&self) -> Vec<LinkPtr>;
 }
 
 #[derive(Clone)]

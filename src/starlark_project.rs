@@ -25,13 +25,13 @@ use starlark::{
 	},
 };
 
-use crate::{static_library::StaticLibrary, target::LinkTarget};
-
-use super::{
+use crate::{
+	link_type::LinkPtr,
 	project::{Project, ProjectInfo},
 	starlark_executable::StarExecutable, //
 	starlark_library::{StarLibrary, StarLibraryWrapper},
 	starlark_link_target::PtrLinkTarget,
+	static_library::StaticLibrary,
 };
 
 #[derive(Clone, Debug, ProvidesStaticType, NoSerialize, Allocative)]
@@ -106,9 +106,9 @@ impl StarLinkTargetCache {
 			None
 		}
 	}
-	pub fn get(&self, key: &PtrLinkTarget) -> Option<Arc<dyn LinkTarget>> {
+	pub fn get(&self, key: &PtrLinkTarget) -> Option<LinkPtr> {
 		match self.get_static(key) {
-			Some(x) => Some(x.clone()),
+			Some(x) => Some(LinkPtr::Static(x.clone())),
 			None => None,
 		}
 	}

@@ -1,6 +1,7 @@
 use std::sync::{Arc, Weak};
 
 use crate::{
+	link_type::LinkPtr,
 	misc::canonicalize,
 	project::Project, //
 	target::{LinkTarget, Target},
@@ -12,7 +13,7 @@ pub struct StaticLibrary {
 	pub name: String,
 	pub c_sources: Vec<String>,
 	pub cpp_sources: Vec<String>,
-	pub private_links: Vec<Arc<dyn LinkTarget>>,
+	pub private_links: Vec<LinkPtr>,
 	// pub public_links: Vec<Arc<dyn LinkTarget>>,
 	pub include_dirs_public: Vec<String>,
 	pub include_dirs_private: Vec<String>,
@@ -115,8 +116,8 @@ impl LinkTarget for StaticLibrary {
 		}
 		flags
 	}
-	fn public_links_recursive(&self) -> Vec<Arc<dyn LinkTarget>> {
-		let mut links: Vec<Arc<dyn LinkTarget>> = vec![];
+	fn public_links_recursive(&self) -> Vec<LinkPtr> {
+		let mut links = Vec::new();
 		for link in &self.private_links {
 			links.extend(link.public_links_recursive());
 		}

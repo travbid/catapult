@@ -10,8 +10,9 @@ use std::{
 use uuid::Uuid;
 
 use crate::{
+	link_type::LinkPtr,
 	project::{Project, ProjectInfo},
-	target::{LinkTarget, LinkTargetPtr, Target},
+	target::{LinkTarget, Target},
 };
 
 const VS_CPP_GUID: &str = "8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942";
@@ -167,7 +168,7 @@ pub struct Msvc {}
 
 impl Msvc {
 	pub fn generate(project: Arc<Project>, build_dir: PathBuf) -> Result<(), String> {
-		let mut guid_map = HashMap::<LinkTargetPtr, VsProject>::new();
+		let mut guid_map = HashMap::<LinkPtr, VsProject>::new();
 		let mut project_vec = Vec::new();
 		Self::generate_inner(&project, &build_dir, &mut guid_map, &mut project_vec)?;
 
@@ -237,7 +238,7 @@ impl Msvc {
 	fn generate_inner(
 		project: &Arc<Project>,
 		build_dir: &PathBuf,
-		guid_map: &mut HashMap<LinkTargetPtr, VsProject>,
+		guid_map: &mut HashMap<LinkPtr, VsProject>,
 		project_vec: &mut Vec<VsProject>,
 	) -> Result<(), String> {
 		for subproject in &project.dependencies {
@@ -269,7 +270,7 @@ impl Msvc {
 				&lib.cpp_sources,
 				&lib.private_links,
 			)?;
-			guid_map.insert(LinkTargetPtr(lib.clone()), vsproj.clone());
+			guid_map.insert(LinkPtr::Static(lib.clone()), vsproj.clone());
 			project_vec.push(vsproj);
 		}
 		for exe in &project.executables {
@@ -303,7 +304,7 @@ impl Msvc {
 
 fn make_vcxproj(
 	build_dir: &PathBuf,
-	guid_map: &HashMap<LinkTargetPtr, VsProject>,
+	guid_map: &HashMap<LinkPtr, VsProject>,
 	target_name: &str,
 	configuration_type: &str,
 	target_ext: &str,
@@ -311,7 +312,7 @@ fn make_vcxproj(
 	includes: &[String],
 	c_sources: &[String],
 	cpp_sources: &[String],
-	private_links: &Vec<Arc<dyn LinkTarget>>,
+	private_links: &Vec<LinkPtr>,
 ) -> Result<VsProject, String> {
 	if !c_sources.is_empty() && !cpp_sources.is_empty() {
 		return Err(format!("This generator does not support mixing C and C++ sources. Consider splitting them into separate libraries. Target: {target_name}"));
@@ -419,24 +420,28 @@ fn make_vcxproj(
 		out_str += "  <ItemGroup>\n";
 
 		for link in private_links {
-			let proj_ref = match guid_map.get(&LinkTargetPtr(link.clone())) {
+			let proj_ref = match guid_map.get(&link) {
 				Some(x) => x,
 				None => return Err(format!("Could not find link: {}", link.name())),
 			};
-			dependencies.push(proj_ref.clone());
-			let proj_ref_include = build_dir.join(&proj_ref.vcxproj_path);
-			out_str += &format!(
-				r#"    <ProjectReference Include="{}">
+			match link {
+				LinkPtr::Static(x) => {
+					dependencies.push(proj_ref.clone());
+					let proj_ref_include = build_dir.join(&proj_ref.vcxproj_path);
+					out_str += &format!(
+						r#"    <ProjectReference Include="{}">
       <Project>{{{}}}</Project>
       <Name>{}</Name>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </ProjectReference>
 "#,
-				proj_ref_include.to_string_lossy(),
-				proj_ref.guid,
-				link.name()
-			);
+						proj_ref_include.to_string_lossy(),
+						proj_ref.guid,
+						x.name()
+					);
+				}
+			}
 		}
 		out_str += "  </ItemGroup>\n";
 	}

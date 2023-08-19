@@ -22,11 +22,11 @@ use starlark::{
 
 use super::{
 	executable::Executable,
+	link_type::LinkPtr,
 	misc::{is_c_source, is_cpp_source},
 	project::Project,
 	starlark_link_target::{PtrLinkTarget, StarLinkTarget},
 	starlark_project::{StarLinkTargetCache, StarProject},
-	target::LinkTarget,
 };
 
 #[derive(Debug, Allocative)]
@@ -62,7 +62,7 @@ impl fmt::Display for StarExecutable {
 
 impl StarExecutable {
 	pub fn as_executable(&self, parent_project: Weak<Project>, link_map: &mut StarLinkTargetCache) -> Executable {
-		let mut links = Vec::<Arc<dyn LinkTarget>>::new();
+		let mut links = Vec::<LinkPtr>::new();
 		for link in &self.links {
 			let ptr = PtrLinkTarget(link.clone());
 			let link_target = match link_map.get(&ptr) {
