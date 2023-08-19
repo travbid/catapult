@@ -103,6 +103,10 @@ impl LinkTarget for InterfaceLibrary {
 	}
 	fn public_links_recursive(&self) -> Vec<LinkPtr> {
 		let mut links = Vec::new();
+		// Bread-first addition
+		for link in &self.links {
+			links.push(link.clone());
+		}
 		for link in &self.links {
 			links.extend(link.public_links_recursive());
 		}

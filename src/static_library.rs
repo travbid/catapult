@@ -125,6 +125,12 @@ impl LinkTarget for StaticLibrary {
 	}
 	fn public_links_recursive(&self) -> Vec<LinkPtr> {
 		let mut links = Vec::new();
+		// Static libraries have to be linked, even if they're private.
+		// The include dirs of the private links won't propagate though.
+		// Bread-first addition
+		for link in &self.private_links {
+			links.push(link.clone());
+		}
 		for link in &self.private_links {
 			links.extend(link.public_links_recursive());
 		}
