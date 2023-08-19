@@ -244,7 +244,7 @@ impl Msvc {
 			Self::generate_inner(subproject, build_dir, guid_map, project_vec)?;
 		}
 
-		for lib in &project.libraries {
+		for lib in &project.static_libraries {
 			let target_name = &lib.name;
 			let configuration_type = "StaticLibrary";
 			let target_ext = ".lib";

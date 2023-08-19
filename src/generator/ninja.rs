@@ -9,8 +9,8 @@ use std::{
 use super::{BuildTools, TargetPlatform};
 use crate::{
 	executable::Executable,
-	library::Library,
 	project::Project,
+	static_library::StaticLibrary,
 	target::{LinkTarget, Target},
 };
 
@@ -275,12 +275,12 @@ impl Ninja {
 		}
 
 		let project_name = &project.info.name;
-		if rules.link_static_lib.is_none() && !project.libraries.is_empty() {
+		if rules.link_static_lib.is_none() && !project.static_libraries.is_empty() {
 			rules.link_static_lib = Some(link_static_lib(&build_tools.static_linker));
 		}
 		fn add_lib_source(
 			src: &str,
-			lib: &Library,
+			lib: &StaticLibrary,
 			build_dir: &Path,
 			project_name: &str,
 			target_platform: &TargetPlatform,
@@ -309,7 +309,7 @@ impl Ninja {
 			.as_string();
 			inputs.push(out_tgt);
 		}
-		for lib in &project.libraries {
+		for lib in &project.static_libraries {
 			let mut inputs = Vec::<String>::new();
 			if rules.compile_c_object.is_none() && !lib.c_sources.is_empty() {
 				rules.compile_c_object = Some(compile_c_object(&build_tools.c_compiler, &build_tools.out_flag));

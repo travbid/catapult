@@ -5,7 +5,7 @@ use std::{
 
 use crate::{
 	executable::Executable, //
-	library::Library,
+	static_library::StaticLibrary,
 };
 
 #[derive(Debug)]
@@ -19,7 +19,7 @@ pub struct Project {
 	pub info: Arc<ProjectInfo>,
     pub dependencies: Vec<Arc<Project>>,
 	pub executables: Vec<Arc<Executable>>,
-	pub libraries: Vec<Arc<Library>>,
+	pub static_libraries: Vec<Arc<StaticLibrary>>,
 }
 
 impl Project {}
