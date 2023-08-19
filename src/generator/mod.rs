@@ -17,7 +17,7 @@ impl Generator {
 		&self,
 		project: Arc<Project>,
 		global_opts: GlobalOptions,
-		build_dir: PathBuf,
+		build_dir: &Path,
 	) -> Result<(), String> {
 		match self {
 			Generator::Msvc => msvc::Msvc::generate(project, build_dir, global_opts),

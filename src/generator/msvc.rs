@@ -214,7 +214,7 @@ fn item_definition_group(
 pub struct Msvc {}
 
 impl Msvc {
-	pub fn generate(project: Arc<Project>, build_dir: PathBuf, global_opts: GlobalOptions) -> Result<(), String> {
+	pub fn generate(project: Arc<Project>, build_dir: &Path, global_opts: GlobalOptions) -> Result<(), String> {
 		let mut guid_map = HashMap::<LinkPtr, VsProject>::new();
 		let mut project_vec = Vec::new();
 		let c_standard = match global_opts.c_standard {
@@ -311,7 +311,7 @@ impl Msvc {
 	}
 	fn generate_inner(
 		project: &Arc<Project>,
-		build_dir: &PathBuf,
+		build_dir: &Path,
 		guid_map: &mut HashMap<LinkPtr, VsProject>,
 		project_vec: &mut Vec<VsProject>,
 		opts: &Options,
@@ -380,7 +380,7 @@ impl Msvc {
 }
 
 fn make_vcxproj(
-	build_dir: &PathBuf,
+	build_dir: &Path,
 	guid_map: &HashMap<LinkPtr, VsProject>,
 	target_name: &str,
 	configuration_type: &str,
