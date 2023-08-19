@@ -106,14 +106,13 @@ fn main() -> ExitCode {
 		}
 	};
 
-	match generator.generate(project, global_opts, build_dir_path) {
+	match generator.generate(project, global_opts, &build_dir_path) {
 		Ok(x) => x,
 		Err(e) => {
 			println!("{}", e);
 			return ExitCode::FAILURE;
 		}
 	};
-
 
 	ExitCode::SUCCESS
 }

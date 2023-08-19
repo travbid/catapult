@@ -234,7 +234,7 @@ pub struct Ninja {}
 impl Ninja {
 	pub fn generate(
 		project: Arc<Project>,
-		build_dir: PathBuf,
+		build_dir: &Path,
 		build_tools: BuildTools,
 		global_opts: GlobalOptions,
 		target_platform: TargetPlatform,
@@ -243,7 +243,7 @@ impl Ninja {
 		let mut out_str = String::new();
 		Ninja::generate_inner(
 			&project,
-			&build_dir,
+			build_dir,
 			&build_tools,
 			&global_opts,
 			&target_platform,
