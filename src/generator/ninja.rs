@@ -379,10 +379,19 @@ impl Ninja {
 					&mut inputs,
 				);
 			}
-			for link in lib.public_links_recursive() {
-				let link =
-					output_path(build_dir, &link.project().info.name, &link.output_name(), &target_platform.obj_ext);
-				inputs.push(link);
+			for link in &lib.public_links_recursive() {
+				match link {
+					LinkPtr::Static(x) => {
+						let link = output_path(
+							build_dir,
+							&x.project().info.name,
+							&link.output_name(),
+							&target_platform.static_lib_ext,
+						);
+						inputs.push(link);
+					}
+					LinkPtr::Interface(_) => {}
+				};
 			}
 			let out_name = output_path(build_dir, project_name, &lib.output_name(), &target_platform.static_lib_ext);
 			let link_flags = Vec::new(); // TODO(Travers): Only for shared libs
@@ -475,6 +484,19 @@ impl Ninja {
 						));
 					}
 					LinkPtr::Interface(_) => {}
+				}
+				for translink in link.public_links_recursive() {
+					match translink {
+						LinkPtr::Static(x) => {
+							object_names.push(output_path(
+								build_dir,
+								&x.project().info.name,
+								&x.output_name(),
+								&target_platform.static_lib_ext,
+							));
+						}
+						LinkPtr::Interface(_) => {}
+					}
 				}
 			}
 			let link_flags = exe.link_flags_recursive();
