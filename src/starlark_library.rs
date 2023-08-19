@@ -22,11 +22,11 @@ use starlark::{
 };
 
 use super::{
-	library::Library, //
 	misc::{is_c_source, is_cpp_source},
 	project::Project,
 	starlark_link_target::{PtrLinkTarget, StarLinkTarget},
 	starlark_project::{StarLinkTargetCache, StarProject},
+	static_library::StaticLibrary,
 	target::LinkTarget,
 };
 
@@ -70,7 +70,7 @@ impl StarLinkTarget for StarLibrary {
 	) -> Arc<dyn LinkTarget> {
 		let arc = Arc::new(self.as_library(parent, link_map));
 		// let ptr = PtrLinkTarget(arc.clone());
-		link_map.insert_library(ptr, arc.clone());
+		link_map.insert_static(ptr, arc.clone());
 		arc
 	}
 }
@@ -83,8 +83,8 @@ impl StarLibrary {
 		// }
 		public_includes
 	}
-	pub fn as_library(&self, parent_project: Weak<Project>, link_map: &mut StarLinkTargetCache) -> Library {
-		Library {
+	pub fn as_library(&self, parent_project: Weak<Project>, link_map: &mut StarLinkTargetCache) -> StaticLibrary {
+		StaticLibrary {
 			parent_project: parent_project.clone(),
 			name: self.name.clone(),
 			c_sources: self.sources.iter().filter(is_c_source).map(String::from).collect(),

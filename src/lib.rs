@@ -1,6 +1,6 @@
 mod executable;
 pub mod generator;
-mod library;
+mod static_library;
 mod misc;
 pub mod project;
 mod starlark_api;

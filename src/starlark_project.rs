@@ -25,7 +25,7 @@ use starlark::{
 	},
 };
 
-use crate::{library::Library, target::LinkTarget};
+use crate::{static_library::StaticLibrary, target::LinkTarget};
 
 use super::{
 	project::{Project, ProjectInfo},
@@ -92,28 +92,28 @@ starlark_simple_value!(StarProject);
 
 pub(super) struct StarLinkTargetCache {
 	all_targets: HashSet<PtrLinkTarget>,
-	libs: HashMap<PtrLinkTarget, Arc<Library>>,
+	static_libs: HashMap<PtrLinkTarget, Arc<StaticLibrary>>,
 }
 
 impl StarLinkTargetCache {
 	fn new() -> StarLinkTargetCache {
-		StarLinkTargetCache { all_targets: HashSet::new(), libs: HashMap::new() }
+		StarLinkTargetCache { all_targets: HashSet::new(), static_libs: HashMap::new() }
 	}
-	pub fn get_library(&self, key: &PtrLinkTarget) -> Option<&Arc<Library>> {
+	pub fn get_static(&self, key: &PtrLinkTarget) -> Option<&Arc<StaticLibrary>> {
 		if self.all_targets.contains(key) {
-			self.libs.get(key)
+			self.static_libs.get(key)
 		} else {
 			None
 		}
 	}
 	pub fn get(&self, key: &PtrLinkTarget) -> Option<Arc<dyn LinkTarget>> {
-		match self.get_library(key) {
+		match self.get_static(key) {
 			Some(x) => Some(x.clone()),
 			None => None,
 		}
 	}
-	pub fn insert_library(&mut self, key: PtrLinkTarget, value: Arc<Library>) {
-		self.libs.insert(key.clone(), value);
+	pub fn insert_static(&mut self, key: PtrLinkTarget, value: Arc<StaticLibrary>) {
+		self.static_libs.insert(key.clone(), value);
 		self.all_targets.insert(key);
 	}
 }
@@ -146,16 +146,16 @@ impl StarProject {
 					.iter()
 					.map(|x| Arc::new(x.as_executable(weak_parent.clone(), link_map)))
 					.collect(),
-				libraries: self
+				static_libraries: self
 					.libraries
 					.iter()
 					.map(|x| {
 						let ptr = PtrLinkTarget(x.clone());
-						if let Some(lib) = link_map.get_library(&ptr) {
+						if let Some(lib) = link_map.get_static(&ptr) {
 							lib.clone()
 						} else {
 							let arc = Arc::new(x.as_library(weak_parent.clone(), link_map));
-							link_map.insert_library(ptr, arc.clone());
+							link_map.insert_static(ptr, arc.clone());
 							arc
 						}
 					})

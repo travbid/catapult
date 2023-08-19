@@ -7,7 +7,7 @@ use crate::{
 };
 
 #[derive(Debug)]
-pub struct Library {
+pub struct StaticLibrary {
 	pub parent_project: Weak<Project>,
 	pub name: String,
 	pub c_sources: Vec<String>,
@@ -22,7 +22,7 @@ pub struct Library {
 	pub output_name: Option<String>,
 }
 
-impl Target for Library {
+impl Target for StaticLibrary {
 	fn name(&self) -> String {
 		self.name.clone()
 	}
@@ -37,7 +37,7 @@ impl Target for Library {
 	}
 }
 
-impl LinkTarget for Library {
+impl LinkTarget for StaticLibrary {
 	fn public_includes(&self) -> Vec<String> {
 		let parent_path = &self.parent_project.upgrade().unwrap().info.path;
 		self.include_dirs_public
@@ -124,7 +124,7 @@ impl LinkTarget for Library {
 	}
 }
 
-impl Library {
+impl StaticLibrary {
 	pub(crate) fn private_includes(&self) -> Vec<String> {
 		let parent_path = &self.parent_project.upgrade().unwrap().info.path;
 		self.include_dirs_private
