@@ -40,16 +40,16 @@ fn main() -> ExitCode {
 	}
 
 	let mut all_required_opts_present = true;
-    let mut match_str = |opt: &str| -> String {
-        match matches.opt_str(opt) {
-            Some(x) => x,
-            None => {
-                println!("Error: Required option '--{}' missing", opt);
-                all_required_opts_present = false;
-                String::new()
-            }
-        }
-    };
+	let mut match_str = |opt: &str| -> String {
+		match matches.opt_str(opt) {
+			Some(x) => x,
+			None => {
+				println!("Error: Required option '--{}' missing", opt);
+				all_required_opts_present = false;
+				String::new()
+			}
+		}
+	};
 	let src_dir = match_str(SOURCE_DIR);
 	let build_dir = match_str(BUILD_DIR);
 	let generator_str = match_str(GENERATOR);
