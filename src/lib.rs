@@ -164,7 +164,6 @@ fn download_from_registry(
 		.timeout(Duration::from_secs(10))
 		.send()
 	{
-		// let resp = match reqwest::blocking::get(url) {
 		Ok(resp) => resp,
 		Err(err) => return Err(anyhow!("Error trying to fetch \"{}\" from {}:\n    {}", name, url, err)),
 	};
