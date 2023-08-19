@@ -29,7 +29,6 @@ impl Generator {
 					exe_linker: vec!["clang++".to_owned()],
 					out_flag: "-o".to_owned(),
 				};
-				let compile_options = Vec::new(); // TODO(Travers)
 				let target_platform = if cfg!(windows) {
 					TargetPlatform {
 						obj_ext: ".obj".to_owned(),
@@ -43,7 +42,7 @@ impl Generator {
 						exe_ext: "".to_owned(),
 					}
 				};
-				ninja::Ninja::generate(project, build_dir, build_tools, global_opts, compile_options, target_platform)
+				ninja::Ninja::generate(project, build_dir, build_tools, global_opts, target_platform)
 			}
 		}
 	}

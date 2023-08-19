@@ -237,7 +237,6 @@ impl Ninja {
 		build_dir: PathBuf,
 		build_tools: BuildTools,
 		global_opts: GlobalOptions,
-		compile_options: Vec<String>,
 		target_platform: TargetPlatform,
 	) -> Result<(), String> {
 		let mut rules = NinjaRules::default();
@@ -247,7 +246,6 @@ impl Ninja {
 			&build_dir,
 			&build_tools,
 			&global_opts,
-			&compile_options,
 			&target_platform,
 			&mut rules,
 			&mut out_str,
@@ -284,33 +282,23 @@ impl Ninja {
 		build_dir: &Path,
 		build_tools: &BuildTools,
 		global_opts: &GlobalOptions,
-		compile_options: &Vec<String>,
 		target_platform: &TargetPlatform,
 		rules: &mut NinjaRules,
 		out_str: &mut String,
 	) -> Result<(), String> {
 		for subproject in &project.dependencies {
-			Ninja::generate_inner(
-				subproject,
-				build_dir,
-				build_tools,
-				global_opts,
-				compile_options,
-				target_platform,
-				rules,
-				out_str,
-			)?;
+			Ninja::generate_inner(subproject, build_dir, build_tools, global_opts, target_platform, rules, out_str)?;
 		}
 
 		let project_name = &project.info.name;
 		if rules.link_static_lib.is_none() && !project.static_libraries.is_empty() {
 			rules.link_static_lib = Some(link_static_lib(&build_tools.static_linker));
 		}
-		let mut c_compile_opts = compile_options.clone();
+		let mut c_compile_opts = Vec::new();
 		if let Some(c_std) = &global_opts.c_standard {
 			c_compile_opts.push(str_to_cstd(c_std)?);
 		}
-		let mut cpp_compile_opts = compile_options.clone();
+		let mut cpp_compile_opts = Vec::new();
 		if let Some(cpp_std) = &global_opts.c_standard {
 			cpp_compile_opts.push(str_to_cppstd(cpp_std)?);
 		}
