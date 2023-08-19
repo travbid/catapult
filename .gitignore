@@ -1,4 +1,6 @@
-/build
-/build_*
-/target
-.vs
+/build/
+/build_*/
+/target/
+
+.vs/
+.vscode/
