@@ -14,6 +14,10 @@ fn print_usage(program: &str, opts: Options) {
 }
 
 fn main() -> ExitCode {
+	env_logger::Builder::from_env(env_logger::Env::default().filter_or("CATAPULT_LOG", "off"))
+		.format_timestamp(None)
+		.init();
+
 	let args: Vec<String> = env::args().collect();
 	let program = args[0].clone();
 
