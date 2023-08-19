@@ -4,6 +4,7 @@ use std::{
 };
 
 use crate::{
+	link_type::LinkPtr,
 	misc::canonicalize,
 	project::Project,
 	target::{LinkTarget, Target},
@@ -16,7 +17,7 @@ pub struct Executable {
 	pub name: String,
 	pub c_sources: Vec<String>,
 	pub cpp_sources: Vec<String>,
-	pub links: Vec<Arc<dyn LinkTarget>>,
+	pub links: Vec<LinkPtr>,
 	pub include_dirs: Vec<String>,
 	pub defines: Vec<String>,
 	pub link_flags: Vec<String>,

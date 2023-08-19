@@ -1,6 +1,6 @@
 mod executable;
 pub mod generator;
-mod static_library;
+mod link_type;
 mod misc;
 pub mod project;
 mod starlark_api;
@@ -8,6 +8,7 @@ mod starlark_executable;
 mod starlark_library;
 mod starlark_link_target;
 mod starlark_project;
+mod static_library;
 mod target;
 
 use std::{

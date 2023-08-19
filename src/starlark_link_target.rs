@@ -4,9 +4,9 @@ use std::sync::{Arc, Weak};
 use allocative::Allocative;
 
 use super::{
+	link_type::LinkPtr,
 	project::Project, //
 	starlark_project::StarLinkTargetCache,
-	target::LinkTarget,
 };
 
 pub(super) trait StarLinkTarget: Send + Sync + fmt::Debug + Allocative {
@@ -15,7 +15,7 @@ pub(super) trait StarLinkTarget: Send + Sync + fmt::Debug + Allocative {
 		parent: Weak<Project>,
 		ptr: PtrLinkTarget,
 		link_map: &mut StarLinkTargetCache,
-	) -> Arc<dyn LinkTarget>;
+	) -> LinkPtr;
 }
 
 #[derive(Clone)]

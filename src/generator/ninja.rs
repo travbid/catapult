@@ -9,6 +9,7 @@ use std::{
 use super::{BuildTools, TargetPlatform};
 use crate::{
 	executable::Executable,
+	link_type::LinkPtr,
 	project::Project,
 	static_library::StaticLibrary,
 	target::{LinkTarget, Target},
@@ -429,12 +430,16 @@ impl Ninja {
 				);
 			}
 			for link in &exe.links {
-				object_names.push(output_path(
-					build_dir,
-					&link.project().info.name,
-					&link.output_name(),
-					&target_platform.static_lib_ext,
-				));
+				match link {
+					LinkPtr::Static(x) => {
+						object_names.push(output_path(
+							build_dir,
+							&x.project().info.name,
+							&x.output_name(),
+							&target_platform.static_lib_ext,
+						));
+					}
+				}
 			}
 			let link_flags = exe.link_flags_recursive();
 			let out_name = output_path(build_dir, project_name, &exe.name, &target_platform.exe_ext);

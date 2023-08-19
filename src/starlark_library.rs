@@ -22,6 +22,7 @@ use starlark::{
 };
 
 use super::{
+	link_type::LinkPtr,
 	misc::{is_c_source, is_cpp_source},
 	project::Project,
 	starlark_link_target::{PtrLinkTarget, StarLinkTarget},
@@ -62,16 +63,11 @@ impl fmt::Display for StarLibrary {
 }
 
 impl StarLinkTarget for StarLibrary {
-	fn as_link_target(
-		&self,
-		parent: Weak<Project>,
-		ptr: PtrLinkTarget,
-		link_map: &mut StarLinkTargetCache,
-	) -> Arc<dyn LinkTarget> {
+	fn as_link_target(&self, parent: Weak<Project>, ptr: PtrLinkTarget, link_map: &mut StarLinkTargetCache) -> LinkPtr {
 		let arc = Arc::new(self.as_library(parent, link_map));
 		// let ptr = PtrLinkTarget(arc.clone());
 		link_map.insert_static(ptr, arc.clone());
-		arc
+		LinkPtr::Static(arc)
 	}
 }
 
