@@ -101,6 +101,7 @@ impl ImplAddLibrary {
 		name: &str,
 		sources: Vec<&str>,
 		link_private: Vec<Value>,
+		link_public: Vec<Value>,
 		include_dirs_public: Vec<&str>,
 		include_dirs_private: Vec<&str>,
 		defines_public: Vec<&str>,
@@ -116,6 +117,7 @@ impl ImplAddLibrary {
 			name: String::from(name),
 			sources: to_vec_strs(&sources),
 			link_private: get_link_targets(link_private)?,
+			link_public: get_link_targets(link_public)?,
 			include_dirs_public: to_vec_strs(&include_dirs_public),
 			include_dirs_private: to_vec_strs(&include_dirs_private),
 			defines_public: defines_public.into_iter().map(String::from).collect(),
@@ -133,16 +135,16 @@ impl starlark::values::function::NativeFunc for ImplAddLibrary {
 		eval: &mut starlark::eval::Evaluator<'v, '_>,
 		parameters: &Arguments<'v, '_>,
 	) -> anyhow::Result<starlark::values::Value<'v>> {
-		let args: [Cell<Option<Value<'v>>>; 7] = self.signature.collect_into(parameters, eval.heap())?;
+		let args: [Cell<Option<Value<'v>>>; 8] = self.signature.collect_into(parameters, eval.heap())?;
 		let v = self.add_static_library_impl(
 			Arguments::check_required("name", args[0].get())?,
 			Arguments::check_required("sources", args[1].get())?,
 			Arguments::check_optional("link_private", args[2].get())?.unwrap_or_default(),
-			Arguments::check_optional("include_dirs_public", args[3].get())?.unwrap_or_default(),
-			Arguments::check_optional("include_dirs_private", args[4].get())?.unwrap_or_default(),
-			Arguments::check_optional("defines_public", args[5].get())?.unwrap_or_default(),
-			Arguments::check_optional("link_flags_public", args[6].get())?.unwrap_or_default(),
-			// listorlambda,
+			Arguments::check_optional("link_public", args[3].get())?.unwrap_or_default(),
+			Arguments::check_optional("include_dirs_public", args[4].get())?.unwrap_or_default(),
+			Arguments::check_optional("include_dirs_private", args[5].get())?.unwrap_or_default(),
+			Arguments::check_optional("defines_public", args[6].get())?.unwrap_or_default(),
+			Arguments::check_optional("link_flags_public", args[7].get())?.unwrap_or_default(),
 		)?;
 		Ok(eval.heap().alloc(StarLibraryWrapper(v)))
 	}
@@ -258,6 +260,7 @@ pub(crate) fn build_api(project: &Arc<Mutex<StarProject>>, builder: &mut Globals
 		sig_builder.required("name");
 		sig_builder.required("sources");
 		sig_builder.optional("link_private");
+		sig_builder.optional("link_public");
 		sig_builder.optional("include_dirs_public");
 		sig_builder.optional("include_dirs_private");
 		sig_builder.optional("defines_public");
@@ -267,11 +270,12 @@ pub(crate) fn build_api(project: &Arc<Mutex<StarProject>>, builder: &mut Globals
 			let parameter_types = HashMap::from([
 				(0, DocType { raw_type: <&str>::starlark_type_repr() }),
 				(1, DocType { raw_type: <Vec<&str>>::starlark_type_repr() }),
-				(2, DocType { raw_type: <&str>::starlark_type_repr() }),
-				(3, DocType { raw_type: <Value>::starlark_type_repr() }),
-				(4, DocType { raw_type: <Vec<&str>>::starlark_type_repr() }),
+				(2, DocType { raw_type: <Vec<Value>>::starlark_type_repr() }),
+				(3, DocType { raw_type: <Vec<Value>>::starlark_type_repr() }),
+				(4, DocType { raw_type: <Value>::starlark_type_repr() }),
 				(5, DocType { raw_type: <Vec<&str>>::starlark_type_repr() }),
 				(6, DocType { raw_type: <Vec<&str>>::starlark_type_repr() }),
+				(7, DocType { raw_type: <Vec<&str>>::starlark_type_repr() }),
 			]);
 			starlark::values::function::NativeCallableRawDocs {
 				rust_docstring: None,

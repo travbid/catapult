@@ -14,6 +14,7 @@ pub struct StaticLibrary {
 	pub c_sources: Vec<String>,
 	pub cpp_sources: Vec<String>,
 	pub link_private: Vec<LinkPtr>,
+	pub link_public: Vec<LinkPtr>,
 	pub include_dirs_public: Vec<String>,
 	pub include_dirs_private: Vec<String>,
 	pub defines_public: Vec<String>,
@@ -116,11 +117,7 @@ impl LinkTarget for StaticLibrary {
 		flags
 	}
 	fn public_links(&self) -> Vec<LinkPtr> {
-		let links = Vec::new();
-		// for link in &self.links_public {
-		// 	links.extend(link.public_links_recursive());
-		// }
-		links
+		self.link_public.clone()
 	}
 	fn public_links_recursive(&self) -> Vec<LinkPtr> {
 		let mut links = Vec::new();
@@ -130,7 +127,13 @@ impl LinkTarget for StaticLibrary {
 		for link in &self.link_private {
 			links.push(link.clone());
 		}
+		for link in &self.link_public {
+			links.push(link.clone());
+		}
 		for link in &self.link_private {
+			links.extend(link.public_links_recursive());
+		}
+		for link in &self.link_public {
 			links.extend(link.public_links_recursive());
 		}
 		links
