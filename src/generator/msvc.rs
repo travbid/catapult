@@ -244,7 +244,7 @@ impl Msvc {
 			},
 		};
 		let opts = Options { c_standard, cpp_standard };
-		Self::generate_inner(&project, &build_dir, &mut guid_map, &mut project_vec, &opts)?;
+		Self::generate_inner(&project, build_dir, &mut guid_map, &mut project_vec, &opts)?;
 
 		let mut sln_content = r#"Microsoft Visual Studio Solution File, Format Version 12.00
 "#
