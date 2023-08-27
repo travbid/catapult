@@ -27,6 +27,14 @@ jobs:
           ninja-build
       - name: Checkout
         uses: actions/checkout@v3
+      - name: Restore cache
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.toml', '**/Cargo.lock') }}
       - run: cargo build
       - run: ./target/debug/catapult -S test_data/test_01 -B build -G Ninja -T test_data/toolchain_gcc.toml
       - run: tree build
@@ -44,6 +52,14 @@ jobs:
           ninja-build
       - name: Checkout
         uses: actions/checkout@v3
+      - name: Restore cache
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.toml', '**/Cargo.lock') }}
       - run: cargo build
       - run: ./target/debug/catapult -S test_data/test_01 -B build -G Ninja -T test_data/toolchain_clang.toml
       - run: tree build
@@ -57,6 +73,14 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v3
+      - name: Restore cache
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.toml', '**/Cargo.lock') }}
       - run: cargo build
       - run: ./target/debug/catapult -S test_data/test_01 -B build -G MSVC
       - run: tree /f build
@@ -73,6 +97,14 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v3
+      - name: Restore cache
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.toml', '**/Cargo.lock') }}
       - run: cargo build
       - run: ./target/debug/catapult -S test_data/test_01 -B build -G Ninja -T test_data/toolchain_clang.toml
       - run: tree /f build
