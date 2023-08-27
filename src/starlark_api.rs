@@ -1,7 +1,6 @@
 use core::{cell::Cell, fmt};
 use std::{
 	collections::HashMap, //
-	path::Path,
 	sync::{Arc, Mutex},
 };
 
@@ -34,7 +33,7 @@ pub(super) fn err_msg<T>(msg: String) -> Result<T, anyhow::Error> {
 	Err(anyhow::Error::msg(msg))
 }
 
-fn to_path_strs(paths: &[&str], project_path: &Path) -> Vec<String> {
+fn to_vec_strs(paths: &[&str]) -> Vec<String> {
 	paths.iter().copied().map(String::from).collect()
 }
 
@@ -118,10 +117,10 @@ impl ImplAddLibrary {
 			// parent_project: Arc::downgrade(&self.project),
 			parent_project: Arc::downgrade(&self.project),
 			name: String::from(name),
-			sources: to_path_strs(&sources, &project.path),
+			sources: to_vec_strs(&sources),
 			private_links,
-			include_dirs_public: to_path_strs(&include_dirs_public, &project.path),
-			include_dirs_private: to_path_strs(&include_dirs_private, &project.path),
+			include_dirs_public: to_vec_strs(&include_dirs_public),
+			include_dirs_private: to_vec_strs(&include_dirs_private),
 			defines_public: defines_public.into_iter().map(String::from).collect(),
 			link_flags_public: link_flags_public.into_iter().map(String::from).collect(),
 			output_name: None, // TODO(Travers)
@@ -174,7 +173,7 @@ impl ImplAddInterfaceLibrary {
 			parent_project: Arc::downgrade(&self.project),
 			name: String::from(name),
 			links,
-			include_dirs: to_path_strs(&include_dirs, &project.path),
+			include_dirs: to_vec_strs(&include_dirs),
 			defines: defines.into_iter().map(String::from).collect(),
 			link_flags: link_flags.into_iter().map(String::from).collect(),
 		});
@@ -224,7 +223,7 @@ impl ImplAddExecutable {
 		let exe = Arc::new(StarExecutable {
 			parent_project: Arc::downgrade(&self.project),
 			name: String::from(name),
-			sources: to_path_strs(&sources, &project.path),
+			sources: to_vec_strs(&sources),
 			links: exe_links,
 			include_dirs,
 			defines,
