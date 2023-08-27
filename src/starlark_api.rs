@@ -96,7 +96,7 @@ struct ImplAddLibrary {
 	project: Arc<Mutex<StarProject>>,
 }
 impl ImplAddLibrary {
-	fn add_library_impl(
+	fn add_static_library_impl(
 		&self,
 		name: &str,
 		sources: Vec<&str>,
@@ -137,7 +137,7 @@ impl starlark::values::function::NativeFunc for ImplAddLibrary {
 		parameters: &Arguments<'v, '_>,
 	) -> anyhow::Result<starlark::values::Value<'v>> {
 		let args: [Cell<Option<Value<'v>>>; 7] = self.signature.collect_into(parameters, eval.heap())?;
-		let v = self.add_library_impl(
+		let v = self.add_static_library_impl(
 			Arguments::check_required("name", args[0].get())?,
 			Arguments::check_required("sources", args[1].get())?,
 			Arguments::check_optional("link_private", args[2].get())?.unwrap_or_default(),
@@ -255,7 +255,8 @@ impl starlark::values::function::NativeFunc for ImplAddExecutable {
 
 pub(crate) fn build_api(project: &Arc<Mutex<StarProject>>, builder: &mut GlobalsBuilder) {
 	{
-		let mut sig_builder = starlark::eval::ParametersSpec::new("add_library".to_owned());
+		let function_name = "add_static_library";
+		let mut sig_builder = starlark::eval::ParametersSpec::new(function_name.to_owned());
 		sig_builder.no_more_positional_only_args();
 		sig_builder.required("name");
 		sig_builder.required("sources");
@@ -284,7 +285,7 @@ pub(crate) fn build_api(project: &Arc<Mutex<StarProject>>, builder: &mut Globals
 			}
 		};
 		builder.set_function(
-			"add_library",
+			function_name,
 			false,
 			documentation,
 			None,

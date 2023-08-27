@@ -17,7 +17,7 @@ zstd = { version = "1.5.5", registry = "https://catapult.trav.bid:6400", channel
 `build.catapult` files are written in [starlark](https://bazel.build/rules/language), a subset of Python.
 They should look vaguely familiar if you know CMake:
 ```python
-mylib = add_library(
+mylib = add_static_library(
     name = 'mylib',
     sources = ['mylib.cpp'],
     include_dirs_private = zstd.include_dirs,
