@@ -96,6 +96,7 @@ struct ImplAddLibrary {
 	project: Arc<Mutex<StarProject>>,
 }
 impl ImplAddLibrary {
+	#[allow(clippy::too_many_arguments)]
 	fn add_static_library_impl(
 		&self,
 		name: &str,
