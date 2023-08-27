@@ -333,6 +333,12 @@ impl Msvc {
 				// .map(|x| x.trim_start_matches(r"\\?\").to_owned())
 				.map(|x| x.to_owned())
 				.collect::<Vec<String>>();
+			let project_links = lib
+				.link_private
+				.iter()
+				.cloned()
+				.chain(lib.link_public.iter().cloned())
+				.collect();
 			let vsproj = make_vcxproj(
 				build_dir,
 				guid_map,
@@ -344,7 +350,7 @@ impl Msvc {
 				&includes,
 				&lib.c_sources,
 				&lib.cpp_sources,
-				&lib.private_links,
+				&project_links,
 			)?;
 			guid_map.insert(LinkPtr::Static(lib.clone()), vsproj.clone());
 			project_vec.push(vsproj);
@@ -390,7 +396,7 @@ fn make_vcxproj(
 	includes: &[String],
 	c_sources: &[String],
 	cpp_sources: &[String],
-	private_links: &Vec<LinkPtr>,
+	project_links: &Vec<LinkPtr>,
 ) -> Result<VsProject, String> {
 	if !c_sources.is_empty() && !cpp_sources.is_empty() {
 		return Err(format!("This generator does not support mixing C and C++ sources. Consider splitting them into separate libraries. Target: {target_name}"));
@@ -495,14 +501,14 @@ fn make_vcxproj(
 	}
 
 	fn add_project_references(
-		private_links: &Vec<LinkPtr>,
+		project_links: &Vec<LinkPtr>,
 		guid_map: &HashMap<LinkPtr, VsProject>,
 		dependencies: &mut Vec<VsProject>,
 		build_dir: &Path,
 	) -> String {
 		let mut out_str = String::new();
-		for link in private_links {
-			let proj_ref = match guid_map.get(&link) {
+		for link in project_links {
+			let proj_ref = match guid_map.get(link) {
 				Some(x) => x,
 				None => {
 					out_str += &add_project_references(&link.public_links(), guid_map, dependencies, build_dir);
@@ -532,9 +538,9 @@ fn make_vcxproj(
 		out_str
 	}
 	let mut dependencies = Vec::new();
-	if !private_links.is_empty() {
+	if !project_links.is_empty() {
 		out_str += "  <ItemGroup>\n";
-		out_str += &add_project_references(private_links, guid_map, &mut dependencies, &build_dir);
+		out_str += &add_project_references(project_links, guid_map, &mut dependencies, build_dir);
 		out_str += "  </ItemGroup>\n";
 	}
 	out_str += r#"  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

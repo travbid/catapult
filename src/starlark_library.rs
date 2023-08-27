@@ -36,6 +36,7 @@ pub(super) struct StarLibrary {
 	pub name: String,
 	pub sources: Vec<String>,
 	pub link_private: Vec<Arc<dyn StarLinkTarget>>,
+	pub link_public: Vec<Arc<dyn StarLinkTarget>>,
 	pub include_dirs_public: Vec<String>,
 	pub include_dirs_private: Vec<String>,
 	pub defines_public: Vec<String>,
@@ -89,6 +90,18 @@ impl StarLibrary {
 			include_dirs_public: self.include_dirs_public.clone(),
 			link_private: self
 				.link_private
+				.iter()
+				.map(|x| {
+					let ptr = PtrLinkTarget(x.clone());
+					if let Some(lt) = link_map.get(&ptr) {
+						lt
+					} else {
+						x.as_link_target(parent_project.clone(), ptr, link_map)
+					}
+				})
+				.collect(),
+			link_public: self
+				.link_public
 				.iter()
 				.map(|x| {
 					let ptr = PtrLinkTarget(x.clone());
