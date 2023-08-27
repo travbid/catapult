@@ -35,7 +35,7 @@ pub(super) struct StarLibrary {
 	pub parent_project: Weak<Mutex<StarProject>>,
 	pub name: String,
 	pub sources: Vec<String>,
-	pub private_links: Vec<Arc<dyn StarLinkTarget>>,
+	pub link_private: Vec<Arc<dyn StarLinkTarget>>,
 	pub include_dirs_public: Vec<String>,
 	pub include_dirs_private: Vec<String>,
 	pub defines_public: Vec<String>,
@@ -87,8 +87,8 @@ impl StarLibrary {
 			cpp_sources: self.sources.iter().filter(is_cpp_source).map(String::from).collect(),
 			include_dirs_private: self.include_dirs_private.clone(),
 			include_dirs_public: self.include_dirs_public.clone(),
-			private_links: self
-				.private_links
+			link_private: self
+				.link_private
 				.iter()
 				.map(|x| {
 					let ptr = PtrLinkTarget(x.clone());
