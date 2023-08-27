@@ -1,5 +1,5 @@
 
-mylib = add_library(
+mylib = add_static_library(
     name = "mylib",
     sources = ["mylib.cpp"],
     include_dirs_public = ["."],
