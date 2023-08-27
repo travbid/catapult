@@ -107,18 +107,15 @@ impl ImplAddLibrary {
 		link_flags_public: Vec<&str>,
 		// list_or_lambda: Arc<ListOrLambdaFrozen>,
 	) -> anyhow::Result<Arc<StarLibrary>> {
-		let private_links = get_link_targets(link_private)?;
 		let mut project = match self.project.lock() {
 			Ok(x) => x,
 			Err(e) => return err_msg(e.to_string()),
 		};
 		let lib = Arc::new(StarLibrary {
-			// parent_project: Arc::new_cyclic(|x| true),
-			// parent_project: Arc::downgrade(&self.project),
 			parent_project: Arc::downgrade(&self.project),
 			name: String::from(name),
 			sources: to_vec_strs(&sources),
-			private_links,
+			link_private: get_link_targets(link_private)?,
 			include_dirs_public: to_vec_strs(&include_dirs_public),
 			include_dirs_private: to_vec_strs(&include_dirs_private),
 			defines_public: defines_public.into_iter().map(String::from).collect(),

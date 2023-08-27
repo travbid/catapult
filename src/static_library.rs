@@ -13,8 +13,7 @@ pub struct StaticLibrary {
 	pub name: String,
 	pub c_sources: Vec<String>,
 	pub cpp_sources: Vec<String>,
-	pub private_links: Vec<LinkPtr>,
-	// pub public_links: Vec<Arc<dyn LinkTarget>>,
+	pub link_private: Vec<LinkPtr>,
 	pub include_dirs_public: Vec<String>,
 	pub include_dirs_private: Vec<String>,
 	pub defines_public: Vec<String>,
@@ -49,7 +48,7 @@ impl LinkTarget for StaticLibrary {
 	fn public_includes_recursive(&self) -> Vec<String> {
 		let mut includes = Vec::new();
 		let parent_path = &self.parent_project.upgrade().unwrap().info.path;
-		for link in &self.private_links {
+		for link in &self.link_private {
 			for include in link.public_includes_recursive() {
 				if !includes.contains(&include) {
 					includes.push(include);
@@ -69,14 +68,14 @@ impl LinkTarget for StaticLibrary {
 	}
 	fn public_defines_recursive(&self) -> Vec<String> {
 		let mut defines = Vec::new();
-		for link in &self.private_links {
+		for link in &self.link_private {
 			for def in link.public_defines() {
 				if !defines.contains(&def) {
 					defines.push(def);
 				}
 			}
 		}
-		for link in &self.private_links {
+		for link in &self.link_private {
 			for def in link.public_defines_recursive() {
 				if !defines.contains(&def) {
 					defines.push(def);
@@ -95,7 +94,7 @@ impl LinkTarget for StaticLibrary {
 	}
 	fn public_link_flags_recursive(&self) -> Vec<String> {
 		let mut flags = Vec::new();
-		for link in &self.private_links {
+		for link in &self.link_private {
 			for flag in link.public_link_flags() {
 				if !flags.contains(&flag) {
 					flags.push(flag);
@@ -127,11 +126,11 @@ impl LinkTarget for StaticLibrary {
 		let mut links = Vec::new();
 		// Static libraries have to be linked, even if they're private.
 		// The include dirs of the private links won't propagate though.
-		// Bread-first addition
-		for link in &self.private_links {
+		// Breadth-first addition
+		for link in &self.link_private {
 			links.push(link.clone());
 		}
-		for link in &self.private_links {
+		for link in &self.link_private {
 			links.extend(link.public_links_recursive());
 		}
 		links
