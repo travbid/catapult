@@ -36,10 +36,31 @@ impl Compiler for Clang {
 			_ => Err(format!("C++ standard not supported by compiler: {std}")),
 		}
 	}
+
+	fn position_independent_code_flag(&self) -> Option<String> {
+		match self.target_windows {
+			true => None,
+			false => Some("-fPIC".to_owned()),
+		}
+	}
+
+	fn position_independent_executable_flag(&self) -> Option<String> {
+		match self.target_windows {
+			true => None,
+			false => Some("-fPIE".to_owned()),
+		}
+	}
 }
 
 impl ExeLinker for Clang {
 	fn cmd(&self) -> Vec<String> {
 		self.cmd.clone()
+	}
+
+	fn position_independent_executable_flag(&self) -> Option<String> {
+		match self.target_windows {
+			true => None,
+			false => Some("-pie".to_owned()),
+		}
 	}
 }
