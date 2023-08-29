@@ -356,7 +356,9 @@ impl Ninja {
 							&link.output_name(),
 							&target_platform.static_lib_ext,
 						);
-						inputs.push(link);
+						if !inputs.contains(&link) {
+							inputs.push(link);
+						}
 					}
 					LinkPtr::Interface(_) => {}
 				};
@@ -414,7 +416,7 @@ impl Ninja {
 		}
 		for exe in &project.executables {
 			log::debug!("   exe target: {}", exe.name);
-			let mut object_names = Vec::<String>::new();
+			let mut inputs = Vec::<String>::new();
 			for src in &exe.c_sources {
 				add_exe_source(
 					src,
@@ -425,7 +427,7 @@ impl Ninja {
 					out_str,
 					rules.compile_c_object.as_ref().unwrap().clone(),
 					c_compile_opts.clone(),
-					&mut object_names,
+					&mut inputs,
 				);
 			}
 			for src in &exe.cpp_sources {
@@ -438,30 +440,36 @@ impl Ninja {
 					out_str,
 					rules.compile_cpp_object.as_ref().unwrap().clone(),
 					cpp_compile_opts.clone(),
-					&mut object_names,
+					&mut inputs,
 				);
 			}
 			for link in &exe.links {
 				match link {
 					LinkPtr::Static(x) => {
-						object_names.push(output_path(
+						let lib_path = output_path(
 							build_dir,
 							&x.project().info.name,
 							&x.output_name(),
 							&target_platform.static_lib_ext,
-						));
+						);
+						if !inputs.contains(&lib_path) {
+							inputs.push(lib_path);
+						}
 					}
 					LinkPtr::Interface(_) => {}
 				}
 				for translink in link.public_links_recursive() {
 					match translink {
 						LinkPtr::Static(x) => {
-							object_names.push(output_path(
+							let lib_path = output_path(
 								build_dir,
 								&x.project().info.name,
 								&x.output_name(),
 								&target_platform.static_lib_ext,
-							));
+							);
+							if !inputs.contains(&lib_path) {
+								inputs.push(lib_path);
+							}
 						}
 						LinkPtr::Interface(_) => {}
 					}
@@ -470,7 +478,7 @@ impl Ninja {
 			let link_flags = exe.link_flags_recursive();
 			let out_name = output_path(build_dir, project_name, &exe.name, &target_platform.exe_ext);
 			*out_str += &NinjaBuild {
-				inputs: object_names,
+				inputs,
 				output_targets: vec![out_name.clone()],
 				rule: rules.link_exe.as_ref().unwrap().clone(),
 				keyval_set: HashMap::from([
