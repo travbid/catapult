@@ -161,7 +161,7 @@ impl NinjaBuild {
 	}
 }
 
-fn compile_c_object(compiler: &Box<dyn Compiler>) -> NinjaRule {
+fn compile_c_object(compiler: &dyn Compiler) -> NinjaRule {
 	let mut command = compiler.cmd();
 	command.extend(vec!["$DEFINES".to_string(), "$INCLUDES".to_string(), "$FLAGS".to_string()]);
 	// command.extend(compiler.compiler_flags(msvc_runtime));
@@ -173,7 +173,7 @@ fn compile_c_object(compiler: &Box<dyn Compiler>) -> NinjaRule {
 		..Default::default()
 	}
 }
-fn compile_cpp_object(compiler: &Box<dyn Compiler>) -> NinjaRule {
+fn compile_cpp_object(compiler: &dyn Compiler) -> NinjaRule {
 	let mut command = compiler.cmd();
 	command.extend(vec!["$DEFINES".to_string(), "$INCLUDES".to_string(), "$FLAGS".to_string()]);
 	command.extend(vec![compiler.out_flag(), "$out".to_owned()]);
@@ -316,10 +316,10 @@ impl Ninja {
 		for lib in &project.static_libraries {
 			let mut inputs = Vec::<String>::new();
 			if rules.compile_c_object.is_none() && !lib.c_sources.is_empty() {
-				rules.compile_c_object = Some(compile_c_object(&toolchain.c_compiler));
+				rules.compile_c_object = Some(compile_c_object(toolchain.c_compiler.as_ref()));
 			}
 			if rules.compile_cpp_object.is_none() && !lib.cpp_sources.is_empty() {
-				rules.compile_cpp_object = Some(compile_cpp_object(&toolchain.cpp_compiler));
+				rules.compile_cpp_object = Some(compile_cpp_object(toolchain.cpp_compiler.as_ref()));
 			}
 			for src in &lib.c_sources {
 				add_lib_source(
