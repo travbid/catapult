@@ -14,6 +14,8 @@ pub trait Compiler {
 	fn out_flag(&self) -> String;
 	fn c_std_flag(&self, std: &str) -> Result<String, String>;
 	fn cpp_std_flag(&self, std: &str) -> Result<String, String>;
+	fn position_independent_code_flag(&self) -> Option<String>;
+	fn position_independent_executable_flag(&self) -> Option<String>;
 }
 
 pub trait StaticLinker {
@@ -22,6 +24,7 @@ pub trait StaticLinker {
 
 pub trait ExeLinker {
 	fn cmd(&self) -> Vec<String>;
+	fn position_independent_executable_flag(&self) -> Option<String>;
 }
 
 pub(super) fn identify_compiler(cmd: Vec<String>) -> Result<Box<dyn Compiler>, String> {

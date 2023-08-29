@@ -164,6 +164,12 @@ impl NinjaBuild {
 	}
 }
 
+fn concat_vecs(vec_a: &[String], vec_b: &[String]) -> Vec<String> {
+	let mut ret = vec_a.to_owned();
+	ret.extend(vec_b.iter().cloned());
+	ret
+}
+
 fn compile_c_object(compiler: &dyn Compiler) -> NinjaRule {
 	let mut command = compiler.cmd();
 	command.extend(vec!["$DEFINES".to_string(), "$INCLUDES".to_string(), "$FLAGS".to_string()]);
@@ -285,6 +291,24 @@ impl Ninja {
 		if let Some(cpp_std) = &global_opts.c_standard {
 			cpp_compile_opts.push(toolchain.cpp_compiler.cpp_std_flag(cpp_std)?);
 		}
+		let mut c_compile_lib_opts = Vec::new();
+		let mut cpp_compile_lib_opts = Vec::new();
+		let mut c_compile_exe_opts = Vec::new();
+		let mut cpp_compile_exe_opts = Vec::new();
+		if let Some(true) = global_opts.position_independent_code {
+			if let Some(fpic_flag) = toolchain.c_compiler.position_independent_code_flag() {
+				c_compile_lib_opts.push(fpic_flag);
+			}
+			if let Some(fpic_flag) = toolchain.cpp_compiler.position_independent_code_flag() {
+				cpp_compile_lib_opts.push(fpic_flag);
+			}
+			if let Some(fpic_flag) = toolchain.c_compiler.position_independent_executable_flag() {
+				c_compile_exe_opts.push(fpic_flag);
+			}
+			if let Some(fpic_flag) = toolchain.cpp_compiler.position_independent_executable_flag() {
+				cpp_compile_exe_opts.push(fpic_flag);
+			}
+		}
 		fn add_lib_source(
 			src: &str,
 			lib: &StaticLibrary,
@@ -333,7 +357,7 @@ impl Ninja {
 					target_platform,
 					out_str,
 					rules.compile_c_object.as_ref().unwrap().clone(),
-					c_compile_opts.clone(),
+					concat_vecs(&c_compile_opts, &c_compile_lib_opts),
 					&mut inputs,
 				);
 			}
@@ -346,7 +370,7 @@ impl Ninja {
 					target_platform,
 					out_str,
 					rules.compile_cpp_object.as_ref().unwrap().clone(),
-					cpp_compile_opts.clone(),
+					concat_vecs(&cpp_compile_opts, &cpp_compile_lib_opts),
 					&mut inputs,
 				);
 			}
@@ -415,7 +439,7 @@ impl Ninja {
 			inputs.push(out_tgt);
 		}
 		if rules.link_exe.is_none() && !project.executables.is_empty() {
-			rules.link_exe = Some(link_exe(&toolchain.exe_linker));
+			rules.link_exe = Some(link_exe(toolchain.exe_linker.as_ref()));
 		}
 		for exe in &project.executables {
 			log::debug!("   exe target: {}", exe.name);
@@ -429,7 +453,7 @@ impl Ninja {
 					target_platform,
 					out_str,
 					rules.compile_c_object.as_ref().unwrap().clone(),
-					c_compile_opts.clone(),
+					concat_vecs(&c_compile_opts, &c_compile_exe_opts),
 					&mut inputs,
 				);
 			}
@@ -442,7 +466,7 @@ impl Ninja {
 					target_platform,
 					out_str,
 					rules.compile_cpp_object.as_ref().unwrap().clone(),
-					cpp_compile_opts.clone(),
+					concat_vecs(&cpp_compile_opts, &cpp_compile_exe_opts),
 					&mut inputs,
 				);
 			}
@@ -478,7 +502,10 @@ impl Ninja {
 					}
 				}
 			}
-			let link_flags = exe.link_flags_recursive();
+			let mut link_flags = exe.link_flags_recursive();
+			if let Some(pie_flag) = toolchain.exe_linker.position_independent_executable_flag() {
+				link_flags.push(pie_flag);
+			}
 			let out_name = output_path(build_dir, project_name, &exe.name, &target_platform.exe_ext);
 			*out_str += &NinjaBuild {
 				inputs,

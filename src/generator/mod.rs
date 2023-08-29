@@ -78,6 +78,14 @@ impl Generator {
 					None => return Err("Toolchain file does not contain required field \"cpp_compiler\"".to_owned()),
 				};
 
+				// Sanity checks
+				if c_compiler.position_independent_code_flag().is_none() {
+					log::info!("position_idependent_code not supported by the specified C compiler");
+				}
+				if cpp_compiler.position_independent_code_flag().is_none() {
+					log::info!("position_idependent_code not supported by the specified C++ compiler");
+				}
+
 				let toolchain = Toolchain { c_compiler, cpp_compiler, static_linker, exe_linker };
 				let target_platform = if cfg!(windows) {
 					TargetPlatform {
