@@ -6,6 +6,8 @@ use std::{
 	sync::Arc,
 };
 
+use log;
+
 use super::{compiler::Compiler, TargetPlatform, Toolchain};
 use crate::{
 	executable::Executable,
@@ -411,7 +413,7 @@ impl Ninja {
 			rules.link_exe = Some(link_exe(&toolchain.exe_linker));
 		}
 		for exe in &project.executables {
-			println!("   target: {}", exe.name);
+			log::debug!("   exe target: {}", exe.name);
 			let mut object_names = Vec::<String>::new();
 			for src in &exe.c_sources {
 				add_exe_source(
