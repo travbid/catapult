@@ -7,6 +7,8 @@ use log;
 pub trait Compiler {
 	fn cmd(&self) -> Vec<String>;
 	fn out_flag(&self) -> String;
+	fn c_std_flag(&self, std: &str) -> Result<String, String>;
+	fn cpp_std_flag(&self, std: &str) -> Result<String, String>;
 }
 
 pub(super) fn identify_compiler(cmd: Vec<String>) -> Result<Box<dyn Compiler>, String> {

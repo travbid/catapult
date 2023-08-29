@@ -159,28 +159,6 @@ impl NinjaBuild {
 	}
 }
 
-// TODO(Travers): Do this for each compiler (un-hardcode clang, implement toolchain)
-fn str_to_cstd(s: &str) -> Result<String, String> {
-	match s {
-		"17" => Ok("-std=c17".to_owned()),
-		"11" => Ok("-std=c11".to_owned()),
-		_ => Err(format!(
-			"Unrecognized value for c_standard: \"{s}\". Accepted values for this generator are \"17\", \"11\""
-		)),
-	}
-}
-fn str_to_cppstd(s: &str) -> Result<String, String> {
-	match s {
-		"20" => Ok("-std=c++20".to_owned()),
-		"17" => Ok("-std=c++17".to_owned()),
-		"14" => Ok("-std=c++14".to_owned()),
-		"11" => Ok("-std=c++11".to_owned()),
-		_ => Err(format!(
-			"Unrecognized value for c_standard: \"{s}\". Accepted values for this generator are \"17\", \"11\""
-		)),
-	}
-}
-
 fn compile_c_object(compiler: &Box<dyn Compiler>) -> NinjaRule {
 	let mut command = compiler.cmd();
 	command.extend(vec!["$DEFINES".to_string(), "$INCLUDES".to_string(), "$FLAGS".to_string()]);
@@ -296,11 +274,11 @@ impl Ninja {
 		}
 		let mut c_compile_opts = Vec::new();
 		if let Some(c_std) = &global_opts.c_standard {
-			c_compile_opts.push(str_to_cstd(c_std)?);
+			c_compile_opts.push(toolchain.c_compiler.c_std_flag(c_std)?);
 		}
 		let mut cpp_compile_opts = Vec::new();
 		if let Some(cpp_std) = &global_opts.c_standard {
-			cpp_compile_opts.push(str_to_cppstd(cpp_std)?);
+			cpp_compile_opts.push(toolchain.cpp_compiler.cpp_std_flag(cpp_std)?);
 		}
 		fn add_lib_source(
 			src: &str,
