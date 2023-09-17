@@ -11,7 +11,7 @@ use std::{
 use serde::Deserialize;
 
 use crate::{project::Project, GlobalOptions};
-use compiler::{identify_compiler, Compiler};
+use compiler::{identify_compiler, identify_linker, Compiler, ExeLinker};
 
 #[derive(Debug, Deserialize)]
 pub struct ToolchainFile {
@@ -71,8 +71,11 @@ impl Generator {
 					None => return Err("Toolchain file does not contain required field \"static_linker\"".to_owned()),
 				};
 				let exe_linker = match toolchain.exe_linker {
-					Some(x) => x,
-					None => return Err("Toolchain file doesn contain required field \"exe_linker\"".to_owned()),
+					Some(x) => match identify_linker(x) {
+						Ok(linker) => linker,
+						Err(e) => return Err(format!("Error identifying C++ compiler: {}", e)),
+					},
+					None => return Err("Toolchain file does not contain required field \"cpp_compiler\"".to_owned()),
 				};
 
 				let toolchain = Toolchain { c_compiler, cpp_compiler, static_linker, exe_linker };
@@ -95,19 +98,11 @@ impl Generator {
 	}
 }
 
-pub trait StaticLinker {
-	fn cmd(&self) -> Vec<String>;
-}
-
-pub trait ExeLinker {
-	fn cmd(&self) -> Vec<String>;
-}
-
 pub struct Toolchain {
 	pub c_compiler: Box<dyn Compiler>,
 	pub cpp_compiler: Box<dyn Compiler>,
 	pub static_linker: Vec<String>,
-	pub exe_linker: Vec<String>,
+	pub exe_linker: Box<dyn ExeLinker>,
 }
 
 pub struct TargetPlatform {

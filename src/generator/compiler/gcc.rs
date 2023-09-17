@@ -1,10 +1,14 @@
-use super::Compiler;
+use super::{Compiler, ExeLinker};
 
-pub(crate) struct GeneralCompiler {
+pub(crate) struct Gcc {
 	pub(super) cmd: Vec<String>,
+	#[allow(dead_code)]
+	pub(super) version: String,
+	#[allow(dead_code)]
+	pub(super) target: String,
 }
 
-impl Compiler for GeneralCompiler {
+impl Compiler for Gcc {
 	fn cmd(&self) -> Vec<String> {
 		self.cmd.clone()
 	}
@@ -17,7 +21,7 @@ impl Compiler for GeneralCompiler {
 		match std {
 			"11" => Ok("-std=c11".to_owned()),
 			"17" => Ok("-std=c17".to_owned()),
-			_ => Err(format!("C++ standard not supported by compiler: {std}")),
+			_ => Err(format!("C standard not supported by compiler: {std}")),
 		}
 	}
 
@@ -30,5 +34,11 @@ impl Compiler for GeneralCompiler {
 			"23" => Ok("-std=c++23".to_owned()),
 			_ => Err(format!("C++ standard not supported by compiler: {std}")),
 		}
+	}
+}
+
+impl ExeLinker for Gcc {
+	fn cmd(&self) -> Vec<String> {
+		self.cmd.clone()
 	}
 }
