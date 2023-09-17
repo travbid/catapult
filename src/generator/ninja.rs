@@ -8,7 +8,10 @@ use std::{
 
 use log;
 
-use super::{compiler::Compiler, TargetPlatform, Toolchain};
+use super::{
+	compiler::{Compiler, ExeLinker},
+	TargetPlatform, Toolchain,
+};
 use crate::{
 	executable::Executable,
 	link_type::LinkPtr,
@@ -193,8 +196,8 @@ fn link_static_lib(static_linker: &[String]) -> NinjaRule {
 		..Default::default()
 	}
 }
-fn link_exe(exe_linker: &[String]) -> NinjaRule {
-	let mut command = exe_linker.to_owned();
+fn link_exe(exe_linker: &dyn ExeLinker) -> NinjaRule {
+	let mut command = exe_linker.cmd();
 	command.extend(vec![
 		"$LINK_FLAGS".to_string(),
 		"$in".to_string(),
