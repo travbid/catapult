@@ -29,7 +29,7 @@ pub enum Generator {
 
 impl Generator {
 	pub fn read_toolchain(toolchain_path: &Path) -> Result<ToolchainFile, String> {
-		let toolchain_toml = match fs::read_to_string(&toolchain_path) {
+		let toolchain_toml = match fs::read_to_string(toolchain_path) {
 			Ok(x) => x,
 			Err(e) => return Err(format!("Error opening toolchain file \"{}\": {}", toolchain_path.display(), e)),
 		};

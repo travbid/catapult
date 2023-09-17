@@ -67,10 +67,7 @@ impl StarExecutable {
 			let ptr = PtrLinkTarget(link.clone());
 			let link_target = match link_map.get(&ptr) {
 				Some(x) => x,
-				None => {
-					let x = link.as_link_target(parent_project.clone(), ptr, link_map);
-					x
-				}
+				None => link.as_link_target(parent_project.clone(), ptr, link_map),
 			};
 			links.push(link_target);
 		}
