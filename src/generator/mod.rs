@@ -57,18 +57,18 @@ impl Generator {
 						Ok(y) => y,
 						Err(e) => return Err(format!("Error identifying C compiler: {}", e)),
 					},
-					None => return Err("Toolchain file doesn contain required field \"c_compiler\"".to_owned()),
+					None => return Err("Toolchain file does not contain required field \"c_compiler\"".to_owned()),
 				};
 				let cpp_compiler = match toolchain.cpp_compiler {
 					Some(x) => match identify_compiler(x) {
 						Ok(y) => y,
 						Err(e) => return Err(format!("Error identifying C++ compiler: {}", e)),
 					},
-					None => return Err("Toolchain file doesn contain required field \"c_compiler\"".to_owned()),
+					None => return Err("Toolchain file does not contain required field \"cpp_compiler\"".to_owned()),
 				};
 				let static_linker = match toolchain.static_linker {
 					Some(x) => x,
-					None => return Err("Toolchain file doesn contain required field \"static_linker\"".to_owned()),
+					None => return Err("Toolchain file does not contain required field \"static_linker\"".to_owned()),
 				};
 				let exe_linker = match toolchain.exe_linker {
 					Some(x) => x,
