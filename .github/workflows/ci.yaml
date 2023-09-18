@@ -17,6 +17,14 @@ env:
   RUST_BACKTRACE: '1'  # Make debugging easier if catapult fails at runtime
 
 jobs:
+  test:
+    name: Cargo Test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      - run: cargo test
+
   ubuntu-ninja-gcc:
     name: Build and Run (Ubuntu / Ninja / GCC)
     runs-on: ubuntu-latest
