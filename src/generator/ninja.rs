@@ -63,41 +63,40 @@ impl NinjaRule {
 	fn as_string(&self) -> String {
 		let mut ret = format!(
 			r#"rule {}
-  command = {}
-"#,
+  command = {}"#,
 			self.name,
 			self.command.join(" ")
 		);
 		if !self.depfile.is_empty() {
-			ret += "  depfile = ";
+			ret += "\n  depfile = ";
 			ret += &self.depfile.join(" ");
 		}
 		if !self.deps.is_empty() {
-			ret += "  deps = ";
+			ret += "\n  deps = ";
 			ret += &self.deps.join(" ");
 		}
 		if let Some(desc) = &self.description {
-			ret += "  description = ";
+			ret += "\n  description = ";
 			ret += desc;
 		}
 		if let Some(dyndep) = &self.dyndep {
-			ret += "  dyndep = ";
+			ret += "\n  dyndep = ";
 			ret += dyndep;
 		}
 		if self.generator {
-			ret += "  generator = 1";
+			ret += "\n  generator = 1";
 		}
 		if let Some(restat) = &self.restat {
-			ret += "  restat = ";
+			ret += "\n  restat = ";
 			ret += restat;
 		}
 		if let Some(rspfile) = &self.rspfile {
-			ret += "  rspfile = ";
+			ret += "\n  rspfile = ";
 			ret += &rspfile.rspfile;
-			ret += "  rspfilecontent = ";
+			ret += "\n  rspfilecontent = ";
 			ret += &rspfile.rspfilecontent;
 		}
-		ret += "\n";
+		ret += "\n\n";
 		ret
 	}
 }
