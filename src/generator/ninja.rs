@@ -8,16 +8,14 @@ use std::{
 
 use log;
 
-use super::{
-	compiler::{Compiler, ExeLinker},
-	TargetPlatform, Toolchain,
-};
+use super::{TargetPlatform, Toolchain};
 use crate::{
 	executable::Executable,
 	link_type::LinkPtr,
 	project::Project,
 	static_library::StaticLibrary,
 	target::{LinkTarget, Target},
+	toolchain::compiler::{Compiler, ExeLinker},
 	GlobalOptions,
 };
 

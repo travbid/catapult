@@ -3,8 +3,6 @@ mod gcc;
 
 use std::process;
 
-use log;
-
 const CLANG_ID: &str = "clang version ";
 const GCC_ID: &str = "gcc version ";
 const TARGET_PREFIX: &str = "Target: ";
