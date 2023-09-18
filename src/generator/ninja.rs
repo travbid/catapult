@@ -568,3 +568,174 @@ fn get_cpp_compiler<'a>(toolchain: &'a Toolchain, name: &str) -> Result<&'a dyn 
 		)),
 	}
 }
+
+#[test]
+fn test_position_independent_code() {
+	struct TestCompiler {}
+	impl Compiler for TestCompiler {
+		fn cmd(&self) -> Vec<String> {
+			vec!["clang".to_owned()]
+		}
+		fn out_flag(&self) -> String {
+			"-o".to_owned()
+		}
+		fn c_std_flag(&self, std: &str) -> Result<String, String> {
+			match std {
+				"11" => Ok("-std=c11".to_owned()),
+				"17" => Ok("-std=c17".to_owned()),
+				_ => Err(format!("C standard not supported by compiler: {std}")),
+			}
+		}
+		fn cpp_std_flag(&self, std: &str) -> Result<String, String> {
+			match std {
+				"11" => Ok("-std=c++11".to_owned()),
+				"14" => Ok("-std=c++14".to_owned()),
+				"17" => Ok("-std=c++17".to_owned()),
+				"20" => Ok("-std=c++20".to_owned()),
+				"23" => Ok("-std=c++23".to_owned()),
+				_ => Err(format!("C++ standard not supported by compiler: {std}")),
+			}
+		}
+		fn position_independent_code_flag(&self) -> Option<String> {
+			Some("-fPIC".to_owned())
+		}
+		fn position_independent_executable_flag(&self) -> Option<String> {
+			Some("-fPIE".to_owned())
+		}
+	}
+	impl ExeLinker for TestCompiler {
+		fn cmd(&self) -> Vec<String> {
+			vec!["clang".to_owned()]
+		}
+		fn position_independent_executable_flag(&self) -> Option<String> {
+			Some("-pie".to_owned())
+		}
+	}
+	let mut add_lib: Option<Arc<StaticLibrary>> = None;
+	let mut create_lib = |weak_parent: &std::sync::Weak<Project>| -> Arc<StaticLibrary> {
+		match &add_lib {
+			Some(x) => x.clone(),
+			None => {
+				add_lib = Some(Arc::new(StaticLibrary {
+					parent_project: weak_parent.clone(),
+					name: "add".to_owned(),
+					c_sources: Vec::new(),
+					cpp_sources: vec!["add.cpp".to_owned()],
+					link_public: Vec::new(),
+					link_private: Vec::new(),
+					include_dirs_public: Vec::new(),
+					include_dirs_private: Vec::new(),
+					defines_public: Vec::new(),
+					link_flags_public: Vec::new(),
+					output_name: None,
+				}));
+				add_lib.as_ref().unwrap().clone()
+			}
+		}
+	};
+	let project = Arc::new_cyclic(|weak_parent| Project {
+		info: Arc::new(crate::project::ProjectInfo { name: "test_project".to_owned(), path: PathBuf::from(".") }),
+		dependencies: Vec::new(),
+		executables: vec![Arc::new(Executable {
+			parent_project: weak_parent.clone(),
+			name: "main".to_owned(),
+			c_sources: Vec::new(),
+			cpp_sources: vec!["main.cpp".to_owned()],
+			links: vec![LinkPtr::Static(create_lib(weak_parent))],
+			include_dirs: Vec::new(),
+			defines: Vec::new(),
+			link_flags: Vec::new(),
+			output_name: None,
+		})],
+		static_libraries: vec![create_lib(weak_parent)],
+		interface_libraries: Vec::new(),
+	});
+	let toolchain = Toolchain {
+		c_compiler: Some(Box::new(TestCompiler {})),
+		cpp_compiler: Some(Box::new(TestCompiler {})),
+		static_linker: Some(vec!["llvm-ar".to_owned()]),
+		exe_linker: Some(Box::new(TestCompiler {})),
+	};
+	let global_opts = GlobalOptions {
+		c_standard: Some("17".to_owned()),
+		cpp_standard: Some("17".to_owned()),
+		position_independent_code: Some(true),
+	};
+	let target_platform = TargetPlatform {
+		obj_ext: ".o".to_owned(),
+		static_lib_ext: ".a".to_owned(),
+		exe_ext: String::new(),
+	};
+	let mut rules = NinjaRules::default();
+	let mut build_lines = Vec::new();
+	let result = Ninja::generate_inner(
+		&project,
+		&PathBuf::from("build"),
+		&toolchain,
+		&global_opts,
+		&target_platform,
+		&mut rules,
+		&mut build_lines,
+	);
+
+	assert!(result.is_ok(), "{}", result.unwrap_err());
+
+	assert_eq!(build_lines.len(), 6);
+
+	let add_cpp_rules = build_lines
+		.iter()
+		.filter(|x| x.inputs.first().unwrap() == "./add.cpp")
+		.collect::<Vec<_>>();
+	assert_eq!(add_cpp_rules.len(), 1);
+
+	assert_eq!(
+		add_cpp_rules
+			.first()
+			.unwrap()
+			.keyval_set
+			.get("FLAGS")
+			.unwrap()
+			.iter()
+			.filter(|x| *x == "-fPIC")
+			.count(),
+		1
+	);
+
+	let main_cpp_rules = build_lines
+		.iter()
+		.filter(|x| x.inputs.first().unwrap() == "./main.cpp")
+		.collect::<Vec<_>>();
+	assert_eq!(add_cpp_rules.len(), 1);
+
+	assert_eq!(
+		main_cpp_rules
+			.first()
+			.unwrap()
+			.keyval_set
+			.get("FLAGS")
+			.unwrap()
+			.iter()
+			.filter(|x| *x == "-fPIE")
+			.count(),
+		1
+	);
+
+	let main_exe_rules = build_lines
+		.iter()
+		.filter(|x| x.output_targets.first().unwrap() == "build/test_project/main")
+		.collect::<Vec<_>>();
+	assert_eq!(add_cpp_rules.len(), 1);
+
+	assert_eq!(
+		main_exe_rules
+			.first()
+			.unwrap()
+			.keyval_set
+			.get("LINK_FLAGS")
+			.unwrap()
+			.iter()
+			.filter(|x| *x == "-pie")
+			.count(),
+		1
+	);
+}
