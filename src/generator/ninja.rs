@@ -145,6 +145,7 @@ fn compile_c_object(compiler: &dyn Compiler) -> NinjaRule {
 	NinjaRule {
 		name: String::from("compile_c_object"),
 		command,
+		description: Some("Compiling C object $out".to_owned()),
 		..Default::default()
 	}
 }
@@ -156,6 +157,7 @@ fn compile_cpp_object(compiler: &dyn Compiler) -> NinjaRule {
 	NinjaRule {
 		name: String::from("compile_cpp_object"),
 		command,
+		description: Some("Compiling C++ object $out".to_owned()),
 		..Default::default()
 	}
 }
@@ -165,6 +167,7 @@ fn link_static_lib(static_linker: &[String]) -> NinjaRule {
 	NinjaRule {
 		name: String::from("link_static_lib"),
 		command,
+		description: Some("Linking static library $out".to_owned()),
 		..Default::default()
 	}
 }
@@ -180,6 +183,7 @@ fn link_exe(exe_linker: &dyn ExeLinker) -> NinjaRule {
 	NinjaRule {
 		name: String::from("compile_exe"),
 		command,
+		description: Some("Linking executable $out".to_owned()),
 		..Default::default()
 	}
 }
