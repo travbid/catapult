@@ -180,7 +180,7 @@ fn link_exe(exe_linker: &dyn ExeLinker) -> NinjaRule {
 		"$LINK_PATH".to_string(),
 	]);
 	NinjaRule {
-		name: String::from("compile_exe"),
+		name: String::from("link_exe"),
 		command,
 		description: Some("Linking executable $out".to_owned()),
 		..Default::default()
