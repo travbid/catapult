@@ -46,7 +46,7 @@ struct NinjaRspFile {
 	rspfilecontent: String,
 }
 
-#[derive(Clone)]
+#[derive(Clone, Default)]
 struct NinjaRule {
 	name: String,
 	command: Vec<String>,
@@ -102,38 +102,12 @@ impl NinjaRule {
 	}
 }
 
-impl Default for NinjaRule {
-	fn default() -> Self {
-		NinjaRule {
-			name: String::new(),
-			command: Vec::new(),
-			depfile: Vec::new(),
-			deps: Vec::new(),
-			description: None,
-			dyndep: None,
-			generator: false,
-			restat: None,
-			rspfile: None,
-		}
-	}
-}
-
+#[derive(Default)]
 struct NinjaRules {
 	compile_c_object: Option<NinjaRule>,
 	compile_cpp_object: Option<NinjaRule>,
 	link_static_lib: Option<NinjaRule>,
 	link_exe: Option<NinjaRule>,
-}
-
-impl Default for NinjaRules {
-	fn default() -> Self {
-		NinjaRules {
-			compile_c_object: None,
-			compile_cpp_object: None,
-			link_static_lib: None,
-			link_exe: None,
-		}
-	}
 }
 
 struct NinjaBuild {
@@ -160,12 +134,6 @@ impl NinjaBuild {
 		ret += "\n";
 		ret
 	}
-}
-
-fn concat_vecs(vec_a: &[String], vec_b: &[String]) -> Vec<String> {
-	let mut ret = vec_a.to_owned();
-	ret.extend(vec_b.iter().cloned());
-	ret
 }
 
 fn compile_c_object(compiler: &dyn Compiler) -> NinjaRule {
@@ -227,7 +195,7 @@ impl Ninja {
 		target_platform: TargetPlatform,
 	) -> Result<(), String> {
 		let mut rules = NinjaRules::default();
-		let mut out_str = String::new();
+		let mut build_lines = Vec::new();
 		Ninja::generate_inner(
 			&project,
 			build_dir,
@@ -235,7 +203,7 @@ impl Ninja {
 			&global_opts,
 			&target_platform,
 			&mut rules,
-			&mut out_str,
+			&mut build_lines,
 		)?;
 		let mut rules_str = String::new();
 		if let Some(c) = rules.compile_c_object {
@@ -258,76 +226,59 @@ impl Ninja {
 		if let Err(e) = f.write_all(rules_str.as_bytes()) {
 			return Err(format!("Error writing to build.ninja: {}", e));
 		}
-		if let Err(e) = f.write_all(out_str.as_bytes()) {
-			return Err(format!("Error writing to build.ninja: {}", e));
+		for line in build_lines {
+			if let Err(e) = f.write_all(line.as_string().as_bytes()) {
+				return Err(format!("Error writing to build.ninja: {}", e));
+			}
 		}
 		Ok(())
 	}
+
 	fn generate_inner(
-		// projects: BTreeMap<String, Arc<Project>>,
 		project: &Arc<Project>,
 		build_dir: &Path,
 		toolchain: &Toolchain,
 		global_opts: &GlobalOptions,
 		target_platform: &TargetPlatform,
 		rules: &mut NinjaRules,
-		out_str: &mut String,
+		build_lines: &mut Vec<NinjaBuild>,
 	) -> Result<(), String> {
 		for subproject in &project.dependencies {
-			Ninja::generate_inner(subproject, build_dir, toolchain, global_opts, target_platform, rules, out_str)?;
+			Ninja::generate_inner(subproject, build_dir, toolchain, global_opts, target_platform, rules, build_lines)?;
 		}
 
 		let project_name = &project.info.name;
 		if rules.link_static_lib.is_none() && !project.static_libraries.is_empty() {
-			rules.link_static_lib = Some(link_static_lib(&toolchain.static_linker));
+			let static_linker = match &toolchain.static_linker {
+				Some(x) => x,
+				None => {
+					return Err(format!(
+						"No static linker specified in toolchain. A static linker is required to build \"{}\".",
+						project.static_libraries.first().unwrap().name()
+					))
+				}
+			};
+			rules.link_static_lib = Some(link_static_lib(static_linker));
 		}
-		let mut c_compile_opts = Vec::new();
-		if let Some(c_std) = &global_opts.c_standard {
-			c_compile_opts.push(toolchain.c_compiler.c_std_flag(c_std)?);
-		}
-		let mut cpp_compile_opts = Vec::new();
-		if let Some(cpp_std) = &global_opts.c_standard {
-			cpp_compile_opts.push(toolchain.cpp_compiler.cpp_std_flag(cpp_std)?);
-		}
-		let mut c_compile_lib_opts = Vec::new();
-		let mut cpp_compile_lib_opts = Vec::new();
-		let mut c_compile_exe_opts = Vec::new();
-		let mut cpp_compile_exe_opts = Vec::new();
-		if let Some(true) = global_opts.position_independent_code {
-			if let Some(fpic_flag) = toolchain.c_compiler.position_independent_code_flag() {
-				c_compile_lib_opts.push(fpic_flag);
-			}
-			if let Some(fpic_flag) = toolchain.cpp_compiler.position_independent_code_flag() {
-				cpp_compile_lib_opts.push(fpic_flag);
-			}
-			if let Some(fpic_flag) = toolchain.c_compiler.position_independent_executable_flag() {
-				c_compile_exe_opts.push(fpic_flag);
-			}
-			if let Some(fpic_flag) = toolchain.cpp_compiler.position_independent_executable_flag() {
-				cpp_compile_exe_opts.push(fpic_flag);
-			}
-		}
+
 		fn add_lib_source(
 			src: &str,
 			lib: &StaticLibrary,
-			build_dir: &Path,
-			project_name: &str,
-			target_platform: &TargetPlatform,
-			out_str: &mut String,
+			out_tgt: String,
 			rule: NinjaRule,
 			compile_options: Vec<String>,
 			inputs: &mut Vec<String>,
-		) {
+		) -> NinjaBuild {
+			inputs.push(out_tgt.clone());
 			let input = input_path(src, &lib.project().info.path);
-			let out_tgt = output_path(build_dir, project_name, src, &target_platform.obj_ext);
 			let mut includes = lib.public_includes_recursive();
 			includes.extend_from_slice(&lib.private_includes());
 			let mut defines = lib.public_defines_recursive();
 			defines.extend_from_slice(&lib.private_defines());
 			let defines = defines.iter().map(|x| "-D".to_string() + x).collect();
-			*out_str += &NinjaBuild {
+			NinjaBuild {
 				inputs: vec![input],
-				output_targets: vec![out_tgt.clone()],
+				output_targets: vec![out_tgt],
 				rule,
 				keyval_set: HashMap::from([
 					("DEFINES".to_string(), defines),
@@ -335,42 +286,65 @@ impl Ninja {
 					("INCLUDES".to_owned(), includes.iter().map(|x| "-I".to_owned() + x).collect()),
 				]),
 			}
-			.as_string();
-			inputs.push(out_tgt);
 		}
 		for lib in &project.static_libraries {
 			let mut inputs = Vec::<String>::new();
-			if rules.compile_c_object.is_none() && !lib.c_sources.is_empty() {
-				rules.compile_c_object = Some(compile_c_object(toolchain.c_compiler.as_ref()));
+			if !lib.c_sources.is_empty() {
+				let c_compiler = get_c_compiler(toolchain, &lib.name())?;
+				let rule = if let Some(rule) = &rules.compile_c_object {
+					rule
+				} else {
+					rules.compile_c_object = Some(compile_c_object(c_compiler));
+					rules.compile_c_object.as_ref().unwrap()
+				};
+				let mut c_compile_opts = Vec::new();
+				if let Some(c_std) = &global_opts.c_standard {
+					c_compile_opts.push(c_compiler.c_std_flag(c_std)?);
+				}
+				if let Some(true) = global_opts.position_independent_code {
+					if let Some(fpic_flag) = c_compiler.position_independent_code_flag() {
+						c_compile_opts.push(fpic_flag);
+					}
+				}
+				for src in &lib.c_sources {
+					build_lines.push(add_lib_source(
+						src,
+						lib,
+						output_path(build_dir, project_name, src, &target_platform.obj_ext),
+						rule.clone(),
+						c_compile_opts.clone(),
+						&mut inputs,
+					));
+				}
 			}
-			if rules.compile_cpp_object.is_none() && !lib.cpp_sources.is_empty() {
-				rules.compile_cpp_object = Some(compile_cpp_object(toolchain.cpp_compiler.as_ref()));
-			}
-			for src in &lib.c_sources {
-				add_lib_source(
-					src,
-					lib,
-					build_dir,
-					project_name,
-					target_platform,
-					out_str,
-					rules.compile_c_object.as_ref().unwrap().clone(),
-					concat_vecs(&c_compile_opts, &c_compile_lib_opts),
-					&mut inputs,
-				);
-			}
-			for src in &lib.cpp_sources {
-				add_lib_source(
-					src,
-					lib,
-					build_dir,
-					project_name,
-					target_platform,
-					out_str,
-					rules.compile_cpp_object.as_ref().unwrap().clone(),
-					concat_vecs(&cpp_compile_opts, &cpp_compile_lib_opts),
-					&mut inputs,
-				);
+
+			if !lib.cpp_sources.is_empty() {
+				let cpp_compiler = get_cpp_compiler(toolchain, &lib.name())?;
+				let rule = if let Some(rule) = &rules.compile_cpp_object {
+					rule
+				} else {
+					rules.compile_cpp_object = Some(compile_cpp_object(cpp_compiler));
+					rules.compile_cpp_object.as_ref().unwrap()
+				};
+				let mut cpp_compile_opts = Vec::new();
+				if let Some(cpp_std) = &global_opts.cpp_standard {
+					cpp_compile_opts.push(cpp_compiler.cpp_std_flag(cpp_std)?);
+				}
+				if let Some(true) = global_opts.position_independent_code {
+					if let Some(fpic_flag) = cpp_compiler.position_independent_code_flag() {
+						cpp_compile_opts.push(fpic_flag);
+					}
+				}
+				for src in &lib.cpp_sources {
+					build_lines.push(add_lib_source(
+						src,
+						lib,
+						output_path(build_dir, project_name, src, &target_platform.obj_ext),
+						rule.clone(),
+						cpp_compile_opts.clone(),
+						&mut inputs,
+					));
+				}
 			}
 			for link in &lib.public_links_recursive() {
 				match link {
@@ -392,7 +366,7 @@ impl Ninja {
 			let link_flags = Vec::new(); // TODO(Travers): Only for shared libs
 							 // let mut link_flags = lib.public_link_flags_recursive();
 							 // link_flags.extend_from_slice(&lib.private_link_flags());
-			*out_str += &NinjaBuild {
+			build_lines.push(NinjaBuild {
 				inputs,
 				output_targets: vec![out_name.clone()],
 				rule: rules.link_static_lib.as_ref().unwrap().clone(),
@@ -400,32 +374,33 @@ impl Ninja {
 					("TARGET_FILE".to_string(), vec![out_name.clone()]),
 					("LINK_FLAGS".to_string(), link_flags),
 				]),
-			}
-			.as_string();
-			*out_str += &format!("build {}: phony {}\n\n", lib.name, out_name.replace(':', "$:"));
+			});
+			build_lines.push(NinjaBuild {
+				inputs: vec![out_name],
+				output_targets: vec![lib.name.clone()],
+				rule: NinjaRule { name: "phony".to_owned(), ..Default::default() },
+				keyval_set: HashMap::new(),
+			});
 		}
 		fn add_exe_source(
 			src: &str,
 			exe: &Executable,
-			build_dir: &Path,
-			project_name: &str,
-			target_platform: &TargetPlatform,
-			out_str: &mut String,
+			out_tgt: String,
 			rule: NinjaRule,
 			compile_options: Vec<String>,
 			inputs: &mut Vec<String>,
-		) {
+		) -> NinjaBuild {
+			inputs.push(out_tgt.clone());
 			let input = input_path(src, &exe.project().info.path);
-			let out_tgt = output_path(build_dir, project_name, src, &target_platform.obj_ext);
 			let includes = exe.public_includes_recursive();
 			let defines = exe
 				.public_defines_recursive()
 				.iter()
 				.map(|x| "-D".to_string() + x)
 				.collect();
-			*out_str += &NinjaBuild {
+			NinjaBuild {
 				inputs: vec![input],
-				output_targets: vec![out_tgt.clone()],
+				output_targets: vec![out_tgt],
 				rule,
 				keyval_set: HashMap::from([
 					("DEFINES".to_string(), defines),
@@ -433,58 +408,90 @@ impl Ninja {
 					("INCLUDES".to_owned(), includes.iter().map(|x| "-I".to_owned() + x).collect()),
 				]),
 			}
-			.as_string();
-			inputs.push(out_tgt);
 		}
-		if rules.link_exe.is_none() && !project.executables.is_empty() {
-			rules.link_exe = Some(link_exe(toolchain.exe_linker.as_ref()));
-		}
-		for exe in &project.executables {
-			log::debug!("   exe target: {}", exe.name);
-			let mut inputs = Vec::<String>::new();
-			for src in &exe.c_sources {
-				add_exe_source(
-					src,
-					exe,
-					build_dir,
-					project_name,
-					target_platform,
-					out_str,
-					rules.compile_c_object.as_ref().unwrap().clone(),
-					concat_vecs(&c_compile_opts, &c_compile_exe_opts),
-					&mut inputs,
-				);
+		if !project.executables.is_empty() {
+			let mut link_exe_flags = Vec::new();
+			let exe_linker = match &toolchain.exe_linker {
+				Some(x) => x,
+				None => {
+					return Err(format!(
+					"No executable linker specified in toolchain. An executable linker is required to build \"{}\".",
+					project.executables.first().unwrap().name()
+				))
+				}
+			};
+			let rule_link_exe = if let Some(rule) = &rules.link_exe {
+				rule
+			} else {
+				rules.link_exe = Some(link_exe(exe_linker.as_ref()));
+				rules.link_exe.as_ref().unwrap()
+			};
+			if let Some(true) = global_opts.position_independent_code {
+				if let Some(pie_flag) = exe_linker.position_independent_executable_flag() {
+					link_exe_flags.push(pie_flag);
+				}
 			}
-			for src in &exe.cpp_sources {
-				add_exe_source(
-					src,
-					exe,
-					build_dir,
-					project_name,
-					target_platform,
-					out_str,
-					rules.compile_cpp_object.as_ref().unwrap().clone(),
-					concat_vecs(&cpp_compile_opts, &cpp_compile_exe_opts),
-					&mut inputs,
-				);
-			}
-			for link in &exe.links {
-				match link {
-					LinkPtr::Static(x) => {
-						let lib_path = output_path(
-							build_dir,
-							&x.project().info.name,
-							&x.output_name(),
-							&target_platform.static_lib_ext,
-						);
-						if !inputs.contains(&lib_path) {
-							inputs.push(lib_path);
+			for exe in &project.executables {
+				log::debug!("   exe target: {}", exe.name);
+				let mut inputs = Vec::<String>::new();
+				if !exe.c_sources.is_empty() {
+					let c_compiler = get_c_compiler(toolchain, &exe.name())?;
+					let rule_compile_c = if let Some(rule) = &rules.compile_c_object {
+						rule
+					} else {
+						rules.compile_c_object = Some(compile_c_object(c_compiler));
+						rules.compile_c_object.as_ref().unwrap()
+					};
+					let mut c_compile_opts = Vec::new();
+					if let Some(c_std) = &global_opts.c_standard {
+						c_compile_opts.push(c_compiler.c_std_flag(c_std)?);
+					}
+					if let Some(true) = global_opts.position_independent_code {
+						if let Some(fpic_flag) = c_compiler.position_independent_executable_flag() {
+							c_compile_opts.push(fpic_flag);
 						}
 					}
-					LinkPtr::Interface(_) => {}
+					for src in &exe.c_sources {
+						build_lines.push(add_exe_source(
+							src,
+							exe,
+							output_path(build_dir, project_name, src, &target_platform.obj_ext),
+							rule_compile_c.clone(),
+							c_compile_opts.clone(),
+							&mut inputs,
+						));
+					}
 				}
-				for translink in link.public_links_recursive() {
-					match translink {
+				if !exe.cpp_sources.is_empty() {
+					let cpp_compiler = get_cpp_compiler(toolchain, &exe.name())?;
+					let rule_compile_cpp = if let Some(rule) = &rules.compile_cpp_object {
+						rule
+					} else {
+						rules.compile_cpp_object = Some(compile_cpp_object(cpp_compiler));
+						rules.compile_cpp_object.as_ref().unwrap()
+					};
+					let mut cpp_compile_opts = Vec::new();
+					if let Some(cpp_std) = &global_opts.cpp_standard {
+						cpp_compile_opts.push(cpp_compiler.cpp_std_flag(cpp_std)?);
+					}
+					if let Some(true) = global_opts.position_independent_code {
+						if let Some(fpic_flag) = cpp_compiler.position_independent_executable_flag() {
+							cpp_compile_opts.push(fpic_flag);
+						}
+					}
+					for src in &exe.cpp_sources {
+						build_lines.push(add_exe_source(
+							src,
+							exe,
+							output_path(build_dir, project_name, src, &target_platform.obj_ext),
+							rule_compile_cpp.clone(),
+							cpp_compile_opts.clone(),
+							&mut inputs,
+						));
+					}
+				}
+				for link in &exe.links {
+					match link {
 						LinkPtr::Static(x) => {
 							let lib_path = output_path(
 								build_dir,
@@ -498,25 +505,63 @@ impl Ninja {
 						}
 						LinkPtr::Interface(_) => {}
 					}
+					for translink in link.public_links_recursive() {
+						match translink {
+							LinkPtr::Static(x) => {
+								let lib_path = output_path(
+									build_dir,
+									&x.project().info.name,
+									&x.output_name(),
+									&target_platform.static_lib_ext,
+								);
+								if !inputs.contains(&lib_path) {
+									inputs.push(lib_path);
+								}
+							}
+							LinkPtr::Interface(_) => {}
+						}
+					}
 				}
+				let mut link_flags = link_exe_flags.clone();
+				link_flags.extend(exe.link_flags_recursive());
+				let out_name = output_path(build_dir, project_name, &exe.name, &target_platform.exe_ext);
+				build_lines.push(NinjaBuild {
+					inputs,
+					output_targets: vec![out_name.clone()],
+					rule: rule_link_exe.clone(),
+					keyval_set: HashMap::from([
+						("TARGET_FILE".to_string(), vec![out_name.clone()]),
+						("LINK_FLAGS".to_string(), link_flags),
+					]),
+				});
+				build_lines.push(NinjaBuild {
+					inputs: vec![out_name],
+					output_targets: vec![exe.name.clone()],
+					rule: NinjaRule { name: "phony".to_owned(), ..Default::default() },
+					keyval_set: HashMap::new(),
+				});
 			}
-			let mut link_flags = exe.link_flags_recursive();
-			if let Some(pie_flag) = toolchain.exe_linker.position_independent_executable_flag() {
-				link_flags.push(pie_flag);
-			}
-			let out_name = output_path(build_dir, project_name, &exe.name, &target_platform.exe_ext);
-			*out_str += &NinjaBuild {
-				inputs,
-				output_targets: vec![out_name.clone()],
-				rule: rules.link_exe.as_ref().unwrap().clone(),
-				keyval_set: HashMap::from([
-					("TARGET_FILE".to_string(), vec![out_name.clone()]),
-					("LINK_FLAGS".to_string(), link_flags),
-				]),
-			}
-			.as_string();
-			*out_str += &format!("build {}: phony {}\n\n", exe.name, out_name.replace(':', "$:"));
 		}
 		Ok(())
+	}
+}
+
+fn get_c_compiler<'a>(toolchain: &'a Toolchain, name: &str) -> Result<&'a dyn Compiler, String> {
+	match toolchain.c_compiler {
+		Some(ref x) => Ok(x.as_ref()),
+		None => Err(format!(
+			"No C compiler specified in toolchain. A C compiler is required to build C sources in \"{}\".",
+			name
+		)),
+	}
+}
+
+fn get_cpp_compiler<'a>(toolchain: &'a Toolchain, name: &str) -> Result<&'a dyn Compiler, String> {
+	match toolchain.cpp_compiler {
+		Some(ref x) => Ok(x.as_ref()),
+		None => Err(format!(
+			"No C++ compiler specified in toolchain. A C++ compiler is required to build C++ sources in \"{}\".",
+			name
+		)),
 	}
 }
