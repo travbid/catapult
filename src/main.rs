@@ -7,7 +7,7 @@ use std::{
 
 use getopts::Options;
 
-use catapult::generator::Generator;
+use catapult::{generator::Generator, toolchain};
 
 fn print_usage(program: &str, opts: Options) {
 	let brief = format!("Usage: {} FILE [options]", program);
@@ -138,7 +138,7 @@ fn main() -> ExitCode {
 	} else {
 		original_dir.join(toolchain_path)
 	};
-	let toolchain = match Generator::read_toolchain(&toolchain_path) {
+	let toolchain = match toolchain::read_toolchain(&toolchain_path) {
 		Ok(x) => x,
 		Err(e) => {
 			println!("Toolchain error: {}", e);

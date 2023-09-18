@@ -12,6 +12,7 @@ mod starlark_link_target;
 mod starlark_project;
 mod static_library;
 mod target;
+pub mod toolchain;
 
 use std::{
 	collections::BTreeMap, //
@@ -84,6 +85,7 @@ struct ManifestOptions {
 	position_independent_code: Option<bool>,
 }
 
+#[derive(Debug)]
 pub struct GlobalOptions {
 	pub c_standard: Option<String>,
 	pub cpp_standard: Option<String>,
