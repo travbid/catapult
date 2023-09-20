@@ -7,7 +7,7 @@ pub mod project;
 mod starlark_api;
 mod starlark_executable;
 mod starlark_interface_library;
-mod starlark_library;
+mod starlark_static_library;
 mod starlark_link_target;
 mod starlark_project;
 mod static_library;

@@ -24,7 +24,7 @@ use starlark::{
 use crate::{
 	starlark_executable::{StarExecutable, StarExecutableWrapper},
 	starlark_interface_library::{StarIfaceLibrary, StarIfaceLibraryWrapper},
-	starlark_library::{StarLibrary, StarLibraryWrapper},
+	starlark_static_library::{StarStaticLibrary, StarLibraryWrapper},
 	starlark_link_target::StarLinkTarget,
 	starlark_project::StarProject,
 };
@@ -90,11 +90,11 @@ fn get_link_targets(links: Vec<Value>) -> Result<Vec<Arc<dyn StarLinkTarget>>, a
 	Ok(link_targets)
 }
 
-struct ImplAddLibrary {
+struct ImplAddStaticLibrary {
 	signature: starlark::eval::ParametersSpec<starlark::values::FrozenValue>,
 	project: Arc<Mutex<StarProject>>,
 }
-impl ImplAddLibrary {
+impl ImplAddStaticLibrary {
 	#[allow(clippy::too_many_arguments)]
 	fn add_static_library_impl(
 		&self,
@@ -107,12 +107,12 @@ impl ImplAddLibrary {
 		defines_public: Vec<&str>,
 		link_flags_public: Vec<&str>,
 		// list_or_lambda: Arc<ListOrLambdaFrozen>,
-	) -> anyhow::Result<Arc<StarLibrary>> {
+	) -> anyhow::Result<Arc<StarStaticLibrary>> {
 		let mut project = match self.project.lock() {
 			Ok(x) => x,
 			Err(e) => return err_msg(e.to_string()),
 		};
-		let lib = Arc::new(StarLibrary {
+		let lib = Arc::new(StarStaticLibrary {
 			parent_project: Arc::downgrade(&self.project),
 			name: String::from(name),
 			sources: to_vec_strs(&sources),
@@ -129,7 +129,7 @@ impl ImplAddLibrary {
 	}
 }
 
-impl starlark::values::function::NativeFunc for ImplAddLibrary {
+impl starlark::values::function::NativeFunc for ImplAddStaticLibrary {
 	fn invoke<'v>(
 		&self,
 		eval: &mut starlark::eval::Evaluator<'v, '_>,
@@ -290,7 +290,7 @@ pub(crate) fn build_api(project: &Arc<Mutex<StarProject>>, builder: &mut Globals
 			false,
 			documentation,
 			None,
-			ImplAddLibrary { signature, project: project.clone() },
+			ImplAddStaticLibrary { signature, project: project.clone() },
 		);
 	}
 	{

@@ -31,7 +31,7 @@ use crate::{
 	project::{Project, ProjectInfo},
 	starlark_executable::StarExecutable, //
 	starlark_interface_library::{StarIfaceLibrary, StarIfaceLibraryWrapper},
-	starlark_library::{StarLibrary, StarLibraryWrapper},
+	starlark_static_library::{StarStaticLibrary, StarLibraryWrapper},
 	starlark_link_target::PtrLinkTarget,
 	static_library::StaticLibrary,
 };
@@ -42,7 +42,7 @@ pub(super) struct StarProject {
 	pub path: PathBuf,
 	pub dependencies: Vec<Arc<StarProject>>,
 	pub executables: Vec<Arc<StarExecutable>>,
-	pub libraries: Vec<Arc<StarLibrary>>,
+	pub libraries: Vec<Arc<StarStaticLibrary>>,
 	pub interface_libraries: Vec<Arc<StarIfaceLibrary>>,
 }
 
