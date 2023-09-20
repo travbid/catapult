@@ -25,6 +25,7 @@ use super::{
 	interface_library::InterfaceLibrary, //
 	link_type::LinkPtr,
 	project::Project,
+	starlark_fmt::{format_link_targets, format_strings},
 	starlark_link_target::{PtrLinkTarget, StarLinkTarget},
 	starlark_project::{StarLinkTargetCache, StarProject},
 };
@@ -43,10 +44,18 @@ impl fmt::Display for StarIfaceLibrary {
 	fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
 		write!(
 			f,
-			r#"StarIfaceLibrary{{
-   name: {},
+			r#"InterfaceLibrary{{
+  name: "{}",
+  links: [{}],
+  include_dirs: [{}],
+  defines: [{}],
+  link_flags: [{}],
 }}"#,
-			self.name
+			self.name,
+			format_link_targets(&self.links),
+			format_strings(&self.include_dirs),
+			format_strings(&self.defines),
+			format_strings(&self.link_flags)
 		)
 	}
 }
@@ -58,12 +67,17 @@ impl StarLinkTarget for StarIfaceLibrary {
 		link_map.insert_interface(ptr, arc.clone());
 		LinkPtr::Interface(arc)
 	}
+
 	fn public_includes_recursive(&self) -> Vec<String> {
 		let mut public_includes = self.include_dirs.clone();
 		for link in &self.links {
 			public_includes.extend(link.public_includes_recursive());
 		}
 		public_includes
+	}
+
+	fn name(&self) -> String {
+		self.name.clone()
 	}
 }
 

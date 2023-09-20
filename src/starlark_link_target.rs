@@ -10,13 +10,9 @@ use super::{
 };
 
 pub(super) trait StarLinkTarget: Send + Sync + fmt::Debug + Allocative {
-	fn as_link_target(
-		&self,
-		parent: Weak<Project>,
-		ptr: PtrLinkTarget,
-		link_map: &mut StarLinkTargetCache,
-	) -> LinkPtr;
+	fn as_link_target(&self, parent: Weak<Project>, ptr: PtrLinkTarget, link_map: &mut StarLinkTargetCache) -> LinkPtr;
 
+	fn name(&self) -> String;
 	fn public_includes_recursive(&self) -> Vec<String>;
 }
 

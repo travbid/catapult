@@ -25,6 +25,7 @@ use super::{
 	link_type::LinkPtr,
 	misc::{is_c_source, is_cpp_source},
 	project::Project,
+	starlark_fmt::{format_link_targets, format_strings},
 	starlark_link_target::{PtrLinkTarget, StarLinkTarget},
 	starlark_project::{StarLinkTargetCache, StarProject},
 	static_library::StaticLibrary,
@@ -47,17 +48,26 @@ pub(super) struct StarStaticLibrary {
 
 impl fmt::Display for StarStaticLibrary {
 	fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-		let mut sources = self.sources.join(",\n      ");
-		if self.sources.len() > 1 {
-			sources = String::from("\n      ") + &sources + ",\n   "
-		}
 		write!(
 			f,
-			r#"StarLibrary{{
-   name: {},
-   sources: [{:?}],
+			r#"StaticLibrary{{
+  name: "{}",
+  sources: [{}],
+  link_private: [{}],
+  link_public: [{}],
+  include_dirs_public: [{}],
+  include_dirs_private: [{}],
+  defines_public: [{}],
+  link_flags_public: [{}],
 }}"#,
-			self.name, sources
+			self.name,
+			format_strings(&self.sources),
+			format_link_targets(&self.link_private),
+			format_link_targets(&self.link_public),
+			format_strings(&self.include_dirs_public),
+			format_strings(&self.include_dirs_private),
+			format_strings(&self.defines_public),
+			format_strings(&self.link_flags_public)
 		)
 	}
 }
@@ -70,12 +80,16 @@ impl StarLinkTarget for StarStaticLibrary {
 		LinkPtr::Static(arc)
 	}
 
+	fn name(&self) -> String {
+		self.name.clone()
+	}
+
 	fn public_includes_recursive(&self) -> Vec<String> {
-		let public_includes = self.include_dirs_private.clone();
+		self.include_dirs_private.clone()
 		// for link in &self.link_public {
 		// 	public_includes.extend(link.public_includes_recursive());
 		// }
-		public_includes
+		// public_includes
 	}
 }
 

@@ -34,11 +34,19 @@ impl fmt::Display for Executable {
    c_sources: [{}],
    cpp_sources: [{}],
    links: [{}],
+   include_dirs: [{}],
+   defines: [{}],
+   link_flags: [{}],
+   output_name: {},
 }}"#,
 			self.name,
 			self.c_sources.join(", "),
 			self.cpp_sources.join(", "),
-			self.links.iter().map(|x| x.name()).collect::<Vec<String>>().join(", ")
+			self.links.iter().map(|x| x.name()).collect::<Vec<String>>().join(", "),
+			self.include_dirs.join(", "),
+			self.defines.join(", "),
+			self.link_flags.join(", "),
+			self.output_name.clone().unwrap_or("None".to_owned())
 		)
 	}
 }
