@@ -6,6 +6,7 @@ mod misc;
 pub mod project;
 mod starlark_api;
 mod starlark_executable;
+mod starlark_fmt;
 mod starlark_interface_library;
 mod starlark_static_library;
 mod starlark_link_target;
@@ -303,7 +304,8 @@ fn parse_project_inner<P: AsRef<Path> + ?Sized>(
 }
 
 pub(crate) fn setup(project: &Arc<Mutex<StarProject>>) -> Globals {
-	let mut globals_builder = GlobalsBuilder::new();
+	let mut globals_builder = GlobalsBuilder::standard();
+    starlark::environment::LibraryExtension::Print.add(&mut globals_builder);
 	starlark_api::build_api(project, &mut globals_builder);
 	globals_builder.build()
 }

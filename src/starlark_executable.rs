@@ -25,6 +25,7 @@ use super::{
 	link_type::LinkPtr,
 	misc::{is_c_source, is_cpp_source},
 	project::Project,
+	starlark_fmt::{format_link_targets, format_strings},
 	starlark_link_target::{PtrLinkTarget, StarLinkTarget},
 	starlark_project::{StarLinkTargetCache, StarProject},
 };
@@ -45,17 +46,22 @@ pub(super) struct StarExecutable {
 
 impl fmt::Display for StarExecutable {
 	fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> fmt::Result {
-		let mut sources = self.sources.join(",\n      ");
-		if self.sources.len() > 1 {
-			sources = String::from("\n      ") + &sources + ",\n   "
-		}
 		write!(
 			f,
-			r#"StarExecutable{{
-   name: {},
-   sources: [{:?}],
+			r#"Executable{{
+  name: "{}",
+  sources: [{}],
+  links: [{}],
+  include_dirs: [{}],
+  defines: [{}],
+  link_flags: [{}],
 }}"#,
-			self.name, sources
+			self.name,
+			format_strings(&self.sources),
+			format_link_targets(&self.links),
+			format_strings(&self.include_dirs),
+			format_strings(&self.defines),
+			format_strings(&self.link_flags)
 		)
 	}
 }
