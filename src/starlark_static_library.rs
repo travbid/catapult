@@ -31,7 +31,7 @@ use super::{
 };
 
 #[derive(Clone, Debug, ProvidesStaticType, Allocative)]
-pub(super) struct StarLibrary {
+pub(super) struct StarStaticLibrary {
 	pub parent_project: Weak<Mutex<StarProject>>,
 	pub name: String,
 	pub sources: Vec<String>,
@@ -45,7 +45,7 @@ pub(super) struct StarLibrary {
 	pub output_name: Option<String>,
 }
 
-impl fmt::Display for StarLibrary {
+impl fmt::Display for StarStaticLibrary {
 	fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
 		let mut sources = self.sources.join(",\n      ");
 		if self.sources.len() > 1 {
@@ -62,7 +62,7 @@ impl fmt::Display for StarLibrary {
 	}
 }
 
-impl StarLinkTarget for StarLibrary {
+impl StarLinkTarget for StarStaticLibrary {
 	fn as_link_target(&self, parent: Weak<Project>, ptr: PtrLinkTarget, link_map: &mut StarLinkTargetCache) -> LinkPtr {
 		let arc = Arc::new(self.as_library(parent, link_map));
 		// let ptr = PtrLinkTarget(arc.clone());
@@ -79,7 +79,7 @@ impl StarLinkTarget for StarLibrary {
 	}
 }
 
-impl StarLibrary {
+impl StarStaticLibrary {
 	pub fn as_library(&self, parent_project: Weak<Project>, link_map: &mut StarLinkTargetCache) -> StaticLibrary {
 		StaticLibrary {
 			parent_project: parent_project.clone(),
@@ -120,7 +120,7 @@ impl StarLibrary {
 }
 
 #[derive(Clone, Debug, ProvidesStaticType, NoSerialize, Allocative)]
-pub(super) struct StarLibraryWrapper(pub(super) Arc<StarLibrary>);
+pub(super) struct StarLibraryWrapper(pub(super) Arc<StarStaticLibrary>);
 
 impl fmt::Display for StarLibraryWrapper {
 	fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
