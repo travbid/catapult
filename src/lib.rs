@@ -12,7 +12,7 @@ mod starlark_static_library;
 mod starlark_link_target;
 mod starlark_project;
 mod static_library;
-mod target;
+pub mod target;
 pub mod toolchain;
 
 use std::{
