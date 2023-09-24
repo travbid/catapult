@@ -81,6 +81,7 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v3
+      - run: choco install ninja
       - run: cargo build
       - run: ./target/debug/catapult -S test_data/test_01 -B build -G Ninja -T test_data/toolchain_clang.toml
       - run: tree /f build
