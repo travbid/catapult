@@ -17,6 +17,7 @@ use starlark::{
 		ProvidesStaticType,
 		StarlarkValue,
 		StringValue,
+		Value,
 	},
 };
 
@@ -114,9 +115,26 @@ impl fmt::Display for StarExecutableWrapper {
 
 impl<'v> StarlarkValue<'v> for StarExecutableWrapper {
 	starlark_type!("Executable");
+
 	fn get_methods() -> Option<&'static Methods> {
 		println!("Executable::get_methods()");
 		executable_methods()
+	}
+
+	fn get_attr(&self, attribute: &str, heap: &'v Heap) -> Option<Value<'v>> {
+		match attribute {
+			"include_dirs" => Some(heap.alloc(self.0.include_dirs.clone())),
+			_ => None,
+		}
+	}
+
+	fn has_attr(&self, attribute: &str, _: &'v Heap) -> bool {
+		attribute == "include_dirs"
+	}
+
+	fn dir_attr(&self) -> Vec<String> {
+		let attrs = vec!["include_dirs".to_owned()];
+		attrs
 	}
 }
 

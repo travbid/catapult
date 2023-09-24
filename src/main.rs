@@ -146,7 +146,7 @@ fn main() -> ExitCode {
 		}
 	};
 
-	let (project, global_opts) = match catapult::parse_project() {
+	let (project, global_opts) = match catapult::parse_project(&toolchain) {
 		Ok(x) => x,
 		Err(e) => {
 			println!("{}", e);

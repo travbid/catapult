@@ -7,6 +7,7 @@ pub mod project;
 mod starlark_api;
 mod starlark_executable;
 mod starlark_fmt;
+mod starlark_global;
 mod starlark_interface_library;
 mod starlark_static_library;
 mod starlark_link_target;
@@ -46,7 +47,9 @@ use tar::Archive;
 
 use project::Project;
 use starlark_api::err_msg;
+use starlark_global::StarGlobal;
 use starlark_project::StarProject;
+use toolchain::Toolchain;
 
 const CATAPULT_TOML: &str = "catapult.toml";
 const BUILD_CATAPULT: &str = "build.catapult";
@@ -111,7 +114,7 @@ fn read_manifest() -> Result<Manifest, anyhow::Error> {
 	Ok(manifest)
 }
 
-pub fn parse_project() -> Result<(Arc<Project>, GlobalOptions), anyhow::Error> {
+pub fn parse_project(toolchain: &Toolchain) -> Result<(Arc<Project>, GlobalOptions), anyhow::Error> {
 	let manifest_options = read_manifest()?.options.unwrap_or_default();
 	let global_options = GlobalOptions {
 		c_standard: manifest_options.c_standard,
@@ -119,7 +122,7 @@ pub fn parse_project() -> Result<(Arc<Project>, GlobalOptions), anyhow::Error> {
 		position_independent_code: manifest_options.position_independent_code,
 	};
 	let mut combined_deps = BTreeMap::new();
-	let project = parse_project_inner(".", &mut combined_deps)?; //, &globals)?;
+	let project = parse_project_inner(".", &global_options, toolchain, &mut combined_deps)?; //, &globals)?;
 
 	Ok((project.into_project(), global_options))
 }
@@ -223,7 +226,9 @@ fn download_from_registry(
 }
 
 fn parse_project_inner<P: AsRef<Path> + ?Sized>(
-	src_dir: &P, /*, globals: &Globals*/
+	src_dir: &P,
+	global_options: &GlobalOptions,
+	toolchain: &Toolchain,
 	dep_map: &mut BTreeMap<String, Arc<StarProject>>,
 ) -> Result<StarProject, anyhow::Error> {
 	let src_dir = src_dir.as_ref();
@@ -257,7 +262,7 @@ fn parse_project_inner<P: AsRef<Path> + ?Sized>(
 		}
 		if let Some(registry) = info.registry {
 			let dep_path = download_from_registry(registry, &name, info.version, info.channel)?;
-			let dep_proj = parse_project_inner(&dep_path, dep_map)?;
+			let dep_proj = parse_project_inner(&dep_path, global_options, toolchain, dep_map)?;
 			let dep_proj = Arc::new(dep_proj);
 			dependent_projects.push(dep_proj.clone());
 			dep_map.insert(name, dep_proj);
@@ -265,7 +270,7 @@ fn parse_project_inner<P: AsRef<Path> + ?Sized>(
 			// Checkout to tmp dir
 			todo!();
 		} else if let Some(dep_path) = info.path {
-			let dep_proj = parse_project_inner(&dep_path, dep_map)?; //, globals)?;
+			let dep_proj = parse_project_inner(&dep_path, global_options, toolchain, dep_map)?; //, globals)?;
 			let dep_proj = Arc::new(dep_proj);
 			dependent_projects.push(dep_proj.clone());
 			dep_map.insert(name, dep_proj);
@@ -294,7 +299,9 @@ fn parse_project_inner<P: AsRef<Path> + ?Sized>(
 	};
 	let this_project = parse_module(
 		manifest.package.name.clone(),
-		dependent_projects, // &dep_map,
+		dependent_projects,
+		global_options,
+		toolchain,
 		current_dir.to_path_buf(),
 		starlark_code,
 		// context.clone(),
@@ -303,9 +310,14 @@ fn parse_project_inner<P: AsRef<Path> + ?Sized>(
 	Ok(this_project)
 }
 
-pub(crate) fn setup(project: &Arc<Mutex<StarProject>>) -> Globals {
+pub(crate) fn setup(
+	project: &Arc<Mutex<StarProject>>,
+	global_options: &GlobalOptions,
+	toolchain: &Toolchain,
+) -> Globals {
 	let mut globals_builder = GlobalsBuilder::standard();
-    starlark::environment::LibraryExtension::Print.add(&mut globals_builder);
+	starlark::environment::LibraryExtension::Print.add(&mut globals_builder);
+	globals_builder.set("GLOBAL", StarGlobal::new(global_options, toolchain));
 	starlark_api::build_api(project, &mut globals_builder);
 	globals_builder.build()
 }
@@ -313,6 +325,8 @@ pub(crate) fn setup(project: &Arc<Mutex<StarProject>>) -> Globals {
 pub(crate) fn parse_module(
 	name: String,
 	deps: Vec<Arc<StarProject>>,
+	global_options: &GlobalOptions,
+	toolchain: &Toolchain,
 	current_dir: PathBuf,
 	starlark_code: String,
 ) -> Result<StarProject, anyhow::Error> {
@@ -328,7 +342,7 @@ pub(crate) fn parse_module(
 		module.set(&dep_proj.name, proj_value);
 	}
 	let mut eval = Evaluator::new(&module);
-	let globals = setup(&project_writable);
+	let globals = setup(&project_writable, global_options, toolchain);
 	eval.eval_module(ast, &globals)?;
 	let project = match project_writable.lock() {
 		Ok(x) => x.clone(),

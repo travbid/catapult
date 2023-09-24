@@ -9,6 +9,14 @@ pub(crate) struct Gcc {
 }
 
 impl Compiler for Gcc {
+	fn id(&self) -> String {
+		"gcc".to_owned()
+	}
+
+	fn version(&self) -> String {
+		self.version.clone()
+	}
+
 	fn cmd(&self) -> Vec<String> {
 		self.cmd.clone()
 	}

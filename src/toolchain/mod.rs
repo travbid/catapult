@@ -15,6 +15,7 @@ pub struct ToolchainFile {
 	// env: Option<HashMap<String, String>>
 }
 
+#[derive(Default)]
 pub struct Toolchain {
 	pub c_compiler: Option<Box<dyn Compiler>>,
 	pub cpp_compiler: Option<Box<dyn Compiler>>,
