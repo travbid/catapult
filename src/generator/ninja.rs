@@ -286,7 +286,13 @@ impl Ninja {
 				keyval_set: HashMap::from([
 					("DEFINES".to_string(), defines),
 					("FLAGS".to_string(), compile_options),
-					("INCLUDES".to_owned(), includes.iter().map(|x| "-I".to_owned() + x).collect()),
+					(
+						"INCLUDES".to_owned(),
+						includes
+							.iter()
+							.map(|x| "-I".to_owned() + x.to_string_lossy().trim_start_matches(r"\\?\"))
+							.collect(),
+					),
 				]),
 			}
 		}
@@ -408,7 +414,13 @@ impl Ninja {
 				keyval_set: HashMap::from([
 					("DEFINES".to_string(), defines),
 					("FLAGS".to_string(), compile_options),
-					("INCLUDES".to_owned(), includes.iter().map(|x| "-I".to_owned() + x).collect()),
+					(
+						"INCLUDES".to_owned(),
+						includes
+							.iter()
+							.map(|x| "-I".to_owned() + x.to_string_lossy().trim_start_matches(r"\\?\"))
+							.collect(),
+					),
 				]),
 			}
 		}

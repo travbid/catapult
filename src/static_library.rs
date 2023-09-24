@@ -1,4 +1,7 @@
-use std::sync::{Arc, Weak};
+use std::{
+	path::PathBuf, //
+	sync::{Arc, Weak},
+};
 
 use crate::{
 	link_type::LinkPtr,
@@ -39,14 +42,14 @@ impl Target for StaticLibrary {
 }
 
 impl LinkTarget for StaticLibrary {
-	fn public_includes(&self) -> Vec<String> {
+	fn public_includes(&self) -> Vec<PathBuf> {
 		let parent_path = &self.parent_project.upgrade().unwrap().info.path;
 		self.include_dirs_public
 			.iter()
-			.map(|x| canonicalize(parent_path, x).unwrap())
+			.map(|x| canonicalize(parent_path, x))
 			.collect()
 	}
-	fn public_includes_recursive(&self) -> Vec<String> {
+	fn public_includes_recursive(&self) -> Vec<PathBuf> {
 		let mut includes = Vec::new();
 		let parent_path = &self.parent_project.upgrade().unwrap().info.path;
 		for link in &self.link_private {
@@ -57,7 +60,6 @@ impl LinkTarget for StaticLibrary {
 			}
 		}
 		for include in self.include_dirs_public.iter().map(|x| canonicalize(parent_path, x)) {
-			let include = include.unwrap();
 			if !includes.contains(&include) {
 				includes.push(include);
 			}
@@ -141,11 +143,11 @@ impl LinkTarget for StaticLibrary {
 }
 
 impl StaticLibrary {
-	pub(crate) fn private_includes(&self) -> Vec<String> {
+	pub(crate) fn private_includes(&self) -> Vec<PathBuf> {
 		let parent_path = &self.parent_project.upgrade().unwrap().info.path;
 		self.include_dirs_private
 			.iter()
-			.map(|x| canonicalize(parent_path, x).unwrap())
+			.map(|x| canonicalize(parent_path, x))
 			.collect()
 	}
 	pub(crate) fn private_defines(&self) -> Vec<String> {

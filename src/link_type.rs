@@ -1,5 +1,8 @@
 use core::{cmp, hash};
-use std::sync::Arc;
+use std::{
+	path::PathBuf, //
+	sync::Arc,
+};
 
 use crate::{
 	interface_library::InterfaceLibrary,
@@ -62,14 +65,14 @@ impl Target for LinkPtr {
 }
 
 impl LinkTarget for LinkPtr {
-	fn public_includes(&self) -> Vec<String> {
+	fn public_includes(&self) -> Vec<PathBuf> {
 		match self {
 			Self::Static(x) => x.public_includes(),
 			Self::Interface(x) => x.public_includes(),
 		}
 	}
 
-	fn public_includes_recursive(&self) -> Vec<String> {
+	fn public_includes_recursive(&self) -> Vec<PathBuf> {
 		match self {
 			Self::Static(x) => x.public_includes_recursive(),
 			Self::Interface(x) => x.public_includes_recursive(),

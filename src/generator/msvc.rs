@@ -331,7 +331,7 @@ impl Msvc {
 				.into_iter()
 				// Visual Studio doesn't seem to support extended-length name syntax
 				// .map(|x| x.trim_start_matches(r"\\?\").to_owned())
-				.map(|x| x.to_owned())
+				.map(|x| x.to_string_lossy().trim_start_matches(r"\\?\").to_owned())
 				.collect::<Vec<String>>();
 			let project_links = lib
 				.link_private
@@ -364,7 +364,7 @@ impl Msvc {
 			// Visual Studio doesn't seem to support extended-length name syntax
 			let includes = includes
 				.into_iter()
-				.map(|x| x.trim_start_matches(r"\\?\").to_owned())
+				.map(|x| x.to_string_lossy().trim_start_matches(r"\\?\").to_owned())
 				.collect::<Vec<String>>();
 			let vsproj = make_vcxproj(
 				build_dir,

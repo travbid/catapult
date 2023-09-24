@@ -3,7 +3,10 @@ use core::{
 	fmt,
 	hash,
 };
-use std::sync::Arc;
+use std::{
+	path::PathBuf, //
+	sync::Arc,
+};
 
 use crate::{
 	link_type::LinkPtr, //
@@ -17,8 +20,8 @@ pub trait Target: fmt::Debug + Send + Sync {
 }
 
 pub trait LinkTarget: Target {
-	fn public_includes(&self) -> Vec<String>;
-	fn public_includes_recursive(&self) -> Vec<String>;
+	fn public_includes(&self) -> Vec<PathBuf>;
+	fn public_includes_recursive(&self) -> Vec<PathBuf>;
 
 	fn public_defines(&self) -> Vec<String>;
 	fn public_defines_recursive(&self) -> Vec<String>;
