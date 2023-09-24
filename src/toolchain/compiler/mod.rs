@@ -8,6 +8,9 @@ const GCC_ID: &str = "gcc version ";
 const TARGET_PREFIX: &str = "Target: ";
 
 pub trait Compiler {
+	fn id(&self) -> String;
+	fn version(&self) -> String;
+
 	fn cmd(&self) -> Vec<String>;
 	fn out_flag(&self) -> String;
 	fn c_std_flag(&self, std: &str) -> Result<String, String>;

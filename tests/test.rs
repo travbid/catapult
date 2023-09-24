@@ -1,11 +1,13 @@
 use std::env;
 
-use catapult::target::Target;
+use catapult::{target::Target, toolchain::Toolchain};
 
 #[test]
 fn test_01() {
 	assert!(env::set_current_dir("test_data/test_01").is_ok());
-	let (project, global_options) = catapult::parse_project().expect("Could not parse project");
+
+	let toolchain = Toolchain::default();
+	let (project, global_options) = catapult::parse_project(&toolchain).expect("Could not parse project");
 	assert_eq!(project.dependencies.len(), 2);
 
 	assert_eq!(global_options.c_standard, Some("17".to_owned()));

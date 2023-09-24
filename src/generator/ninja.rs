@@ -585,6 +585,12 @@ fn get_cpp_compiler<'a>(toolchain: &'a Toolchain, name: &str) -> Result<&'a dyn 
 fn test_position_independent_code() {
 	struct TestCompiler {}
 	impl Compiler for TestCompiler {
+		fn id(&self) -> String {
+			"clang".to_owned()
+		}
+		fn version(&self) -> String {
+			"17.0.0".to_owned()
+		}
 		fn cmd(&self) -> Vec<String> {
 			vec!["clang".to_owned()]
 		}

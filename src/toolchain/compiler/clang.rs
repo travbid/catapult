@@ -10,6 +10,14 @@ pub(crate) struct Clang {
 }
 
 impl Compiler for Clang {
+	fn id(&self) -> String {
+		"clang".to_owned()
+	}
+
+	fn version(&self) -> String {
+		self.version.clone()
+	}
+
 	fn cmd(&self) -> Vec<String> {
 		self.cmd.clone()
 	}
