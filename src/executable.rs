@@ -1,5 +1,6 @@
+use core::fmt;
 use std::{
-	fmt,
+	path::PathBuf,
 	sync::{Arc, Weak},
 };
 
@@ -67,7 +68,7 @@ impl Target for Executable {
 }
 
 impl Executable {
-	pub(crate) fn public_includes_recursive(&self) -> Vec<String> {
+	pub(crate) fn public_includes_recursive(&self) -> Vec<PathBuf> {
 		let mut includes = Vec::new();
 		let parent_path = &self.parent_project.upgrade().unwrap().info.path;
 		for link in &self.links {
@@ -79,7 +80,6 @@ impl Executable {
 		}
 
 		for include in self.include_dirs.iter().map(|x| canonicalize(parent_path, x)) {
-			let include = include.unwrap();
 			if !includes.contains(&include) {
 				includes.push(include);
 			}
