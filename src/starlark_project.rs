@@ -31,8 +31,8 @@ use crate::{
 	project::{Project, ProjectInfo},
 	starlark_executable::StarExecutable, //
 	starlark_interface_library::{StarIfaceLibrary, StarIfaceLibraryWrapper},
-	starlark_static_library::{StarStaticLibrary, StarLibraryWrapper},
 	starlark_link_target::PtrLinkTarget,
+	starlark_static_library::{StarLibraryWrapper, StarStaticLibrary},
 	static_library::StaticLibrary,
 };
 
@@ -135,13 +135,11 @@ impl StarLinkTargetCache {
 		}
 	}
 	pub fn get(&self, key: &PtrLinkTarget) -> Option<LinkPtr> {
-		match self.get_static(key) {
-			Some(x) => return Some(LinkPtr::Static(x.clone())),
-			None => (),
+		if let Some(x) = self.get_static(key) {
+			return Some(LinkPtr::Static(x.clone()));
 		}
-		match self.get_interface(key) {
-			Some(x) => return Some(LinkPtr::Interface(x.clone())),
-			None => (),
+		if let Some(x) = self.get_interface(key) {
+			return Some(LinkPtr::Interface(x.clone()));
 		}
 		None
 	}
@@ -172,44 +170,42 @@ impl StarProject {
 		self.as_project_inner(&mut cache)
 	}
 	fn as_project_inner(&self, link_map: &mut StarLinkTargetCache) -> Arc<Project> {
-		let project = Arc::<Project>::new_cyclic(|weak_parent| {
-			Project {
-				info: Arc::new(ProjectInfo { name: self.name.clone(), path: self.path.clone() }),
-				dependencies: self.dependencies.iter().map(|x| x.as_project_inner(link_map)).collect(),
-				executables: self
-					.executables
-					.iter()
-					.map(|x| Arc::new(x.as_executable(weak_parent.clone(), link_map)))
-					.collect(),
-				static_libraries: self
-					.libraries
-					.iter()
-					.map(|x| {
-						let ptr = PtrLinkTarget(x.clone());
-						if let Some(lib) = link_map.get_static(&ptr) {
-							lib.clone()
-						} else {
-							let arc = Arc::new(x.as_library(weak_parent.clone(), link_map));
-							link_map.insert_static(ptr, arc.clone());
-							arc
-						}
-					})
-					.collect(),
-				interface_libraries: self
-					.interface_libraries
-					.iter()
-					.map(|x| {
-						let ptr = PtrLinkTarget(x.clone());
-						if let Some(lib) = link_map.get_interface(&ptr) {
-							lib.clone()
-						} else {
-							let arc = Arc::new(x.as_library(weak_parent.clone(), link_map));
-							link_map.insert_interface(ptr, arc.clone());
-							arc
-						}
-					})
-					.collect(),
-			}
+		let project = Arc::<Project>::new_cyclic(|weak_parent| Project {
+			info: Arc::new(ProjectInfo { name: self.name.clone(), path: self.path.clone() }),
+			dependencies: self.dependencies.iter().map(|x| x.as_project_inner(link_map)).collect(),
+			executables: self
+				.executables
+				.iter()
+				.map(|x| Arc::new(x.as_executable(weak_parent.clone(), link_map)))
+				.collect(),
+			static_libraries: self
+				.libraries
+				.iter()
+				.map(|x| {
+					let ptr = PtrLinkTarget(x.clone());
+					if let Some(lib) = link_map.get_static(&ptr) {
+						lib.clone()
+					} else {
+						let arc = Arc::new(x.as_library(weak_parent.clone(), link_map));
+						link_map.insert_static(ptr, arc.clone());
+						arc
+					}
+				})
+				.collect(),
+			interface_libraries: self
+				.interface_libraries
+				.iter()
+				.map(|x| {
+					let ptr = PtrLinkTarget(x.clone());
+					if let Some(lib) = link_map.get_interface(&ptr) {
+						lib.clone()
+					} else {
+						let arc = Arc::new(x.as_library(weak_parent.clone(), link_map));
+						link_map.insert_interface(ptr, arc.clone());
+						arc
+					}
+				})
+				.collect(),
 		});
 
 		project

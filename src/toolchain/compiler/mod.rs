@@ -95,7 +95,7 @@ pub(super) fn identify_linker(cmd: Vec<String>) -> Result<Box<dyn ExeLinker>, St
 		None => return Err("Linker command is empty".to_owned()),
 	};
 	// The `-v` flag outputs more information than `--version`
-    // and outputs to stderr instead of stdout
+	// and outputs to stderr instead of stdout
 	let version_output = match process::Command::new(exe).arg("-v").output() {
 		Ok(x) => {
 			if !x.status.success() {
