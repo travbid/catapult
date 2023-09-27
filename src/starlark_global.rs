@@ -1,9 +1,12 @@
 use core::fmt;
+use std::collections::HashMap;
 
 use allocative::Allocative;
+use serde::Deserialize;
 use starlark::{
 	starlark_simple_value, starlark_type,
 	values::{
+		AllocValue,
 		Heap, //
 		NoSerialize,
 		ProvidesStaticType,
@@ -15,14 +18,91 @@ use starlark::{
 use super::GlobalOptions;
 use crate::toolchain::Toolchain;
 
+#[derive(Clone, Debug, Allocative)]
+pub enum PkgOpt {
+	Bool(bool),
+	Int(i64),
+	Float(f64),
+	String(String),
+}
+
+impl fmt::Display for PkgOpt {
+	fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> fmt::Result {
+		match self {
+			PkgOpt::Bool(b) => write!(f, "{}", b),
+			PkgOpt::Int(i) => write!(f, "{}", i),
+			PkgOpt::Float(x) => write!(f, "{}", x),
+			PkgOpt::String(s) => write!(f, "{}", s),
+		}
+	}
+}
+
+impl<'de> Deserialize<'de> for PkgOpt {
+	fn deserialize<D>(d: D) -> Result<Self, <D as serde::Deserializer<'de>>::Error>
+	where
+		D: serde::Deserializer<'de>,
+	{
+		struct PkgOptVisitor;
+
+		impl<'de> serde::de::Visitor<'de> for PkgOptVisitor {
+			type Value = PkgOpt;
+
+			fn expecting(&self, f: &mut fmt::Formatter<'_>) -> Result<(), fmt::Error> {
+				write!(f, "bool|int|float|str")
+			}
+
+			fn visit_bool<E>(self, v: bool) -> Result<Self::Value, E>
+			where
+				E: serde::de::Error,
+			{
+				Ok(PkgOpt::Bool(v))
+			}
+
+			fn visit_i64<E>(self, v: i64) -> Result<Self::Value, E>
+			where
+				E: serde::de::Error,
+			{
+				Ok(PkgOpt::Int(v))
+			}
+
+			fn visit_f64<E>(self, v: f64) -> Result<Self::Value, E>
+			where
+				E: serde::de::Error,
+			{
+				Ok(PkgOpt::Float(v))
+			}
+
+			fn visit_str<E>(self, v: &str) -> Result<Self::Value, E>
+			where
+				E: serde::de::Error,
+			{
+				Ok(PkgOpt::String(v.to_owned()))
+			}
+
+			fn visit_string<E>(self, v: String) -> Result<Self::Value, E>
+			where
+				E: serde::de::Error,
+			{
+				Ok(PkgOpt::String(v))
+			}
+		}
+		d.deserialize_any(PkgOptVisitor)
+	}
+}
+
 #[derive(Debug, Allocative, ProvidesStaticType, NoSerialize)]
 pub(super) struct StarGlobal {
-	options: StarOptions,
+	global_options: StarGlobalOptions,
+	package_options: StarPackageOptions,
 	toolchain: StarToolchain,
 }
 
 impl StarGlobal {
-	pub(super) fn new(options: &GlobalOptions, toolchain: &Toolchain) -> StarGlobal {
+	pub(super) fn new(
+		options: &GlobalOptions,
+		package_options: HashMap<String, PkgOpt>,
+		toolchain: &Toolchain,
+	) -> StarGlobal {
 		let c_compiler = toolchain.c_compiler.as_ref().map(|compiler| StarCompiler {
 			id: compiler.id(),
 			version: StarVersion::from_str(compiler.version()),
@@ -32,11 +112,12 @@ impl StarGlobal {
 			version: StarVersion::from_str(compiler.version()),
 		});
 		StarGlobal {
-			options: StarOptions {
+			global_options: StarGlobalOptions {
 				c_standard: options.c_standard.clone(),
 				cpp_standard: options.cpp_standard.clone(),
 				position_independent_code: options.position_independent_code,
 			},
+			package_options: StarPackageOptions(package_options),
 			toolchain: StarToolchain { c_compiler, cpp_compiler },
 		}
 	}
@@ -47,9 +128,11 @@ impl fmt::Display for StarGlobal {
 		write!(
 			f,
 			r#"Global{{
-    options: {},
+    global_options: {},
+    package_options: {},
+    toolchain: {},
 }}"#,
-			self.options,
+			self.global_options, self.package_options, self.toolchain,
 		)
 	}
 }
@@ -59,7 +142,8 @@ impl<'v> StarlarkValue<'v> for StarGlobal {
 
 	fn get_attr(&self, attribute: &str, heap: &'v Heap) -> Option<Value<'v>> {
 		match attribute {
-			"options" => Some(heap.alloc(self.options.clone())),
+			"global_options" => Some(heap.alloc(self.global_options.clone())),
+			"package_options" => Some(heap.alloc(self.package_options.clone())),
 			"toolchain" => Some(heap.alloc(self.toolchain.clone())),
 			_ => None,
 		}
@@ -68,7 +152,7 @@ impl<'v> StarlarkValue<'v> for StarGlobal {
 	fn has_attr(&self, attribute: &str, _: &'v Heap) -> bool {
 		#[allow(clippy::match_like_matches_macro)]
 		match attribute {
-			"options" | "toolchain" => true,
+			"global_options" | "package_options" | "toolchain" => true,
 			_ => false,
 		}
 	}
@@ -82,17 +166,17 @@ impl<'v> StarlarkValue<'v> for StarGlobal {
 starlark_simple_value!(StarGlobal);
 
 #[derive(Clone, Debug, Allocative, ProvidesStaticType, NoSerialize)]
-pub(super) struct StarOptions {
+pub(super) struct StarGlobalOptions {
 	c_standard: Option<String>,
 	cpp_standard: Option<String>,
 	position_independent_code: Option<bool>,
 }
 
-impl fmt::Display for StarOptions {
+impl fmt::Display for StarGlobalOptions {
 	fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> fmt::Result {
 		write!(
 			f,
-			r#"Options{{
+			r#"GlobalOptions{{
     c_standard: {},
     cpp_standard: {},
     position_independent_code: {},
@@ -106,8 +190,8 @@ impl fmt::Display for StarOptions {
 	}
 }
 
-impl<'v> StarlarkValue<'v> for StarOptions {
-	starlark_type!("Options");
+impl<'v> StarlarkValue<'v> for StarGlobalOptions {
+	starlark_type!("GlobalOptions");
 
 	fn get_attr(&self, attribute: &str, heap: &'v Heap) -> Option<Value<'v>> {
 		match attribute {
@@ -136,7 +220,46 @@ impl<'v> StarlarkValue<'v> for StarOptions {
 	}
 }
 
-starlark_simple_value!(StarOptions);
+starlark_simple_value!(StarGlobalOptions);
+
+#[derive(Clone, Debug, Allocative, ProvidesStaticType, NoSerialize)]
+struct StarPackageOptions(HashMap<String, PkgOpt>);
+
+impl fmt::Display for StarPackageOptions {
+	fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> fmt::Result {
+		writeln!(f, "PackageOptions{{")?;
+		for (key, val) in &self.0 {
+			writeln!(f, "   {}: {}", key, val)?;
+		}
+		writeln!(f, "}}")
+	}
+}
+
+impl<'v> StarlarkValue<'v> for StarPackageOptions {
+	starlark_type!("PackageOptions");
+
+	fn get_attr(&self, attribute: &str, heap: &'v Heap) -> Option<Value<'v>> {
+		match self.0.get(attribute) {
+			None => None,
+			Some(x) => match x {
+				PkgOpt::Bool(b) => Some(Value::new_bool(*b)),
+				PkgOpt::Int(i) => Some(i.alloc_value(heap)),
+				PkgOpt::Float(f) => Some(f.alloc_value(heap)),
+				PkgOpt::String(s) => Some(s.alloc_value(heap)),
+			},
+		}
+	}
+
+	fn has_attr(&self, attribute: &str, _: &'v Heap) -> bool {
+		self.0.contains_key(attribute)
+	}
+
+	fn dir_attr(&self) -> Vec<String> {
+		self.0.keys().cloned().collect()
+	}
+}
+
+starlark_simple_value!(StarPackageOptions);
 
 #[derive(Clone, Debug, Allocative, ProvidesStaticType, NoSerialize)]
 pub(super) struct StarToolchain {

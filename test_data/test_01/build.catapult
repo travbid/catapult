@@ -8,8 +8,8 @@ mylib = add_static_library(
 
 print('--- ' + str(mylib))
 print('=== Global: ' + str(GLOBAL))
-print('=== Options: ' + str(GLOBAL.options))
-print('=== C Standard: ' + str(GLOBAL.options.c_standard))
+print('=== Options: ' + str(GLOBAL.global_options))
+print('=== C Standard: ' + str(GLOBAL.global_options.c_standard))
 print('=== Toolchain: ' + str(GLOBAL.toolchain))
 
 c_compiler = GLOBAL.toolchain.c_compiler

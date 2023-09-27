@@ -38,9 +38,10 @@ jobs:
       - run: cargo build
       - run: ./target/debug/catapult -S test_data/test_01 -B build -G Ninja -T test_data/toolchain_gcc.toml
       - run: tree build
-      - run: ninja -C build -j1 -v
+      - run: ninja -C build -j1 -v myexe mytest
       - run: tree build
       - run: ./build/test_one/myexe abc def
+      - run: ./build/my_depend/mytest
 
   ubuntu-ninja-clang:
     name: Build and Run (Ubuntu / Ninja / Clang)
@@ -55,9 +56,10 @@ jobs:
       - run: cargo build
       - run: ./target/debug/catapult -S test_data/test_01 -B build -G Ninja -T test_data/toolchain_clang.toml
       - run: tree build
-      - run: ninja -C build -j1 -v
+      - run: ninja -C build -j1 -v myexe mytest
       - run: tree build
       - run: ./build/test_one/myexe abc def
+      - run: ./build/my_depend/mytest
 
   windows-msvc:
     name: Build and Run (Windows / MSVC)
@@ -74,6 +76,7 @@ jobs:
           && MSBuild build/test_one.sln
       - run: tree /f build
       - run: ./build/test_one/Debug/myexe.exe abc def
+      - run: ./build/my_depend/Debug/mytest.exe
 
   windows-ninja-clang:
     name: Build and Run (Windows / Ninja / Clang)
@@ -85,6 +88,7 @@ jobs:
       - run: cargo build
       - run: ./target/debug/catapult -S test_data/test_01 -B build -G Ninja -T test_data/toolchain_clang.toml
       - run: tree /f build
-      - run: ninja -C build -j1 -v
+      - run: ninja -C build -j1 -v myexe mytest
       - run: tree /f build
       - run: ./build/test_one/myexe.exe abc def
+      - run: ./build/my_depend/mytest.exe
