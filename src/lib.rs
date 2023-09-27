@@ -17,9 +17,8 @@ pub mod target;
 pub mod toolchain;
 
 use std::{
-	collections::BTreeMap, //
-	env,
-	fs,
+	collections::{BTreeMap, HashMap},
+	env, fs,
 	path::{Path, PathBuf},
 	sync::Arc,
 	sync::Mutex,
@@ -47,7 +46,7 @@ use tar::Archive;
 
 use project::Project;
 use starlark_api::err_msg;
-use starlark_global::StarGlobal;
+use starlark_global::{PkgOpt, StarGlobal};
 use starlark_project::StarProject;
 use toolchain::Toolchain;
 
@@ -59,6 +58,7 @@ struct Manifest {
 	package: PackageManifest,
 	dependencies: Option<BTreeMap<String, DependencyManifest>>,
 	options: Option<ManifestOptions>,
+	package_options: Option<HashMap<String, PkgOpt>>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -80,6 +80,7 @@ struct DependencyManifest {
 	// branch: Option<String>,
 	// tag: Option<String>,
 	// rev: Option<String>,
+	options: Option<HashMap<String, PkgOpt>>,
 }
 
 #[derive(Debug, Default, Deserialize)]
@@ -122,7 +123,8 @@ pub fn parse_project(toolchain: &Toolchain) -> Result<(Arc<Project>, GlobalOptio
 		position_independent_code: manifest_options.position_independent_code,
 	};
 	let mut combined_deps = BTreeMap::new();
-	let project = parse_project_inner(".", &global_options, toolchain, &mut combined_deps)?; //, &globals)?;
+	let project =
+		parse_project_inner(".", &global_options, &HashMap::new(), HashMap::new(), toolchain, &mut combined_deps)?;
 
 	Ok((project.into_project(), global_options))
 }
@@ -228,6 +230,8 @@ fn download_from_registry(
 fn parse_project_inner<P: AsRef<Path> + ?Sized>(
 	src_dir: &P,
 	global_options: &GlobalOptions,
+	package_options: &HashMap<String, HashMap<String, PkgOpt>>,
+	mut pkg_opt_underrides: HashMap<String, PkgOpt>,
 	toolchain: &Toolchain,
 	dep_map: &mut BTreeMap<String, Arc<StarProject>>,
 ) -> Result<StarProject, anyhow::Error> {
@@ -253,6 +257,14 @@ fn parse_project_inner<P: AsRef<Path> + ?Sized>(
 
 	let manifest = read_manifest()?;
 
+	if let Some(pkg_opts) = package_options.get(&manifest.package.name) {
+		for (opt_name, opt_val) in pkg_opts {
+			pkg_opt_underrides.insert(opt_name.clone(), opt_val.clone());
+		}
+	}
+	let mut pkg_opts = package_options.clone();
+	pkg_opts.insert(manifest.package.name.clone(), pkg_opt_underrides);
+
 	let mut dependent_projects = Vec::new();
 
 	// Parse dependencies before parsing the dependent
@@ -260,9 +272,13 @@ fn parse_project_inner<P: AsRef<Path> + ?Sized>(
 		if let Some(dep_proj) = dep_map.get(&name) {
 			dependent_projects.push(dep_proj.clone());
 		}
+
+		let pkg_opt_underrides = info.options.unwrap_or_default();
+
 		if let Some(registry) = info.registry {
 			let dep_path = download_from_registry(registry, &name, info.version, info.channel)?;
-			let dep_proj = parse_project_inner(&dep_path, global_options, toolchain, dep_map)?;
+			let dep_proj =
+				parse_project_inner(&dep_path, global_options, &pkg_opts, pkg_opt_underrides, toolchain, dep_map)?;
 			let dep_proj = Arc::new(dep_proj);
 			dependent_projects.push(dep_proj.clone());
 			dep_map.insert(name, dep_proj);
@@ -270,7 +286,8 @@ fn parse_project_inner<P: AsRef<Path> + ?Sized>(
 			// Checkout to tmp dir
 			todo!();
 		} else if let Some(dep_path) = info.path {
-			let dep_proj = parse_project_inner(&dep_path, global_options, toolchain, dep_map)?; //, globals)?;
+			let dep_proj =
+				parse_project_inner(&dep_path, global_options, &pkg_opts, pkg_opt_underrides, toolchain, dep_map)?; //, globals)?;
 			let dep_proj = Arc::new(dep_proj);
 			dependent_projects.push(dep_proj.clone());
 			dep_map.insert(name, dep_proj);
@@ -291,6 +308,18 @@ fn parse_project_inner<P: AsRef<Path> + ?Sized>(
 		};
 	}
 
+	let mut option_overrides = manifest.package_options.unwrap_or_default();
+	if let Some(pkg_opts) = pkg_opts.get(&manifest.package.name) {
+		for (opt_name, opt_val) in pkg_opts {
+			log::debug!("Override option: {opt_name}");
+			if option_overrides.contains_key(opt_name) {
+				option_overrides.insert(opt_name.clone(), opt_val.clone());
+			} else {
+				log::error!("Package \"{}\" does not provide option \"{opt_name}\"", manifest.package.name);
+			}
+		}
+	}
+
 	let starlark_code = match fs::read_to_string(BUILD_CATAPULT) {
 		Ok(x) => x,
 		Err(e) => {
@@ -301,6 +330,7 @@ fn parse_project_inner<P: AsRef<Path> + ?Sized>(
 		manifest.package.name.clone(),
 		dependent_projects,
 		global_options,
+		option_overrides,
 		toolchain,
 		current_dir.to_path_buf(),
 		starlark_code,
@@ -313,11 +343,12 @@ fn parse_project_inner<P: AsRef<Path> + ?Sized>(
 pub(crate) fn setup(
 	project: &Arc<Mutex<StarProject>>,
 	global_options: &GlobalOptions,
+	package_options: HashMap<String, PkgOpt>,
 	toolchain: &Toolchain,
 ) -> Globals {
 	let mut globals_builder = GlobalsBuilder::standard();
 	starlark::environment::LibraryExtension::Print.add(&mut globals_builder);
-	globals_builder.set("GLOBAL", StarGlobal::new(global_options, toolchain));
+	globals_builder.set("GLOBAL", StarGlobal::new(global_options, package_options, toolchain));
 	starlark_api::build_api(project, &mut globals_builder);
 	globals_builder.build()
 }
@@ -326,6 +357,7 @@ pub(crate) fn parse_module(
 	name: String,
 	deps: Vec<Arc<StarProject>>,
 	global_options: &GlobalOptions,
+	package_options: HashMap<String, PkgOpt>,
 	toolchain: &Toolchain,
 	current_dir: PathBuf,
 	starlark_code: String,
@@ -342,7 +374,7 @@ pub(crate) fn parse_module(
 		module.set(&dep_proj.name, proj_value);
 	}
 	let mut eval = Evaluator::new(&module);
-	let globals = setup(&project_writable, global_options, toolchain);
+	let globals = setup(&project_writable, global_options, package_options, toolchain);
 	eval.eval_module(ast, &globals)?;
 	let project = match project_writable.lock() {
 		Ok(x) => x.clone(),

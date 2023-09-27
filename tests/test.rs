@@ -21,7 +21,7 @@ fn test_01() {
 		.collect::<Vec<_>>();
 	assert_eq!(my_depends.len(), 1);
 	let my_depend = my_depends.first().unwrap();
-	assert_eq!(my_depend.executables.len(), 0);
+	assert_eq!(my_depend.executables.len(), 1);
 	assert_eq!(my_depend.static_libraries.len(), 1);
 
 	let lib = my_depend.static_libraries.first().unwrap();

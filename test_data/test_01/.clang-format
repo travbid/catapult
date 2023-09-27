@@ -1,0 +1,21 @@
+---
+AccessModifierOffset: -2
+# AlignAfterOpenBracket: Align
+# AlignOperands: DontAlign
+# AllowShortBlocksOnASingleLine: true
+AllowShortCaseLabelsOnASingleLine: true
+AllowShortFunctionsOnASingleLine: Empty
+# AllowShortIfStatementsOnASingleLine: Always
+# AllowShortLoopsOnASingleLine: true
+BasedOnStyle: Google
+# BreakBeforeBinaryOperators: All
+BreakConstructorInitializers: BeforeComma
+ColumnLimit: 120
+ConstructorInitializerAllOnOneLineOrOnePerLine: false
+DerivePointerAlignment: false
+IncludeBlocks: Preserve
+IndentWidth: 2
+Language: Cpp
+PointerAlignment: Right
+TabWidth: 2
+UseTab: Never

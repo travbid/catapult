@@ -1,5 +1,19 @@
-add_static_library(
-    name = "my_depend_lib",
-    sources = ["my_depend.cpp"],
-    include_dirs_public = ["."],
-)
+
+def build():
+    my_depend_lib = add_static_library(
+        name = "my_depend_lib",
+        sources = ["my_depend.cpp"],
+        include_dirs_public = ["."],
+    )
+
+    print('mydepend random_number: ' + str(GLOBAL.package_options.random_number))
+    print('mydepend build_tests: ' + str(GLOBAL.package_options.build_tests))
+
+    if GLOBAL.package_options.build_tests == True:
+        add_executable(
+            name = "mytest",
+            sources = ["mytest.cpp"],
+            links = [my_depend_lib],
+        )
+
+build()
