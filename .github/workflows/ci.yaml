@@ -45,7 +45,7 @@ jobs:
       - run: cargo build
       - run: ./target/debug/catapult -S test_data/test_01 -B build -G Ninja -T test_data/toolchain_gcc.toml
       - run: tree build
-      - run: ninja -C build -j1 -v myexe mytest
+      - run: ninja -C build -v myexe mytest
       - run: tree build
       - run: ./build/test_one/myexe abc def
       - run: ./build/my_depend/mytest
@@ -63,7 +63,7 @@ jobs:
       - run: cargo build
       - run: ./target/debug/catapult -S test_data/test_01 -B build -G Ninja -T test_data/toolchain_clang.toml
       - run: tree build
-      - run: ninja -C build -j1 -v myexe mytest
+      - run: ninja -C build -v myexe mytest
       - run: tree build
       - run: ./build/test_one/myexe abc def
       - run: ./build/my_depend/mytest
@@ -95,7 +95,7 @@ jobs:
       - run: cargo build
       - run: ./target/debug/catapult -S test_data/test_01 -B build -G Ninja -T test_data/toolchain_clang.toml
       - run: tree /f build
-      - run: ninja -C build -j1 -v myexe mytest
+      - run: ninja -C build -v myexe mytest
       - run: tree /f build
       - run: ./build/test_one/myexe.exe abc def
       - run: ./build/my_depend/mytest.exe
