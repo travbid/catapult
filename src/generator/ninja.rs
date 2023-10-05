@@ -2,7 +2,7 @@ use core::default::Default;
 use std::{
 	collections::HashMap,
 	io::Write,
-	path::{Path, PathBuf},
+	path::Path, //
 	sync::Arc,
 };
 
@@ -19,24 +19,25 @@ use crate::{
 	GlobalOptions,
 };
 
-fn input_path(src: &str, project_path: &Path) -> String {
-	let src_path = PathBuf::from(src);
-	if src_path.is_relative() {
+fn input_path(src: &Path, project_path: &Path) -> String {
+	if src.is_relative() {
 		project_path.join(src)
 	} else {
-		src_path
+		src.to_owned()
 	}
 	.to_str()
 	.unwrap()
+	.trim_start_matches(r"\\?\")
 	.to_owned()
 }
 
-fn output_path(build_dir: &Path, project_name: &str, src: &str, ext: &str) -> String {
+fn output_path(build_dir: &Path, project_name: &str, src: &Path, ext: &str) -> String {
 	build_dir
 		.join(project_name)
-		.join(src.to_owned() + ext)
+		.join(src.to_str().unwrap().to_owned() + ext)
 		.to_str()
 		.unwrap()
+		.trim_start_matches(r"\\?\")
 		.to_owned()
 }
 
@@ -265,7 +266,7 @@ impl Ninja {
 		}
 
 		fn add_lib_source(
-			src: &str,
+			src: &Path,
 			lib: &StaticLibrary,
 			out_tgt: String,
 			rule: NinjaRule,
@@ -361,7 +362,7 @@ impl Ninja {
 						let link = output_path(
 							build_dir,
 							&x.project().info.name,
-							&link.output_name(),
+							link.output_name().as_ref(),
 							&target_platform.static_lib_ext,
 						);
 						if !inputs.contains(&link) {
@@ -371,7 +372,8 @@ impl Ninja {
 					LinkPtr::Interface(_) => {}
 				};
 			}
-			let out_name = output_path(build_dir, project_name, &lib.output_name(), &target_platform.static_lib_ext);
+			let out_name =
+				output_path(build_dir, project_name, lib.output_name().as_ref(), &target_platform.static_lib_ext);
 			let link_flags = Vec::new(); // TODO(Travers): Only for shared libs
 							 // let mut link_flags = lib.public_link_flags_recursive();
 							 // link_flags.extend_from_slice(&lib.private_link_flags());
@@ -392,7 +394,7 @@ impl Ninja {
 			});
 		}
 		fn add_exe_source(
-			src: &str,
+			src: &Path,
 			exe: &Executable,
 			out_tgt: String,
 			rule: NinjaRule,
@@ -511,7 +513,7 @@ impl Ninja {
 							let lib_path = output_path(
 								build_dir,
 								&x.project().info.name,
-								&x.output_name(),
+								x.output_name().as_ref(),
 								&target_platform.static_lib_ext,
 							);
 							if !inputs.contains(&lib_path) {
@@ -526,7 +528,7 @@ impl Ninja {
 								let lib_path = output_path(
 									build_dir,
 									&x.project().info.name,
-									&x.output_name(),
+									x.output_name().as_ref(),
 									&target_platform.static_lib_ext,
 								);
 								if !inputs.contains(&lib_path) {
@@ -539,7 +541,7 @@ impl Ninja {
 				}
 				let mut link_flags = link_exe_flags.clone();
 				link_flags.extend(exe.link_flags_recursive());
-				let out_name = output_path(build_dir, project_name, &exe.name, &target_platform.exe_ext);
+				let out_name = output_path(build_dir, project_name, exe.name.as_ref(), &target_platform.exe_ext);
 				build_lines.push(NinjaBuild {
 					inputs,
 					output_targets: vec![out_name.clone()],
@@ -583,6 +585,8 @@ fn get_cpp_compiler<'a>(toolchain: &'a Toolchain, name: &str) -> Result<&'a dyn 
 
 #[test]
 fn test_position_independent_code() {
+	use std::path::PathBuf;
+
 	struct TestCompiler {}
 	impl Compiler for TestCompiler {
 		fn id(&self) -> String {
@@ -638,7 +642,7 @@ fn test_position_independent_code() {
 					parent_project: weak_parent.clone(),
 					name: "add".to_owned(),
 					c_sources: Vec::new(),
-					cpp_sources: vec!["add.cpp".to_owned()],
+					cpp_sources: vec![PathBuf::from("add.cpp")],
 					link_public: Vec::new(),
 					link_private: Vec::new(),
 					include_dirs_public: Vec::new(),
@@ -658,7 +662,7 @@ fn test_position_independent_code() {
 			parent_project: weak_parent.clone(),
 			name: "main".to_owned(),
 			c_sources: Vec::new(),
-			cpp_sources: vec!["main.cpp".to_owned()],
+			cpp_sources: vec![PathBuf::from("main.cpp")],
 			links: vec![LinkPtr::Static(create_lib(weak_parent))],
 			include_dirs: Vec::new(),
 			defines: Vec::new(),

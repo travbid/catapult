@@ -6,7 +6,7 @@ use std::{
 
 use crate::{
 	link_type::LinkPtr,
-	misc::canonicalize,
+	misc::join_parent,
 	project::Project,
 	target::{LinkTarget, Target},
 };
@@ -16,8 +16,8 @@ pub struct Executable {
 	pub parent_project: Weak<Project>,
 
 	pub name: String,
-	pub c_sources: Vec<String>,
-	pub cpp_sources: Vec<String>,
+	pub c_sources: Vec<PathBuf>,
+	pub cpp_sources: Vec<PathBuf>,
 	pub links: Vec<LinkPtr>,
 	pub include_dirs: Vec<String>,
 	pub defines: Vec<String>,
@@ -41,8 +41,14 @@ impl fmt::Display for Executable {
    output_name: {},
 }}"#,
 			self.name,
-			self.c_sources.join(", "),
-			self.cpp_sources.join(", "),
+			self.c_sources
+				.iter()
+				.map(|x| x.to_string_lossy())
+				.fold(String::new(), |acc, x| acc + ", " + &x),
+			self.cpp_sources
+				.iter()
+				.map(|x| x.to_string_lossy())
+				.fold(String::new(), |acc, x| acc + ", " + &x),
 			self.links.iter().map(|x| x.name()).collect::<Vec<String>>().join(", "),
 			self.include_dirs.join(", "),
 			self.defines.join(", "),
@@ -79,7 +85,7 @@ impl Executable {
 			}
 		}
 
-		for include in self.include_dirs.iter().map(|x| canonicalize(parent_path, x)) {
+		for include in self.include_dirs.iter().map(|x| join_parent(parent_path, x)) {
 			if !includes.contains(&include) {
 				includes.push(include);
 			}

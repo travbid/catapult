@@ -176,7 +176,7 @@ impl StarProject {
 			executables: self
 				.executables
 				.iter()
-				.map(|x| Arc::new(x.as_executable(weak_parent.clone(), link_map)))
+				.map(|x| Arc::new(x.as_executable(weak_parent.clone(), &self.path, link_map)))
 				.collect(),
 			static_libraries: self
 				.libraries
@@ -186,7 +186,7 @@ impl StarProject {
 					if let Some(lib) = link_map.get_static(&ptr) {
 						lib.clone()
 					} else {
-						let arc = Arc::new(x.as_library(weak_parent.clone(), link_map));
+						let arc = Arc::new(x.as_library(weak_parent.clone(), &self.path, link_map));
 						link_map.insert_static(ptr, arc.clone());
 						arc
 					}
@@ -200,7 +200,7 @@ impl StarProject {
 					if let Some(lib) = link_map.get_interface(&ptr) {
 						lib.clone()
 					} else {
-						let arc = Arc::new(x.as_library(weak_parent.clone(), link_map));
+						let arc = Arc::new(x.as_library(weak_parent.clone(), &self.path, link_map));
 						link_map.insert_interface(ptr, arc.clone());
 						arc
 					}

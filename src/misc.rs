@@ -1,21 +1,26 @@
 use std::path::{Path, PathBuf};
 
-pub(crate) fn canonicalize(parent_path: &Path, x: &String) -> PathBuf {
-	let path = PathBuf::from(x);
-	if path.is_absolute() {
-		path
-	} else {
-		let joined = parent_path.join(x);
-		match joined.canonicalize() {
+pub(crate) fn join_parent(parent_path: &Path, x: &String) -> PathBuf {
+	let joined = parent_path.join(x); // If x is absolute, it replaces the current path.
+	match joined.try_exists() {
+		Ok(true) => match joined.canonicalize() {
 			Ok(path) => path,
 			Err(e) => {
 				log::warn!("Could not canonicalize path \"{}\": {}", joined.to_string_lossy(), e);
 				joined
 			}
+		},
+		Ok(false) => {
+			log::warn!("Path does not exist: \"{}\"", joined.to_string_lossy());
+			joined
 		}
-		// TODO(Travers): Check if there's a way to make clang/gcc/msvc support UNC paths
-		// Implement dunce::canonicalize() ?
+		Err(e) => {
+			log::warn!("Existence of path could not be confirmed \"{}\": {}", joined.to_string_lossy(), e);
+			joined
+		}
 	}
+	// TODO(Travers): Check if there's a way to make clang/gcc/msvc support UNC paths
+	// Implement dunce::canonicalize() ?
 }
 
 pub(crate) fn is_c_source(src_filename: &&String) -> bool {

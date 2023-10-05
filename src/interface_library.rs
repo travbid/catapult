@@ -5,7 +5,7 @@ use std::{
 
 use crate::{
 	link_type::LinkPtr,
-	misc::canonicalize,
+	misc::join_parent,
 	project::Project, //
 	target::{LinkTarget, Target},
 };
@@ -35,7 +35,7 @@ impl Target for InterfaceLibrary {
 impl LinkTarget for InterfaceLibrary {
 	fn public_includes(&self) -> Vec<PathBuf> {
 		let parent_path = &self.parent_project.upgrade().unwrap().info.path;
-		self.include_dirs.iter().map(|x| canonicalize(parent_path, x)).collect()
+		self.include_dirs.iter().map(|x| join_parent(parent_path, x)).collect()
 	}
 	fn public_includes_recursive(&self) -> Vec<PathBuf> {
 		let mut includes = Vec::new();
