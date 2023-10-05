@@ -24,7 +24,7 @@ pub(crate) fn format_link_targets(items: &[Arc<dyn StarLinkTarget>]) -> String {
 			.iter()
 			.map(|x| x.name())
 			.fold(String::new(), |acc, x| acc + &x + separator);
-        ret.insert_str(0, "\n    ");
+		ret.insert_str(0, "\n    ");
 		ret.pop();
 		ret.pop();
 		ret
