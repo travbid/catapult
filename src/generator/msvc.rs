@@ -26,15 +26,15 @@ struct VsProject {
 	dependencies: Vec<VsProject>,
 }
 
-fn input_path(src: &str, project_path: &Path) -> String {
-	let src_path = PathBuf::from(src);
-	if src_path.is_relative() {
+fn input_path(src: &Path, project_path: &Path) -> String {
+	if src.is_relative() {
 		project_path.join(src)
 	} else {
-		src_path
+		src.to_owned()
 	}
 	.to_str()
 	.unwrap()
+	.trim_start_matches(r"\\?\")
 	.to_owned()
 }
 
@@ -394,8 +394,8 @@ fn make_vcxproj(
 	project_info: &ProjectInfo,
 	opts: &Options,
 	includes: &[String],
-	c_sources: &[String],
-	cpp_sources: &[String],
+	c_sources: &[PathBuf],
+	cpp_sources: &[PathBuf],
 	project_links: &Vec<LinkPtr>,
 ) -> Result<VsProject, String> {
 	if !c_sources.is_empty() && !cpp_sources.is_empty() {

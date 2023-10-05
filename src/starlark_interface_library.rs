@@ -1,5 +1,8 @@
 use core::fmt;
-use std::sync::{Arc, Mutex, Weak};
+use std::{
+	path::Path,
+	sync::{Arc, Mutex, Weak},
+};
 
 use allocative::Allocative;
 use starlark::{
@@ -61,8 +64,14 @@ impl fmt::Display for StarIfaceLibrary {
 }
 
 impl StarLinkTarget for StarIfaceLibrary {
-	fn as_link_target(&self, parent: Weak<Project>, ptr: PtrLinkTarget, link_map: &mut StarLinkTargetCache) -> LinkPtr {
-		let arc = Arc::new(self.as_library(parent, link_map));
+	fn as_link_target(
+		&self,
+		parent: Weak<Project>,
+		parent_path: &Path,
+		ptr: PtrLinkTarget,
+		link_map: &mut StarLinkTargetCache,
+	) -> LinkPtr {
+		let arc = Arc::new(self.as_library(parent, parent_path, link_map));
 		// let ptr = PtrLinkTarget(arc.clone());
 		link_map.insert_interface(ptr, arc.clone());
 		LinkPtr::Interface(arc)
@@ -82,7 +91,12 @@ impl StarLinkTarget for StarIfaceLibrary {
 }
 
 impl StarIfaceLibrary {
-	pub fn as_library(&self, parent_project: Weak<Project>, link_map: &mut StarLinkTargetCache) -> InterfaceLibrary {
+	pub fn as_library(
+		&self,
+		parent_project: Weak<Project>,
+		parent_path: &Path,
+		link_map: &mut StarLinkTargetCache,
+	) -> InterfaceLibrary {
 		InterfaceLibrary {
 			parent_project: parent_project.clone(),
 			name: self.name.clone(),
@@ -95,7 +109,7 @@ impl StarIfaceLibrary {
 					if let Some(lt) = link_map.get(&ptr) {
 						lt
 					} else {
-						x.as_link_target(parent_project.clone(), ptr, link_map)
+						x.as_link_target(parent_project.clone(), parent_path, ptr, link_map)
 					}
 				})
 				.collect(),

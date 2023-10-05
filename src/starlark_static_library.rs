@@ -1,5 +1,8 @@
 use core::fmt;
-use std::sync::{Arc, Mutex, Weak};
+use std::{
+	path::Path,
+	sync::{Arc, Mutex, Weak},
+};
 
 use allocative::Allocative;
 use starlark::{
@@ -23,7 +26,7 @@ use starlark::{
 
 use super::{
 	link_type::LinkPtr,
-	misc::{is_c_source, is_cpp_source},
+	misc::{is_c_source, is_cpp_source, join_parent},
 	project::Project,
 	starlark_fmt::{format_link_targets, format_strings},
 	starlark_link_target::{PtrLinkTarget, StarLinkTarget},
@@ -73,8 +76,14 @@ impl fmt::Display for StarStaticLibrary {
 }
 
 impl StarLinkTarget for StarStaticLibrary {
-	fn as_link_target(&self, parent: Weak<Project>, ptr: PtrLinkTarget, link_map: &mut StarLinkTargetCache) -> LinkPtr {
-		let arc = Arc::new(self.as_library(parent, link_map));
+	fn as_link_target(
+		&self,
+		parent: Weak<Project>,
+		parent_path: &Path,
+		ptr: PtrLinkTarget,
+		link_map: &mut StarLinkTargetCache,
+	) -> LinkPtr {
+		let arc = Arc::new(self.as_library(parent, parent_path, link_map));
 		// let ptr = PtrLinkTarget(arc.clone());
 		link_map.insert_static(ptr, arc.clone());
 		LinkPtr::Static(arc)
@@ -94,12 +103,27 @@ impl StarLinkTarget for StarStaticLibrary {
 }
 
 impl StarStaticLibrary {
-	pub fn as_library(&self, parent_project: Weak<Project>, link_map: &mut StarLinkTargetCache) -> StaticLibrary {
+	pub fn as_library(
+		&self,
+		parent_project: Weak<Project>,
+		parent_path: &Path,
+		link_map: &mut StarLinkTargetCache,
+	) -> StaticLibrary {
 		StaticLibrary {
 			parent_project: parent_project.clone(),
 			name: self.name.clone(),
-			c_sources: self.sources.iter().filter(is_c_source).map(String::from).collect(),
-			cpp_sources: self.sources.iter().filter(is_cpp_source).map(String::from).collect(),
+			c_sources: self
+				.sources
+				.iter()
+				.filter(is_c_source)
+				.map(|x| join_parent(parent_path, x))
+				.collect(),
+			cpp_sources: self
+				.sources
+				.iter()
+				.filter(is_cpp_source)
+				.map(|x| join_parent(parent_path, x))
+				.collect(),
 			include_dirs_private: self.include_dirs_private.clone(),
 			include_dirs_public: self.include_dirs_public.clone(),
 			link_private: self
@@ -110,7 +134,7 @@ impl StarStaticLibrary {
 					if let Some(lt) = link_map.get(&ptr) {
 						lt
 					} else {
-						x.as_link_target(parent_project.clone(), ptr, link_map)
+						x.as_link_target(parent_project.clone(), parent_path, ptr, link_map)
 					}
 				})
 				.collect(),
@@ -122,7 +146,7 @@ impl StarStaticLibrary {
 					if let Some(lt) = link_map.get(&ptr) {
 						lt
 					} else {
-						x.as_link_target(parent_project.clone(), ptr, link_map)
+						x.as_link_target(parent_project.clone(), parent_path, ptr, link_map)
 					}
 				})
 				.collect(),

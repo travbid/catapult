@@ -5,7 +5,7 @@ use std::{
 
 use crate::{
 	link_type::LinkPtr,
-	misc::canonicalize,
+	misc::join_parent,
 	project::Project, //
 	target::{LinkTarget, Target},
 };
@@ -14,8 +14,8 @@ use crate::{
 pub struct StaticLibrary {
 	pub parent_project: Weak<Project>,
 	pub name: String,
-	pub c_sources: Vec<String>,
-	pub cpp_sources: Vec<String>,
+	pub c_sources: Vec<PathBuf>,
+	pub cpp_sources: Vec<PathBuf>,
 	pub link_private: Vec<LinkPtr>,
 	pub link_public: Vec<LinkPtr>,
 	pub include_dirs_public: Vec<String>,
@@ -46,7 +46,7 @@ impl LinkTarget for StaticLibrary {
 		let parent_path = &self.parent_project.upgrade().unwrap().info.path;
 		self.include_dirs_public
 			.iter()
-			.map(|x| canonicalize(parent_path, x))
+			.map(|x| join_parent(parent_path, x))
 			.collect()
 	}
 	fn public_includes_recursive(&self) -> Vec<PathBuf> {
@@ -59,7 +59,7 @@ impl LinkTarget for StaticLibrary {
 				}
 			}
 		}
-		for include in self.include_dirs_public.iter().map(|x| canonicalize(parent_path, x)) {
+		for include in self.include_dirs_public.iter().map(|x| join_parent(parent_path, x)) {
 			if !includes.contains(&include) {
 				includes.push(include);
 			}
@@ -147,7 +147,7 @@ impl StaticLibrary {
 		let parent_path = &self.parent_project.upgrade().unwrap().info.path;
 		self.include_dirs_private
 			.iter()
-			.map(|x| canonicalize(parent_path, x))
+			.map(|x| join_parent(parent_path, x))
 			.collect()
 	}
 	pub(crate) fn private_defines(&self) -> Vec<String> {

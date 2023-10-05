@@ -1,5 +1,8 @@
 use core::fmt;
-use std::sync::{Arc, Mutex, Weak};
+use std::{
+	path::Path,
+	sync::{Arc, Mutex, Weak},
+};
 
 use allocative::Allocative;
 use starlark::{
@@ -24,7 +27,7 @@ use starlark::{
 use super::{
 	executable::Executable,
 	link_type::LinkPtr,
-	misc::{is_c_source, is_cpp_source},
+	misc::{is_c_source, is_cpp_source, join_parent},
 	project::Project,
 	starlark_fmt::{format_link_targets, format_strings},
 	starlark_link_target::{PtrLinkTarget, StarLinkTarget},
@@ -68,21 +71,36 @@ impl fmt::Display for StarExecutable {
 }
 
 impl StarExecutable {
-	pub fn as_executable(&self, parent_project: Weak<Project>, link_map: &mut StarLinkTargetCache) -> Executable {
+	pub fn as_executable(
+		&self,
+		parent_project: Weak<Project>,
+		parent_path: &Path,
+		link_map: &mut StarLinkTargetCache,
+	) -> Executable {
 		let mut links = Vec::<LinkPtr>::new();
 		for link in &self.links {
 			let ptr = PtrLinkTarget(link.clone());
 			let link_target = match link_map.get(&ptr) {
 				Some(x) => x,
-				None => link.as_link_target(parent_project.clone(), ptr, link_map),
+				None => link.as_link_target(parent_project.clone(), parent_path, ptr, link_map),
 			};
 			links.push(link_target);
 		}
 		Executable {
-			parent_project,
+			parent_project: parent_project.clone(),
 			name: self.name.clone(),
-			c_sources: self.sources.iter().filter(is_c_source).map(String::from).collect(),
-			cpp_sources: self.sources.iter().filter(is_cpp_source).map(String::from).collect(),
+			c_sources: self
+				.sources
+				.iter()
+				.filter(is_c_source)
+				.map(|x| join_parent(parent_path, x))
+				.collect(),
+			cpp_sources: self
+				.sources
+				.iter()
+				.filter(is_cpp_source)
+				.map(|x| join_parent(parent_path, x))
+				.collect(),
 			links,
 			include_dirs: self.include_dirs.clone(),
 			defines: self.defines.clone(),
