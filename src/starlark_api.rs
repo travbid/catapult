@@ -24,9 +24,9 @@ use starlark::{
 use crate::{
 	starlark_executable::{StarExecutable, StarExecutableWrapper},
 	starlark_interface_library::{StarIfaceLibrary, StarIfaceLibraryWrapper},
-	starlark_static_library::{StarStaticLibrary, StarLibraryWrapper},
 	starlark_link_target::StarLinkTarget,
 	starlark_project::StarProject,
+	starlark_static_library::{StarLibraryWrapper, StarStaticLibrary},
 };
 
 pub(super) fn err_msg<T>(msg: String) -> Result<T, anyhow::Error> {
