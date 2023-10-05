@@ -18,6 +18,9 @@ use starlark::{
 use super::GlobalOptions;
 use crate::toolchain::Toolchain;
 
+const PAD: &str = "";
+const INDENT_SIZE: usize = 4;
+
 #[derive(Clone, Debug, Allocative)]
 pub enum PkgOpt {
 	Bool(bool),
@@ -125,13 +128,15 @@ impl StarGlobal {
 
 impl fmt::Display for StarGlobal {
 	fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> fmt::Result {
+		let width = f.width().unwrap_or(0);
+		let width_plus = width + INDENT_SIZE;
 		write!(
 			f,
 			r#"Global{{
-    global_options: {},
-    package_options: {},
-    toolchain: {},
-}}"#,
+{PAD:width_plus$}global_options: {:width_plus$},
+{PAD:width_plus$}package_options: {:width_plus$},
+{PAD:width_plus$}toolchain: {:width_plus$},
+{PAD:width$}}}"#,
 			self.global_options, self.package_options, self.toolchain,
 		)
 	}
@@ -174,13 +179,15 @@ pub(super) struct StarGlobalOptions {
 
 impl fmt::Display for StarGlobalOptions {
 	fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> fmt::Result {
+		let width = f.width().unwrap_or(0);
+		let width_plus = width + INDENT_SIZE;
 		write!(
 			f,
 			r#"GlobalOptions{{
-    c_standard: {},
-    cpp_standard: {},
-    position_independent_code: {},
-}}"#,
+{PAD:width_plus$}c_standard: {},
+{PAD:width_plus$}cpp_standard: {},
+{PAD:width_plus$}position_independent_code: {},
+{PAD:width$}}}"#,
 			self.c_standard.as_deref().unwrap_or("None"),
 			self.cpp_standard.as_deref().unwrap_or("None"),
 			self.position_independent_code
@@ -227,11 +234,16 @@ struct StarPackageOptions(HashMap<String, PkgOpt>);
 
 impl fmt::Display for StarPackageOptions {
 	fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> fmt::Result {
+		if self.0.is_empty() {
+			return write!(f, "PackageOptions{{}}");
+		}
+		let width = f.width().unwrap_or(0);
+		let width_plus = width + INDENT_SIZE;
 		writeln!(f, "PackageOptions{{")?;
 		for (key, val) in &self.0 {
-			writeln!(f, "   {}: {}", key, val)?;
+			writeln!(f, "{PAD:width_plus$}{}: {}", key, val)?;
 		}
-		writeln!(f, "}}")
+		write!(f, "{PAD:width$}}}")
 	}
 }
 
@@ -269,15 +281,20 @@ pub(super) struct StarToolchain {
 
 impl fmt::Display for StarToolchain {
 	fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> fmt::Result {
-		write!(
-			f,
-			r#"Toolchain{{
-    c_compiler: {},
-    cpp_compiler: {},
-}}"#,
-			self.c_compiler.as_ref().map_or("None".to_owned(), |x| x.to_string()),
-			self.cpp_compiler.as_ref().map_or("None".to_owned(), |x| x.to_string()),
-		)
+		let width = f.width().unwrap_or(0);
+		let width_plus = width + INDENT_SIZE;
+		writeln!(f, "Toolchain{{")?;
+		if let Some(compiler) = &self.c_compiler {
+			writeln!(f, "{PAD:width_plus$}c_compiler: {:width_plus$}", compiler)?;
+		} else {
+			writeln!(f, "{PAD:width_plus$}c_compiler: None")?;
+		}
+		if let Some(compiler) = &self.cpp_compiler {
+			writeln!(f, "{PAD:width_plus$}cpp_compiler: {:width_plus$}", compiler)?;
+		} else {
+			writeln!(f, "{PAD:width_plus$}cpp_compiler: None")?;
+		}
+		write!(f, "{PAD:width$}}}")
 	}
 }
 
@@ -316,13 +333,15 @@ pub(super) struct StarCompiler {
 
 impl fmt::Display for StarCompiler {
 	fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> fmt::Result {
+		let width = f.width().unwrap_or(0);
+		let width_plus = width + INDENT_SIZE;
 		write!(
 			f,
 			r#"Compiler{{
-    id: "{}",
-    version: {},
-}}"#,
-			self.id, self.version,
+{PAD:width_plus$}id: "{}",
+{PAD:width_plus$}version: {:width_plus$},
+{PAD:width$}}}"#,
+			self.id, self.version
 		)
 	}
 }
@@ -377,15 +396,17 @@ impl StarVersion {
 
 impl fmt::Display for StarVersion {
 	fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> fmt::Result {
+		let width = f.width().unwrap_or(0);
+		let width_plus = width + INDENT_SIZE;
 		write!(
 			f,
-			r#"Compiler{{
-    str: "{}",
-    major: {},
-    minor: {},
-    patch: {},
-    revision: "{}",
-}}"#,
+			r#"Version{{
+{PAD:width_plus$}str: "{}",
+{PAD:width_plus$}major: {},
+{PAD:width_plus$}minor: {},
+{PAD:width_plus$}patch: {},
+{PAD:width_plus$}revision: "{}",
+{PAD:width$}}}"#,
 			self.str, self.major, self.minor, self.patch, self.revision,
 		)
 	}
