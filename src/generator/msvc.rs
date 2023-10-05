@@ -179,10 +179,11 @@ fn item_definition_group(
 	} else {
 		"MultiThreaded"
 	};
+	// TODO(Travers): Add global options for warnings
+	// <WarningLevel>Level4</WarningLevel>
+	// <TreatWarningAsError>false</TreatWarningAsError>
 	ret += r#"</RuntimeLibrary>
-      <TreatWarningAsError>true</TreatWarningAsError>
       <UseFullPaths>false</UseFullPaths>
-      <WarningLevel>Level4</WarningLevel>
       <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_WINDOWS</PreprocessorDefinitions>
       <ObjectFileName>$(IntDir)</ObjectFileName>
     </ClCompile>
