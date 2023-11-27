@@ -15,7 +15,10 @@ use crate::{
 	project::Project,
 	static_library::StaticLibrary,
 	target::{LinkTarget, Target},
-	toolchain::compiler::{Compiler, ExeLinker},
+	toolchain::{
+		compiler::{Compiler, ExeLinker},
+		Profile,
+	},
 	GlobalOptions,
 };
 
@@ -195,6 +198,7 @@ impl Ninja {
 		project: Arc<Project>,
 		build_dir: &Path,
 		toolchain: Toolchain,
+		profile: Profile,
 		global_opts: GlobalOptions,
 		target_platform: TargetPlatform,
 	) -> Result<(), String> {
@@ -204,6 +208,7 @@ impl Ninja {
 			&project,
 			build_dir,
 			&toolchain,
+			&profile,
 			&global_opts,
 			&target_platform,
 			&mut rules,
@@ -242,13 +247,23 @@ impl Ninja {
 		project: &Arc<Project>,
 		build_dir: &Path,
 		toolchain: &Toolchain,
+		profile: &Profile,
 		global_opts: &GlobalOptions,
 		target_platform: &TargetPlatform,
 		rules: &mut NinjaRules,
 		build_lines: &mut Vec<NinjaBuild>,
 	) -> Result<(), String> {
 		for subproject in &project.dependencies {
-			Ninja::generate_inner(subproject, build_dir, toolchain, global_opts, target_platform, rules, build_lines)?;
+			Ninja::generate_inner(
+				subproject,
+				build_dir,
+				toolchain,
+				profile,
+				global_opts,
+				target_platform,
+				rules,
+				build_lines,
+			)?;
 		}
 
 		let project_name = &project.info.name;
@@ -307,7 +322,7 @@ impl Ninja {
 					rules.compile_c_object = Some(compile_c_object(c_compiler));
 					rules.compile_c_object.as_ref().unwrap()
 				};
-				let mut c_compile_opts = Vec::new();
+				let mut c_compile_opts = profile.c_compile_flags.clone();
 				if let Some(c_std) = &global_opts.c_standard {
 					c_compile_opts.push(c_compiler.c_std_flag(c_std)?);
 				}
@@ -336,7 +351,7 @@ impl Ninja {
 					rules.compile_cpp_object = Some(compile_cpp_object(cpp_compiler));
 					rules.compile_cpp_object.as_ref().unwrap()
 				};
-				let mut cpp_compile_opts = Vec::new();
+				let mut cpp_compile_opts = profile.cpp_compile_flags.clone();
 				if let Some(cpp_std) = &global_opts.cpp_standard {
 					cpp_compile_opts.push(cpp_compiler.cpp_std_flag(cpp_std)?);
 				}
@@ -459,7 +474,7 @@ impl Ninja {
 						rules.compile_c_object = Some(compile_c_object(c_compiler));
 						rules.compile_c_object.as_ref().unwrap()
 					};
-					let mut c_compile_opts = Vec::new();
+					let mut c_compile_opts = profile.c_compile_flags.clone();
 					if let Some(c_std) = &global_opts.c_standard {
 						c_compile_opts.push(c_compiler.c_std_flag(c_std)?);
 					}
@@ -487,7 +502,7 @@ impl Ninja {
 						rules.compile_cpp_object = Some(compile_cpp_object(cpp_compiler));
 						rules.compile_cpp_object.as_ref().unwrap()
 					};
-					let mut cpp_compile_opts = Vec::new();
+					let mut cpp_compile_opts = profile.cpp_compile_flags.clone();
 					if let Some(cpp_std) = &global_opts.cpp_standard {
 						cpp_compile_opts.push(cpp_compiler.cpp_std_flag(cpp_std)?);
 					}
@@ -678,7 +693,9 @@ fn test_position_independent_code() {
 		cpp_compiler: Some(Box::new(TestCompiler {})),
 		static_linker: Some(vec!["llvm-ar".to_owned()]),
 		exe_linker: Some(Box::new(TestCompiler {})),
+		profile: Default::default(),
 	};
+	let profile = Default::default();
 	let global_opts = GlobalOptions {
 		c_standard: Some("17".to_owned()),
 		cpp_standard: Some("17".to_owned()),
@@ -695,6 +712,7 @@ fn test_position_independent_code() {
 		&project,
 		&PathBuf::from("build"),
 		&toolchain,
+		&profile,
 		&global_opts,
 		&target_platform,
 		&mut rules,

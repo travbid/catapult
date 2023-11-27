@@ -6,7 +6,11 @@ use std::{
 	sync::Arc,
 };
 
-use crate::{project::Project, toolchain::Toolchain, GlobalOptions};
+use crate::{
+	project::Project,
+	toolchain::{Profile, Toolchain},
+	GlobalOptions,
+};
 
 pub enum Generator {
 	Msvc,
@@ -20,6 +24,7 @@ impl Generator {
 		global_opts: GlobalOptions,
 		build_dir: &Path,
 		toolchain: Toolchain,
+		profile: Profile,
 	) -> Result<(), String> {
 		match self {
 			Generator::Msvc => msvc::Msvc::generate(project, build_dir, global_opts),
@@ -37,7 +42,7 @@ impl Generator {
 						exe_ext: "".to_owned(),
 					}
 				};
-				ninja::Ninja::generate(project, build_dir, toolchain, global_opts, target_platform)
+				ninja::Ninja::generate(project, build_dir, toolchain, profile, global_opts, target_platform)
 			}
 		}
 	}

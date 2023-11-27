@@ -2,3 +2,11 @@ c_compiler = ["gcc"]
 cpp_compiler = ["g++"]
 static_linker = ["ar", "qc"]
 exe_linker = ["g++"]
+
+[profile.Debug]
+c_compile_flags = ["-Og", "-g3", "-D_DEBUG"]
+cpp_compile_flags = ["-Og", "-g3", "-D_DEBUG"]
+
+[profile.Release]
+c_compile_flags = ["-O3", "-DNDEBUG"]
+cpp_compile_flags = ["-O3", "-DNDEBUG"]
