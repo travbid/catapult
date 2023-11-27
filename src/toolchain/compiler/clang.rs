@@ -62,7 +62,11 @@ impl Compiler for Clang {
 
 impl ExeLinker for Clang {
 	fn cmd(&self) -> Vec<String> {
-		self.cmd.clone()
+		let mut ret = self.cmd.clone();
+		if self.target_windows {
+			ret.push("-fuse-ld=lld-link".to_owned());
+		}
+		ret
 	}
 
 	fn position_independent_executable_flag(&self) -> Option<String> {
