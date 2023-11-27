@@ -1,22 +1,28 @@
 use std::path::{Path, PathBuf};
 
-pub(crate) fn join_parent(parent_path: &Path, x: &String) -> PathBuf {
+#[derive(Debug)]
+pub struct SourcePath {
+	pub full: PathBuf,
+	pub name: String,
+}
+
+pub(crate) fn join_parent(parent_path: &Path, x: &String) -> SourcePath {
 	let joined = parent_path.join(x); // If x is absolute, it replaces the current path.
 	match joined.try_exists() {
 		Ok(true) => match joined.canonicalize() {
-			Ok(path) => path,
+			Ok(path) => SourcePath { full: path, name: x.clone() },
 			Err(e) => {
 				log::warn!("Could not canonicalize path \"{}\": {}", joined.to_string_lossy(), e);
-				joined
+				SourcePath { full: joined, name: x.clone() }
 			}
 		},
 		Ok(false) => {
 			log::warn!("Path does not exist: \"{}\"", joined.to_string_lossy());
-			joined
+			SourcePath { full: joined, name: x.clone() }
 		}
 		Err(e) => {
 			log::warn!("Existence of path could not be confirmed \"{}\": {}", joined.to_string_lossy(), e);
-			joined
+			SourcePath { full: joined, name: x.clone() }
 		}
 	}
 	// TODO(Travers): Check if there's a way to make clang/gcc/msvc support UNC paths

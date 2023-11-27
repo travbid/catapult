@@ -24,6 +24,8 @@ use starlark::{
 	},
 };
 
+use crate::misc::join_parent;
+
 use super::{
 	interface_library::InterfaceLibrary, //
 	link_type::LinkPtr,
@@ -100,7 +102,7 @@ impl StarIfaceLibrary {
 		InterfaceLibrary {
 			parent_project: parent_project.clone(),
 			name: self.name.clone(),
-			include_dirs: self.include_dirs.clone(),
+			include_dirs: self.include_dirs.iter().map(|x| join_parent(parent_path, x)).collect(),
 			links: self
 				.links
 				.iter()

@@ -6,7 +6,7 @@ use std::{
 
 use crate::{
 	link_type::LinkPtr,
-	misc::join_parent,
+	misc::SourcePath,
 	project::Project,
 	target::{LinkTarget, Target},
 };
@@ -16,10 +16,10 @@ pub struct Executable {
 	pub parent_project: Weak<Project>,
 
 	pub name: String,
-	pub c_sources: Vec<PathBuf>,
-	pub cpp_sources: Vec<PathBuf>,
+	pub c_sources: Vec<SourcePath>,
+	pub cpp_sources: Vec<SourcePath>,
 	pub links: Vec<LinkPtr>,
-	pub include_dirs: Vec<String>,
+	pub include_dirs: Vec<SourcePath>,
 	pub defines: Vec<String>,
 	pub link_flags: Vec<String>,
 
@@ -43,14 +43,17 @@ impl fmt::Display for Executable {
 			self.name,
 			self.c_sources
 				.iter()
-				.map(|x| x.to_string_lossy())
-				.fold(String::new(), |acc, x| acc + ", " + &x),
+				.map(|x| &x.name)
+				.fold(String::new(), |acc, x| acc + ", " + x),
 			self.cpp_sources
 				.iter()
-				.map(|x| x.to_string_lossy())
-				.fold(String::new(), |acc, x| acc + ", " + &x),
+				.map(|x| &x.name)
+				.fold(String::new(), |acc, x| acc + ", " + x),
 			self.links.iter().map(|x| x.name()).collect::<Vec<String>>().join(", "),
-			self.include_dirs.join(", "),
+			self.include_dirs
+				.iter()
+				.map(|x| &x.name)
+				.fold(String::new(), |acc, x| acc + ", " + x),
 			self.defines.join(", "),
 			self.link_flags.join(", "),
 			self.output_name.clone().unwrap_or("None".to_owned())
@@ -76,7 +79,6 @@ impl Target for Executable {
 impl Executable {
 	pub(crate) fn public_includes_recursive(&self) -> Vec<PathBuf> {
 		let mut includes = Vec::new();
-		let parent_path = &self.parent_project.upgrade().unwrap().info.path;
 		for link in &self.links {
 			for include in link.public_includes_recursive() {
 				if !includes.contains(&include) {
@@ -85,9 +87,9 @@ impl Executable {
 			}
 		}
 
-		for include in self.include_dirs.iter().map(|x| join_parent(parent_path, x)) {
-			if !includes.contains(&include) {
-				includes.push(include);
+		for include in self.include_dirs.iter().map(|x| &x.full) {
+			if !includes.contains(include) {
+				includes.push(include.to_owned());
 			}
 		}
 		includes

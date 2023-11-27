@@ -31,10 +31,10 @@ fn input_path(src: &Path, project_path: &Path) -> String {
 	.to_owned()
 }
 
-fn output_path(build_dir: &Path, project_name: &str, src: &Path, ext: &str) -> String {
+fn output_path(build_dir: &Path, project_name: &str, src: &str, ext: &str) -> String {
 	build_dir
 		.join(project_name)
-		.join(src.to_str().unwrap().to_owned() + ext)
+		.join(src.to_owned() + ext)
 		.to_str()
 		.unwrap()
 		.trim_start_matches(r"\\?\")
@@ -318,9 +318,9 @@ impl Ninja {
 				}
 				for src in &lib.c_sources {
 					build_lines.push(add_lib_source(
-						src,
+						&src.full,
 						lib,
-						output_path(build_dir, project_name, src, &target_platform.obj_ext),
+						output_path(build_dir, project_name, &src.name, &target_platform.obj_ext),
 						rule.clone(),
 						c_compile_opts.clone(),
 						&mut inputs,
@@ -347,9 +347,9 @@ impl Ninja {
 				}
 				for src in &lib.cpp_sources {
 					build_lines.push(add_lib_source(
-						src,
+						&src.full,
 						lib,
-						output_path(build_dir, project_name, src, &target_platform.obj_ext),
+						output_path(build_dir, project_name, &src.name, &target_platform.obj_ext),
 						rule.clone(),
 						cpp_compile_opts.clone(),
 						&mut inputs,
@@ -470,9 +470,9 @@ impl Ninja {
 					}
 					for src in &exe.c_sources {
 						build_lines.push(add_exe_source(
-							src,
+							&src.full,
 							exe,
-							output_path(build_dir, project_name, src, &target_platform.obj_ext),
+							output_path(build_dir, project_name, &src.name, &target_platform.obj_ext),
 							rule_compile_c.clone(),
 							c_compile_opts.clone(),
 							&mut inputs,
@@ -498,9 +498,9 @@ impl Ninja {
 					}
 					for src in &exe.cpp_sources {
 						build_lines.push(add_exe_source(
-							src,
+							&src.full,
 							exe,
-							output_path(build_dir, project_name, src, &target_platform.obj_ext),
+							output_path(build_dir, project_name, &src.name, &target_platform.obj_ext),
 							rule_compile_cpp.clone(),
 							cpp_compile_opts.clone(),
 							&mut inputs,
@@ -585,6 +585,7 @@ fn get_cpp_compiler<'a>(toolchain: &'a Toolchain, name: &str) -> Result<&'a dyn 
 
 #[test]
 fn test_position_independent_code() {
+	use crate::misc::SourcePath;
 	use std::path::PathBuf;
 
 	struct TestCompiler {}
@@ -642,7 +643,7 @@ fn test_position_independent_code() {
 					parent_project: weak_parent.clone(),
 					name: "add".to_owned(),
 					c_sources: Vec::new(),
-					cpp_sources: vec![PathBuf::from("add.cpp")],
+					cpp_sources: vec![SourcePath { full: PathBuf::from("add.cpp"), name: "add.cpp".to_owned() }],
 					link_public: Vec::new(),
 					link_private: Vec::new(),
 					include_dirs_public: Vec::new(),
@@ -662,7 +663,7 @@ fn test_position_independent_code() {
 			parent_project: weak_parent.clone(),
 			name: "main".to_owned(),
 			c_sources: Vec::new(),
-			cpp_sources: vec![PathBuf::from("main.cpp")],
+			cpp_sources: vec![SourcePath { full: PathBuf::from("main.cpp"), name: "main.cpp".to_owned() }],
 			links: vec![LinkPtr::Static(create_lib(weak_parent))],
 			include_dirs: Vec::new(),
 			defines: Vec::new(),
@@ -704,9 +705,10 @@ fn test_position_independent_code() {
 
 	assert_eq!(build_lines.len(), 6);
 
+	let add_cpp_path = PathBuf::from(".").join("add.cpp").to_string_lossy().to_string();
 	let add_cpp_rules = build_lines
 		.iter()
-		.filter(|x| x.inputs.first().unwrap() == "./add.cpp")
+		.filter(|x| x.inputs.first().unwrap() == &add_cpp_path)
 		.collect::<Vec<_>>();
 	assert_eq!(add_cpp_rules.len(), 1);
 
@@ -723,9 +725,10 @@ fn test_position_independent_code() {
 		1
 	);
 
+	let main_cpp_path = PathBuf::from(".").join("main.cpp").to_string_lossy().to_string();
 	let main_cpp_rules = build_lines
 		.iter()
-		.filter(|x| x.inputs.first().unwrap() == "./main.cpp")
+		.filter(|x| x.inputs.first().unwrap() == &main_cpp_path)
 		.collect::<Vec<_>>();
 	assert_eq!(add_cpp_rules.len(), 1);
 
@@ -742,9 +745,17 @@ fn test_position_independent_code() {
 		1
 	);
 
+	let main_out_path = PathBuf::from("build")
+		.join("test_project")
+		.join("main")
+		.to_string_lossy()
+		.to_string();
 	let main_exe_rules = build_lines
 		.iter()
-		.filter(|x| x.output_targets.first().unwrap() == "build/test_project/main")
+		.filter(|x| {
+			println!("out: {}", x.output_targets.first().unwrap());
+			x.output_targets.first().unwrap() == &main_out_path
+		})
 		.collect::<Vec<_>>();
 	assert_eq!(add_cpp_rules.len(), 1);
 

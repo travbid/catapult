@@ -11,6 +11,7 @@ use uuid::Uuid;
 
 use crate::{
 	link_type::LinkPtr,
+	misc::SourcePath,
 	project::{Project, ProjectInfo},
 	target::{LinkTarget, Target},
 	GlobalOptions,
@@ -395,8 +396,8 @@ fn make_vcxproj(
 	project_info: &ProjectInfo,
 	opts: &Options,
 	includes: &[String],
-	c_sources: &[PathBuf],
-	cpp_sources: &[PathBuf],
+	c_sources: &[SourcePath],
+	cpp_sources: &[SourcePath],
 	project_links: &Vec<LinkPtr>,
 ) -> Result<VsProject, String> {
 	if !c_sources.is_empty() && !cpp_sources.is_empty() {
@@ -487,7 +488,7 @@ fn make_vcxproj(
 	if !c_sources.is_empty() {
 		out_str += "  <ItemGroup>\n";
 		for src in c_sources {
-			let input = input_path(src, &project_info.path);
+			let input = input_path(&src.full, &project_info.path);
 			out_str += &format!("    <ClCompile Include=\"{input}\" />\n");
 		}
 		out_str += "  </ItemGroup>\n";
@@ -495,7 +496,7 @@ fn make_vcxproj(
 	if !cpp_sources.is_empty() {
 		out_str += "  <ItemGroup>\n";
 		for src in cpp_sources {
-			let input = input_path(src, &project_info.path);
+			let input = input_path(&src.full, &project_info.path);
 			out_str += &format!("    <ClCompile Include=\"{input}\" />\n");
 		}
 		out_str += "  </ItemGroup>\n";

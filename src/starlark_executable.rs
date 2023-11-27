@@ -102,7 +102,7 @@ impl StarExecutable {
 				.map(|x| join_parent(parent_path, x))
 				.collect(),
 			links,
-			include_dirs: self.include_dirs.clone(),
+			include_dirs: self.include_dirs.iter().map(|x| join_parent(parent_path, x)).collect(),
 			defines: self.defines.clone(),
 			link_flags: self.link_flags.clone(),
 			output_name: self.output_name.clone(),

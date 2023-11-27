@@ -124,8 +124,16 @@ impl StarStaticLibrary {
 				.filter(is_cpp_source)
 				.map(|x| join_parent(parent_path, x))
 				.collect(),
-			include_dirs_private: self.include_dirs_private.clone(),
-			include_dirs_public: self.include_dirs_public.clone(),
+			include_dirs_private: self
+				.include_dirs_private
+				.iter()
+				.map(|x| join_parent(parent_path, x))
+				.collect(),
+			include_dirs_public: self
+				.include_dirs_public
+				.iter()
+				.map(|x| join_parent(parent_path, x))
+				.collect(),
 			link_private: self
 				.link_private
 				.iter()
