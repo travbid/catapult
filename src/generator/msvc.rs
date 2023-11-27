@@ -150,12 +150,26 @@ fn item_definition_group(
 	// flags.contains("/permissive-")
 	ret += r#"</AdditionalOptions>
       <AssemblerListingLocation>$(IntDir)</AssemblerListingLocation>
-      <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
-      <ConformanceMode>true</ConformanceMode>
-      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
-      <ExceptionHandling>Sync</ExceptionHandling>
-      <InlineFunctionExpansion>Disabled</InlineFunctionExpansion>
 "#;
+	if config_type == ConfigType::Debug {
+		ret += "      <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>\n";
+	}
+	ret += "      <ConformanceMode>true</ConformanceMode>\n";
+	if config_type == ConfigType::Debug || config_type == ConfigType::RelWithDebInfo {
+		ret += "      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>\n";
+	} else {
+		ret += "      <DebugInformationFormat></DebugInformationFormat>\n";
+	}
+	ret += "      <ExceptionHandling>Sync</ExceptionHandling>\n";
+
+	ret += "      <InlineFunctionExpansion>";
+	ret += match config_type {
+		ConfigType::Debug => "Disabled",
+		ConfigType::Release => "AnySuitable",
+		ConfigType::MinSizeRel | ConfigType::RelWithDebInfo => "OnlyExplicitInline",
+	};
+	ret += "</InlineFunctionExpansion>\n";
+
 	if let Some(c_std) = &opts.c_standard {
 		ret += "      <LanguageStandard_C>";
 		ret += c_std.as_str();
@@ -185,11 +199,21 @@ fn item_definition_group(
 	// <TreatWarningAsError>false</TreatWarningAsError>
 	ret += r#"</RuntimeLibrary>
       <UseFullPaths>false</UseFullPaths>
-      <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_WINDOWS</PreprocessorDefinitions>
+      <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_WINDOWS"#;
+	if config_type != ConfigType::Debug {
+		ret += ";NDEBUG";
+	}
+	ret += r#"</PreprocessorDefinitions>
       <ObjectFileName>$(IntDir)</ObjectFileName>
     </ClCompile>
     <ResourceCompile>
-      <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_DEBUG;_WINDOWS</PreprocessorDefinitions>
+      <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_WINDOWS"#;
+	if config_type == ConfigType::Debug {
+		ret += ";_DEBUG";
+	} else {
+		ret += ";NDEBUG";
+	}
+	ret += r#"</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>"#;
 	ret += &include_dirs.join(";");
 	ret += r#"%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
