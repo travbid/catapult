@@ -1,6 +1,6 @@
 pub(crate) mod compiler;
 
-use std::{fs, path::Path};
+use std::{collections::BTreeMap, fs, path::Path};
 
 use serde::Deserialize;
 
@@ -12,6 +12,7 @@ pub struct ToolchainFile {
 	cpp_compiler: Option<Vec<String>>,
 	static_linker: Option<Vec<String>>,
 	exe_linker: Option<Vec<String>>,
+	profile: Option<BTreeMap<String, Profile>>,
 	// env: Option<HashMap<String, String>>
 }
 
@@ -21,6 +22,15 @@ pub struct Toolchain {
 	pub cpp_compiler: Option<Box<dyn Compiler>>,
 	pub static_linker: Option<Vec<String>>,
 	pub exe_linker: Option<Box<dyn ExeLinker>>,
+	pub profile: BTreeMap<String, Profile>,
+}
+
+#[derive(Clone, Debug, Default, Deserialize)]
+pub struct Profile {
+	#[serde(default)]
+	pub c_compile_flags: Vec<String>,
+	#[serde(default)]
+	pub cpp_compile_flags: Vec<String>,
 }
 
 pub fn read_toolchain(toolchain_path: &Path) -> Result<Toolchain, String> {
@@ -58,6 +68,8 @@ pub fn read_toolchain(toolchain_path: &Path) -> Result<Toolchain, String> {
 		None => None,
 	};
 
+	let profile = toolchain_file.profile.unwrap_or_default();
+
 	// Sanity checks
 	if let Some(ref c_compiler) = c_compiler {
 		if c_compiler.position_independent_code_flag().is_none() {
@@ -70,7 +82,7 @@ pub fn read_toolchain(toolchain_path: &Path) -> Result<Toolchain, String> {
 		}
 	}
 
-	let toolchain = Toolchain { c_compiler, cpp_compiler, static_linker, exe_linker };
+	let toolchain = Toolchain { c_compiler, cpp_compiler, static_linker, exe_linker, profile };
 
 	Ok(toolchain)
 }

@@ -26,12 +26,14 @@ fn main() -> ExitCode {
 	const BUILD_DIR: &str = "build-dir";
 	const GENERATOR: &str = "generator";
 	const TOOLCHAIN: &str = "toolchain";
+	const PROFILE: &str = "profile";
 
 	let mut opts = Options::new();
 	opts.optopt("S", SOURCE_DIR, "Specify the source directory", "<path-to-source>");
 	opts.optopt("B", BUILD_DIR, "Specify the build directory", "<path-to-build>");
 	opts.optopt("G", GENERATOR, "Specify a build system generator", "<generator-name>");
 	opts.optopt("T", TOOLCHAIN, "Specify a path to a toolchain file", "<path-to-toolchain-file>");
+	opts.optopt("P", PROFILE, "Specify the profile to build", "<profile-name>");
 	opts.optflag("h", "help", "print this help menu");
 	let matches = match opts.parse(&args[1..]) {
 		Ok(m) => m,
@@ -91,10 +93,13 @@ fn main() -> ExitCode {
 		}
 	};
 
+	let profile_opt = matches.opt_str(PROFILE);
+
 	println!("source-dir: {}", src_dir);
 	println!(" build-dir: {}", build_dir);
 	println!(" generator: {}", generator_str);
 	println!(" toolchain: {}", toolchain_path.display());
+	println!("   profile: {}", profile_opt.as_deref().unwrap_or_default());
 
 	let generator = match generator_str.as_str() {
 		"Ninja" => Generator::Ninja,
@@ -146,6 +151,26 @@ fn main() -> ExitCode {
 		}
 	};
 
+	// Check selected profile is provided by toolchain
+	let profile = if let Some(prof) = profile_opt {
+		match generator {
+			Generator::Msvc => {
+				println!("--profile is incompatible with MSVC generator");
+				return ExitCode::FAILURE;
+			}
+			_ => {}
+		};
+		match toolchain.profile.get(&prof) {
+			None => {
+				println!("Selected profile is not provided by toolchain");
+				return ExitCode::FAILURE;
+			}
+			Some(x) => x.clone(),
+		}
+	} else {
+		Default::default()
+	};
+
 	let (project, global_opts) = match catapult::parse_project(&toolchain) {
 		Ok(x) => x,
 		Err(e) => {
@@ -154,7 +179,7 @@ fn main() -> ExitCode {
 		}
 	};
 
-	match generator.generate(project, global_opts, &build_dir_path, toolchain) {
+	match generator.generate(project, global_opts, &build_dir_path, toolchain, profile) {
 		Ok(x) => x,
 		Err(e) => {
 			println!("{}", e);
