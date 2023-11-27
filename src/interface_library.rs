@@ -5,7 +5,7 @@ use std::{
 
 use crate::{
 	link_type::LinkPtr,
-	misc::join_parent,
+	misc::SourcePath,
 	project::Project, //
 	target::{LinkTarget, Target},
 };
@@ -15,7 +15,7 @@ pub struct InterfaceLibrary {
 	pub parent_project: Weak<Project>,
 	pub name: String,
 	pub links: Vec<LinkPtr>,
-	pub include_dirs: Vec<String>,
+	pub include_dirs: Vec<SourcePath>,
 	pub defines: Vec<String>,
 	pub link_flags: Vec<String>,
 }
@@ -34,8 +34,7 @@ impl Target for InterfaceLibrary {
 
 impl LinkTarget for InterfaceLibrary {
 	fn public_includes(&self) -> Vec<PathBuf> {
-		let parent_path = &self.parent_project.upgrade().unwrap().info.path;
-		self.include_dirs.iter().map(|x| join_parent(parent_path, x)).collect()
+		self.include_dirs.iter().map(|x| x.full.clone()).collect()
 	}
 	fn public_includes_recursive(&self) -> Vec<PathBuf> {
 		let mut includes = Vec::new();

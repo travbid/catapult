@@ -5,7 +5,7 @@ use std::{
 
 use crate::{
 	link_type::LinkPtr,
-	misc::join_parent,
+	misc::SourcePath,
 	project::Project, //
 	target::{LinkTarget, Target},
 };
@@ -14,12 +14,12 @@ use crate::{
 pub struct StaticLibrary {
 	pub parent_project: Weak<Project>,
 	pub name: String,
-	pub c_sources: Vec<PathBuf>,
-	pub cpp_sources: Vec<PathBuf>,
+	pub c_sources: Vec<SourcePath>,
+	pub cpp_sources: Vec<SourcePath>,
 	pub link_private: Vec<LinkPtr>,
 	pub link_public: Vec<LinkPtr>,
-	pub include_dirs_public: Vec<String>,
-	pub include_dirs_private: Vec<String>,
+	pub include_dirs_public: Vec<SourcePath>,
+	pub include_dirs_private: Vec<SourcePath>,
 	pub defines_public: Vec<String>,
 	pub link_flags_public: Vec<String>,
 
@@ -43,15 +43,10 @@ impl Target for StaticLibrary {
 
 impl LinkTarget for StaticLibrary {
 	fn public_includes(&self) -> Vec<PathBuf> {
-		let parent_path = &self.parent_project.upgrade().unwrap().info.path;
-		self.include_dirs_public
-			.iter()
-			.map(|x| join_parent(parent_path, x))
-			.collect()
+		self.include_dirs_public.iter().map(|x| x.full.clone()).collect()
 	}
 	fn public_includes_recursive(&self) -> Vec<PathBuf> {
 		let mut includes = Vec::new();
-		let parent_path = &self.parent_project.upgrade().unwrap().info.path;
 		for link in &self.link_private {
 			for include in link.public_includes_recursive() {
 				if !includes.contains(&include) {
@@ -59,9 +54,9 @@ impl LinkTarget for StaticLibrary {
 				}
 			}
 		}
-		for include in self.include_dirs_public.iter().map(|x| join_parent(parent_path, x)) {
-			if !includes.contains(&include) {
-				includes.push(include);
+		for include in self.include_dirs_public.iter().map(|x| &x.full) {
+			if !includes.contains(include) {
+				includes.push(include.to_owned());
 			}
 		}
 		includes
@@ -144,11 +139,7 @@ impl LinkTarget for StaticLibrary {
 
 impl StaticLibrary {
 	pub(crate) fn private_includes(&self) -> Vec<PathBuf> {
-		let parent_path = &self.parent_project.upgrade().unwrap().info.path;
-		self.include_dirs_private
-			.iter()
-			.map(|x| join_parent(parent_path, x))
-			.collect()
+		self.include_dirs_private.iter().map(|x| x.full.clone()).collect()
 	}
 	pub(crate) fn private_defines(&self) -> Vec<String> {
 		// TODO(Travers)
