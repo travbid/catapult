@@ -31,6 +31,16 @@ pub struct Profile {
 	pub c_compile_flags: Vec<String>,
 	#[serde(default)]
 	pub cpp_compile_flags: Vec<String>,
+	pub vcxproj: Option<VcxprojProfile>,
+}
+
+#[derive(Clone, Debug, Default, Deserialize)]
+pub struct VcxprojProfile {
+	pub platform: String,
+	pub preprocessor_definitions: Vec<String>,
+	pub property_group: BTreeMap<String, String>,
+	pub cl_compile: BTreeMap<String, String>,
+	pub link: BTreeMap<String, String>,
 }
 
 pub fn read_toolchain(toolchain_path: &Path) -> Result<Toolchain, String> {

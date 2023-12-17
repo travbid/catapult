@@ -1,6 +1,5 @@
-use core::fmt;
 use std::{
-	collections::HashMap, //
+	collections::{BTreeMap, HashMap},
 	fs,
 	io::Write,
 	path::{Path, PathBuf},
@@ -14,6 +13,7 @@ use crate::{
 	misc::SourcePath,
 	project::{Project, ProjectInfo},
 	target::{LinkTarget, Target},
+	toolchain::{Profile, VcxprojProfile},
 	GlobalOptions,
 };
 
@@ -37,37 +37,6 @@ fn input_path(src: &Path, project_path: &Path) -> String {
 	.unwrap()
 	.trim_start_matches(r"\\?\")
 	.to_owned()
-}
-
-#[derive(PartialEq)]
-enum ConfigType {
-	Debug,
-	Release,
-	MinSizeRel,
-	RelWithDebInfo,
-}
-
-impl ConfigType {
-	fn optimization(&self) -> &str {
-		match self {
-			ConfigType::Debug => "Disabled",
-			ConfigType::Release => "MaxSpeed",
-			ConfigType::MinSizeRel => "MinSpace",
-			ConfigType::RelWithDebInfo => "MaxSpeed",
-		}
-	}
-}
-
-impl fmt::Display for ConfigType {
-	fn fmt(&self, f: &mut fmt::Formatter<'_>) -> Result<(), fmt::Error> {
-		let s = match self {
-			ConfigType::Debug => "Debug",
-			ConfigType::Release => "Release",
-			ConfigType::MinSizeRel => "MinSizeRel",
-			ConfigType::RelWithDebInfo => "RelWithDebInfo",
-		};
-		write!(f, "{}", s)
-	}
 }
 
 enum CStd {
@@ -132,43 +101,26 @@ impl VsProject {
 }
 
 fn item_definition_group(
-	config_type: ConfigType,
+	profile_name: &str,
+	profile: &VcxprojProfile,
 	include_dirs: &[String],
-	compile_flags: &[String],
+	// compile_flags: &[String],
 	opts: &Options,
 	compile_as_c: bool,
 ) -> String {
 	let mut ret = format!(
-		r#"  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='{config_type}|x64'">
+		r#"  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='{profile_name}|{}'">
     <ClCompile>
-      <AdditionalIncludeDirectories>"#
+"#,
+		profile.platform
 	);
+	for (key, val) in &profile.cl_compile {
+		ret += &format!("      <{key}>{val}</{key}>\n");
+	}
+	ret += "      <AdditionalIncludeDirectories>";
 	ret += &include_dirs.join(";");
-	ret += r#"%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <AdditionalOptions>%(AdditionalOptions)"#;
-	ret += &compile_flags.join(";");
-	// flags.contains("/permissive-")
-	ret += r#"</AdditionalOptions>
-      <AssemblerListingLocation>$(IntDir)</AssemblerListingLocation>
-"#;
-	if config_type == ConfigType::Debug {
-		ret += "      <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>\n";
-	}
+	ret += "%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>\n";
 	ret += "      <ConformanceMode>true</ConformanceMode>\n";
-	if config_type == ConfigType::Debug || config_type == ConfigType::RelWithDebInfo {
-		ret += "      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>\n";
-	} else {
-		ret += "      <DebugInformationFormat></DebugInformationFormat>\n";
-	}
-	ret += "      <ExceptionHandling>Sync</ExceptionHandling>\n";
-
-	ret += "      <InlineFunctionExpansion>";
-	ret += match config_type {
-		ConfigType::Debug => "Disabled",
-		ConfigType::Release => "AnySuitable",
-		ConfigType::MinSizeRel | ConfigType::RelWithDebInfo => "OnlyExplicitInline",
-	};
-	ret += "</InlineFunctionExpansion>\n";
 
 	if let Some(c_std) = &opts.c_standard {
 		ret += "      <LanguageStandard_C>";
@@ -183,35 +135,23 @@ fn item_definition_group(
 	if compile_as_c {
 		ret += "      <CompileAs>CompileAsC</CompileAs>\n";
 	}
-	ret += "      <Optimization>";
-	ret += config_type.optimization();
-	ret += r#"</Optimization>
-      <PrecompiledHeader>NotUsing</PrecompiledHeader>
-      <RuntimeLibrary>"#;
-	// TODO(Travers): msvc runtime
-	ret += if config_type == ConfigType::Debug {
-		"MultiThreadedDebug"
-	} else {
-		"MultiThreaded"
-	};
 	// TODO(Travers): Add global options for warnings
 	// <WarningLevel>Level4</WarningLevel>
 	// <TreatWarningAsError>false</TreatWarningAsError>
-	ret += r#"</RuntimeLibrary>
-      <UseFullPaths>false</UseFullPaths>
-      <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_WINDOWS"#;
-	if config_type != ConfigType::Debug {
-		ret += ";NDEBUG";
+	// TODO(Travers): Add other definitions and compile flags
+	ret += "      <PreprocessorDefinitions>";
+	for def in &profile.preprocessor_definitions {
+		ret += def;
+		ret += ";";
 	}
-	ret += r#"</PreprocessorDefinitions>
-      <ObjectFileName>$(IntDir)</ObjectFileName>
+	ret += "%(PreprocessorDefinitions)</PreprocessorDefinitions>\n";
+	ret += r#"      <ObjectFileName>$(IntDir)</ObjectFileName>
     </ClCompile>
     <ResourceCompile>
-      <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_WINDOWS"#;
-	if config_type == ConfigType::Debug {
-		ret += ";_DEBUG";
-	} else {
-		ret += ";NDEBUG";
+      <PreprocessorDefinitions>%(PreprocessorDefinitions)"#;
+	for def in &profile.preprocessor_definitions {
+		ret += ";";
+		ret += def;
 	}
 	ret += r#"</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>"#;
@@ -229,8 +169,10 @@ fn item_definition_group(
       <ProxyFileName>%(Filename)_p.c</ProxyFileName>
     </Midl>
     <Lib>
-      <AdditionalOptions>%(AdditionalOptions) /machine:x64</AdditionalOptions>
-    </Lib>
+"#;
+	ret +=
+		&format!("      <AdditionalOptions>%(AdditionalOptions) /machine:{}</AdditionalOptions>\n", profile.platform);
+	ret += r#"    </Lib>
   </ItemDefinitionGroup>
 "#;
 
@@ -240,7 +182,12 @@ fn item_definition_group(
 pub struct Msvc {}
 
 impl Msvc {
-	pub fn generate(project: Arc<Project>, build_dir: &Path, global_opts: GlobalOptions) -> Result<(), String> {
+	pub fn generate(
+		project: Arc<Project>,
+		build_dir: &Path,
+		profiles: BTreeMap<String, Profile>,
+		global_opts: GlobalOptions,
+	) -> Result<(), String> {
 		let mut guid_map = HashMap::<LinkPtr, VsProject>::new();
 		let mut project_vec = Vec::new();
 		let c_standard = match global_opts.c_standard {
@@ -269,8 +216,21 @@ impl Msvc {
 				}
 			},
 		};
+		let vcxproj_profiles = profiles
+			.into_iter()
+			.filter_map(|x| match x.1.vcxproj {
+				None => None,
+				Some(prof) => Some((x.0, prof)),
+			})
+			.collect::<BTreeMap<String, VcxprojProfile>>();
+		if vcxproj_profiles.is_empty() {
+			return Err(
+				"Toolchain doesn't contain any profiles with a \"vcxproj\" section, required for MSVC generator"
+					.to_owned(),
+			);
+		}
 		let opts = Options { c_standard, cpp_standard };
-		Self::generate_inner(&project, build_dir, &mut guid_map, &mut project_vec, &opts)?;
+		Self::generate_inner(&project, build_dir, &vcxproj_profiles, &mut guid_map, &mut project_vec, &opts)?;
 
 		let mut sln_content = r#"Microsoft Visual Studio Solution File, Format Version 12.00
 "#
@@ -338,12 +298,13 @@ impl Msvc {
 	fn generate_inner(
 		project: &Arc<Project>,
 		build_dir: &Path,
+		profiles: &BTreeMap<String, VcxprojProfile>,
 		guid_map: &mut HashMap<LinkPtr, VsProject>,
 		project_vec: &mut Vec<VsProject>,
 		opts: &Options,
 	) -> Result<(), String> {
 		for subproject in &project.dependencies {
-			Self::generate_inner(subproject, build_dir, guid_map, project_vec, opts)?;
+			Self::generate_inner(subproject, build_dir, profiles, guid_map, project_vec, opts)?;
 		}
 
 		for lib in &project.static_libraries {
@@ -367,6 +328,7 @@ impl Msvc {
 				.collect();
 			let vsproj = make_vcxproj(
 				build_dir,
+				profiles,
 				guid_map,
 				target_name,
 				configuration_type,
@@ -394,6 +356,7 @@ impl Msvc {
 				.collect::<Vec<String>>();
 			let vsproj = make_vcxproj(
 				build_dir,
+				profiles,
 				guid_map,
 				target_name,
 				configuration_type,
@@ -413,6 +376,7 @@ impl Msvc {
 
 fn make_vcxproj(
 	build_dir: &Path,
+	profiles: &BTreeMap<String, VcxprojProfile>,
 	guid_map: &HashMap<LinkPtr, VsProject>,
 	target_name: &str,
 	configuration_type: &str,
@@ -430,85 +394,73 @@ fn make_vcxproj(
 	const PLATFORM_TOOLSET: &str = "v143";
 	let target_guid = Uuid::new_v4().to_string().to_ascii_uppercase();
 	let output_dir = build_dir.join(&project_info.name);
-	let out_dir_debug = output_dir.join("Debug").to_string_lossy().to_string();
-	let out_dir_release = output_dir.join("Release").to_string_lossy().to_string();
-	let out_dir_relwdebinfo = output_dir.join("RelWithDebInfo").to_string_lossy().to_string();
-	let out_dir_minsizerel = output_dir.join("MinSizeRel").to_string_lossy().to_string();
-	let mut out_str = format!(
-		r#"<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+	let mut out_str = r#"<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
-    <ProjectConfiguration Include="Debug|x64">
-      <Configuration>Debug</Configuration>
-      <Platform>x64</Platform>
+"#
+	.to_owned();
+	for (profile_name, profile_cfg) in profiles {
+		out_str += &format!(
+			r#"    <ProjectConfiguration Include="{}|{}">
+      <Configuration>{}</Configuration>
+      <Platform>{}</Platform>
     </ProjectConfiguration>
-    <ProjectConfiguration Include="Release|x64">
-      <Configuration>Release</Configuration>
-      <Platform>x64</Platform>
-    </ProjectConfiguration>
-    <ProjectConfiguration Include="MinSizeRel|x64">
-      <Configuration>MinSizeRel</Configuration>
-      <Platform>x64</Platform>
-    </ProjectConfiguration>
-    <ProjectConfiguration Include="RelWithDebInfo|x64">
-      <Configuration>RelWithDebInfo</Configuration>
-      <Platform>x64</Platform>
-    </ProjectConfiguration>
-  </ItemGroup>
-  <PropertyGroup Label="Globals">
+"#,
+			profile_name, profile_cfg.platform, profile_name, profile_cfg.platform
+		);
+	}
+	out_str += "  </ItemGroup>\n";
+	out_str += &format!(
+		r#"  <PropertyGroup Label="Globals">
+    <VCProjectVersion>16.0</VCProjectVersion>
+    <Keyword>Win32Proj</Keyword>
     <ProjectGuid>{{{target_guid}}}</ProjectGuid>
-    <Platform>x64</Platform>
-    <ProjectName>{target_name}</ProjectName>
+    <RootNamespace>{target_name}</RootNamespace>
+    <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.default.props" />
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
-    <ConfigurationType>{configuration_type}</ConfigurationType>
-    <PlatformToolset>{PLATFORM_TOOLSET}</PlatformToolset>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
-    <ConfigurationType>{configuration_type}</ConfigurationType>
-    <PlatformToolset>{PLATFORM_TOOLSET}</PlatformToolset>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'" Label="Configuration">
-    <ConfigurationType>{configuration_type}</ConfigurationType>
-    <PlatformToolset>{PLATFORM_TOOLSET}</PlatformToolset>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'" Label="Configuration">
-    <ConfigurationType>{configuration_type}</ConfigurationType>
-    <PlatformToolset>{PLATFORM_TOOLSET}</PlatformToolset>
-  </PropertyGroup>
-  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
-  <ImportGroup Label="ExtensionSettings" />
-  <ImportGroup Label="PropertySheets" />
-  <PropertyGroup Label="UserMacros" />
-  <PropertyGroup>
-    <_ProjectFileVersion>10.0.20506.1</_ProjectFileVersion>
-    <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">{out_dir_debug}\\</OutDir>
-    <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">{target_name}.dir\Debug\</IntDir>
-    <TargetName Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">{target_name}</TargetName>
-    <TargetExt Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">{target_ext}</TargetExt>
-    <OutDir Condition="'$(Configuration)|$(Platform)'=='Release|x64'">{out_dir_release}\\</OutDir>
-    <IntDir Condition="'$(Configuration)|$(Platform)'=='Release|x64'">{target_name}.dir\Release\</IntDir>
-    <TargetName Condition="'$(Configuration)|$(Platform)'=='Release|x64'">{target_name}</TargetName>
-    <TargetExt Condition="'$(Configuration)|$(Platform)'=='Release|x64'">{target_ext}</TargetExt>
-    <OutDir Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">{out_dir_minsizerel}\\</OutDir>
-    <IntDir Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">{target_name}.dir\MinSizeRel\</IntDir>
-    <TargetName Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">{target_name}</TargetName>
-    <TargetExt Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">{target_ext}</TargetExt>
-    <OutDir Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">{out_dir_relwdebinfo}\\</OutDir>
-    <IntDir Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">{target_name}.dir\RelWithDebInfo\</IntDir>
-    <TargetName Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">{target_name}</TargetName>
-    <TargetExt Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">{target_ext}</TargetExt>
-  </PropertyGroup>
 "#
 	);
+	for (profile_name, profile_cfg) in profiles {
+		out_str += &format!(
+			r#"    <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='{}|{}'" Label="Configuration">
+      <ConfigurationType>{configuration_type}</ConfigurationType>
+      <PlatformToolset>{PLATFORM_TOOLSET}</PlatformToolset>
+    </PropertyGroup>
+"#,
+			profile_name, profile_cfg.platform
+		);
+	}
+	out_str += "    <Import Project=\"$(VCTargetsPath)\\Microsoft.Cpp.props\" />\n";
+	out_str += "    <PropertyGroup>\n";
+	for (profile_name, profile_cfg) in profiles {
+		let subfolder = profile_name.clone() + "-" + &profile_cfg.platform;
+		let out_dir = output_dir.join(subfolder);
+		let out_dir = out_dir.to_string_lossy();
+		out_str += &format!(
+			r#"    <OutDir Condition="'$(Configuration)|$(Platform)'=='{}|{}'">{out_dir}\\</OutDir>
+	    <IntDir Condition="'$(Configuration)|$(Platform)'=='{}|{}'">{target_name}.dir\Debug\</IntDir>
+	    <TargetName Condition="'$(Configuration)|$(Platform)'=='{}|{}'">{target_name}</TargetName>
+	    <TargetExt Condition="'$(Configuration)|$(Platform)'=='{}|{}'">{target_ext}</TargetExt>
+	"#,
+			profile_name,
+			profile_cfg.platform,
+			profile_name,
+			profile_cfg.platform,
+			profile_name,
+			profile_cfg.platform,
+			profile_name,
+			profile_cfg.platform
+		);
+	}
+	out_str += "  </PropertyGroup>\n";
 
 	// let include_dirs = include_dirs.iter().map(|x| input_path(x, &project_path)).collect::<Vec<String>>();
-	let compile_flags = Vec::new(); // TODO(Travers)
+	// let compile_flags = Vec::new(); // TODO(Travers)
 	let compile_as_c = cpp_sources.is_empty() && !c_sources.is_empty();
-	out_str += &item_definition_group(ConfigType::Debug, includes, &compile_flags, opts, compile_as_c);
-	out_str += &item_definition_group(ConfigType::Release, includes, &compile_flags, opts, compile_as_c);
-	out_str += &item_definition_group(ConfigType::MinSizeRel, includes, &compile_flags, opts, compile_as_c);
-	out_str += &item_definition_group(ConfigType::RelWithDebInfo, includes, &compile_flags, opts, compile_as_c);
+	for (profile_name, profile) in profiles {
+		out_str += &item_definition_group(profile_name, profile, includes, opts, compile_as_c);
+	}
 	if !c_sources.is_empty() {
 		out_str += "  <ItemGroup>\n";
 		for src in c_sources {
