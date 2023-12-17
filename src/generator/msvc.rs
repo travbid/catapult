@@ -104,6 +104,7 @@ fn item_definition_group(
 	profile_name: &str,
 	profile: &VcxprojProfile,
 	include_dirs: &[String],
+	defines: &[String],
 	// compile_flags: &[String],
 	opts: &Options,
 	compile_as_c: bool,
@@ -144,6 +145,10 @@ fn item_definition_group(
 		ret += def;
 		ret += ";";
 	}
+	for def in defines {
+		ret += def;
+		ret += ";";
+	}
 	ret += "%(PreprocessorDefinitions)</PreprocessorDefinitions>\n";
 	ret += r#"      <ObjectFileName>$(IntDir)</ObjectFileName>
     </ClCompile>
@@ -152,6 +157,10 @@ fn item_definition_group(
 	for def in &profile.preprocessor_definitions {
 		ret += ";";
 		ret += def;
+	}
+	for def in defines {
+		ret += def;
+		ret += ";";
 	}
 	ret += r#"</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>"#;
@@ -320,6 +329,7 @@ impl Msvc {
 				// .map(|x| x.trim_start_matches(r"\\?\").to_owned())
 				.map(|x| x.to_string_lossy().trim_start_matches(r"\\?\").to_owned())
 				.collect::<Vec<String>>();
+			let defines = lib.public_defines_recursive();
 			let project_links = lib
 				.link_private
 				.iter()
@@ -336,6 +346,7 @@ impl Msvc {
 				project_info,
 				opts,
 				&includes,
+				&defines,
 				&lib.c_sources,
 				&lib.cpp_sources,
 				&project_links,
@@ -349,6 +360,7 @@ impl Msvc {
 			let target_ext = ".exe";
 			let project_info = &exe.project().info;
 			let includes = exe.public_includes_recursive();
+			let defines = exe.public_defines_recursive();
 			// Visual Studio doesn't seem to support extended-length name syntax
 			let includes = includes
 				.into_iter()
@@ -364,6 +376,7 @@ impl Msvc {
 				project_info,
 				opts,
 				&includes,
+				&defines,
 				&exe.c_sources,
 				&exe.cpp_sources,
 				&exe.links,
@@ -384,6 +397,7 @@ fn make_vcxproj(
 	project_info: &ProjectInfo,
 	opts: &Options,
 	includes: &[String],
+	defines: &[String],
 	c_sources: &[SourcePath],
 	cpp_sources: &[SourcePath],
 	project_links: &Vec<LinkPtr>,
@@ -459,7 +473,7 @@ fn make_vcxproj(
 	// let compile_flags = Vec::new(); // TODO(Travers)
 	let compile_as_c = cpp_sources.is_empty() && !c_sources.is_empty();
 	for (profile_name, profile) in profiles {
-		out_str += &item_definition_group(profile_name, profile, includes, opts, compile_as_c);
+		out_str += &item_definition_group(profile_name, profile, includes, defines, opts, compile_as_c);
 	}
 	if !c_sources.is_empty() {
 		out_str += "  <ItemGroup>\n";
