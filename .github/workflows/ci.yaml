@@ -45,6 +45,7 @@ jobs:
       - run: cargo build
       - run: ./target/debug/catapult -S test_data/test_01 -B build -G Ninja -T test_data/toolchain_gcc.toml
       - run: tree build
+      - run: cat build/build.ninja
       - run: ninja -C build -v myexe mytest
       - run: tree build
       - run: ./build/test_one/myexe abc def
@@ -61,8 +62,10 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v3
       - run: cargo build
+
       - run: ./target/debug/catapult --source-dir test_data/test_01 --build-dir build_debug --generator Ninja --toolchain test_data/toolchain_clang.toml --profile Debug
       - run: tree build_debug
+      - run: cat build_debug/build.ninja
       - run: ninja -C build_debug -v myexe mytest
       - run: tree build_debug
       - run: ./build_debug/test_one/myexe abc def
@@ -70,6 +73,7 @@ jobs:
 
       - run: ./target/debug/catapult --source-dir test_data/test_01 --build-dir build_release --generator Ninja --toolchain test_data/toolchain_clang.toml --profile Release
       - run: tree build_release
+      - run: cat build_release/build.ninja
       - run: ninja -C build_release -v myexe mytest
       - run: tree build_release
       - run: ./build_release/test_one/myexe abc def
@@ -123,6 +127,7 @@ jobs:
       - run: cargo build
       - run: ./target/debug/catapult --source-dir test_data/test_01 --build-dir build --generator Ninja --toolchain test_data/toolchain_clang.toml --profile Debug
       - run: tree /f build
+      - run: Get-Content build/build.ninja
       - run: ninja -C build -v myexe mytest
       - run: tree /f build
       - run: ./build/test_one/myexe.exe abc def
