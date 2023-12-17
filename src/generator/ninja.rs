@@ -44,6 +44,28 @@ fn output_path(build_dir: &Path, project_name: &str, src: &str, ext: &str) -> St
 		.to_owned()
 }
 
+fn transform_defines(defines: &[String]) -> Vec<String> {
+	defines
+		.iter()
+		.map(|x| {
+			let mut s = x.split('=');
+			let def_name = s.next().unwrap(); // MY_DEFINE
+			let def_value = s.collect::<Vec<_>>();
+			let def = if def_value.is_empty() {
+				x.clone()
+			} else {
+				let def_value = def_value.join("=").replace('"', r#"\""#); // \"abc def\"
+				if def_value.contains(char::is_whitespace) {
+					def_name.to_owned() + r#"=""# + &def_value + r#"""# // MY_DEFINE="\"abc def\""
+				} else {
+					def_name.to_owned() + "=" + &def_value // MY_DEFINE=\"abcdef\"
+				}
+			};
+			"-D".to_string() + &def
+		})
+		.collect()
+}
+
 #[derive(Clone)]
 struct NinjaRspFile {
 	rspfile: String,
@@ -294,13 +316,12 @@ impl Ninja {
 			includes.extend_from_slice(&lib.private_includes());
 			let mut defines = lib.public_defines_recursive();
 			defines.extend_from_slice(&lib.private_defines());
-			let defines = defines.iter().map(|x| "-D".to_string() + x).collect();
 			NinjaBuild {
 				inputs: vec![input],
 				output_targets: vec![out_tgt],
 				rule,
 				keyval_set: HashMap::from([
-					("DEFINES".to_string(), defines),
+					("DEFINES".to_string(), transform_defines(&defines)),
 					("FLAGS".to_string(), compile_options),
 					(
 						"INCLUDES".to_owned(),
@@ -419,17 +440,13 @@ impl Ninja {
 			inputs.push(out_tgt.clone());
 			let input = input_path(src, &exe.project().info.path);
 			let includes = exe.public_includes_recursive();
-			let defines = exe
-				.public_defines_recursive()
-				.iter()
-				.map(|x| "-D".to_string() + x)
-				.collect();
+			let defines = exe.public_defines_recursive();
 			NinjaBuild {
 				inputs: vec![input],
 				output_targets: vec![out_tgt],
 				rule,
 				keyval_set: HashMap::from([
-					("DEFINES".to_string(), defines),
+					("DEFINES".to_string(), transform_defines(&defines)),
 					("FLAGS".to_string(), compile_options),
 					(
 						"INCLUDES".to_owned(),
