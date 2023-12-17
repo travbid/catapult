@@ -82,15 +82,36 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v3
       - run: cargo build
-      - run: ./target/debug/catapult -S test_data/test_01 -B build -G MSVC
+      - run: ./target/debug/catapult --source-dir test_data/test_01 --build-dir build --generator MSVC --toolchain test_data/toolchain_msvc.toml
       - run: tree /f build
+
       - shell: cmd
         run: >
           call "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Auxiliary\Build\vcvars64.bat"
           && MSBuild build/test_one.sln
       - run: tree /f build
-      - run: ./build/test_one/Debug/myexe.exe abc def
-      - run: ./build/my_depend/Debug/mytest.exe
+      - run: ./build/test_one/Debug-x64/myexe.exe abc def
+
+      - shell: cmd
+        run: >
+          call "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Auxiliary\Build\vcvars64.bat"
+          && MSBuild build/test_one.sln -property:Configuration=MinSizeRel;Platform=x64
+      - run: tree /f build
+      - run: ./build/test_one/MinSizeRel-x64/myexe.exe abc def
+
+      - shell: cmd
+        run: >
+          call "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Auxiliary\Build\vcvars64.bat"
+          && MSBuild build/test_one.sln -property:Configuration=RelWithDebInfo;Platform=x64
+      - run: tree /f build
+      - run: ./build/test_one/RelWithDebInfo-x64/myexe.exe abc def
+
+      - shell: cmd
+        run: >
+          call "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Auxiliary\Build\vcvars64.bat"
+          && MSBuild build/test_one.sln -property:Configuration=Release;Platform=x64
+      - run: tree /f build
+      - run: ./build/test_one/Release-x64/myexe.exe abc def
 
   windows-ninja-clang:
     name: Build and Run (Windows / Ninja / Clang)

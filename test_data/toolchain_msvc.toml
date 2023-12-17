@@ -1,0 +1,89 @@
+[vcxproj]
+platform = "x64"
+
+	[vcxproj.cl_compile]
+	SDLCheck = "true"
+
+[profile.Debug]
+
+	[profile.Debug.vcxproj]
+	platform = "x64"
+	preprocessor_definitions = [ "_DEBUG" ]
+
+		[profile.Debug.vcxproj.property_group]
+		UseDebugLibraries = "false"
+		WholeProgramOptimization = "true"
+
+		[profile.Debug.vcxproj.cl_compile]
+		BasicRuntimeChecks = "EnableFastChecks"
+		DebugInformationFormat = "ProgramDatabase"
+		InlineFunctionExpansion = "Disabled"
+		Optimization = "Disabled"
+		RuntimeLibrary = "MultiThreadedDebug"
+
+		[profile.Debug.vcxproj.link]
+		GenerateDebugInformation = "true"
+
+
+[profile.Release]
+
+	[profile.Release.vcxproj]
+	platform = "x64"
+	preprocessor_definitions = [ "NDEBUG" ]
+
+		[profile.Release.vcxproj.property_group]
+		UseDebugLibraries = "false"
+		WholeProgramOptimization = "true"
+
+		[profile.Release.vcxproj.cl_compile]
+		DebugInformationFormat = ""
+		InlineFunctionExpansion = "AnySuitable"
+		Optimization = "MaxSpeed"
+		RuntimeLibrary = "MultiThreaded"
+
+		[profile.Release.vcxproj.link]
+		GenerateDebugInformation = "true"
+		EnableCOMDATFolding = "true"
+		OptimizeReferences = "true"
+
+
+[profile.MinSizeRel]
+
+	[profile.MinSizeRel.vcxproj]
+	platform = "x64"
+	preprocessor_definitions = [ "NDEBUG" ]
+
+		[profile.MinSizeRel.vcxproj.property_group]
+		UseDebugLibraries = "false"
+		WholeProgramOptimization = "true"
+
+		[profile.MinSizeRel.vcxproj.cl_compile]
+		DebugInformationFormat = ""
+		InlineFunctionExpansion = "OnlyExplicitInline"
+		Optimization = "MinSpace"
+		RuntimeLibrary = "MultiThreaded"
+
+		[profile.MinSizeRel.vcxproj.link]
+		GenerateDebugInformation = "true"
+		EnableCOMDATFolding = "true"
+		OptimizeReferences = "true"
+
+
+[profile.RelWithDebInfo]
+
+	[profile.RelWithDebInfo.vcxproj]
+	platform = "x64"
+	preprocessor_definitions = [ "NDEBUG" ]
+
+		[profile.RelWithDebInfo.vcxproj.property_group]
+		UseDebugLibraries = "false"
+		WholeProgramOptimization = "true"
+
+		[profile.RelWithDebInfo.vcxproj.cl_compile]
+		DebugInformationFormat = "ProgramDatabase"
+		InlineFunctionExpansion = "OnlyExplicitInline"
+		Optimization = "MaxSpeed"
+		RuntimeLibrary = "MultiThreaded"
+
+		[profile.RelWithDebInfo.vcxproj.link]
+		GenerateDebugInformation = "true"
