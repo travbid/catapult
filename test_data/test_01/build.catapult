@@ -21,6 +21,7 @@ myexe = add_executable(
     name = "myexe",
     sources = ["main.cpp"],
     links = [mylib, my_depend.my_depend_lib, zstd.zstd],
+    defines = ['MY_DEFINE="myexe defined"']
 )
 
 print('--- ' + str(myexe))
