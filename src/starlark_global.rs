@@ -4,7 +4,7 @@ use std::collections::HashMap;
 use allocative::Allocative;
 use serde::Deserialize;
 use starlark::{
-	starlark_simple_value, starlark_type,
+	starlark_simple_value,
 	values::{
 		AllocValue,
 		Heap, //
@@ -142,9 +142,8 @@ impl fmt::Display for StarGlobal {
 	}
 }
 
+#[starlark::values::starlark_value(type = "Global")]
 impl<'v> StarlarkValue<'v> for StarGlobal {
-	starlark_type!("Global");
-
 	fn get_attr(&self, attribute: &str, heap: &'v Heap) -> Option<Value<'v>> {
 		match attribute {
 			"global_options" => Some(heap.alloc(self.global_options.clone())),
@@ -197,9 +196,8 @@ impl fmt::Display for StarGlobalOptions {
 	}
 }
 
+#[starlark::values::starlark_value(type = "GlobalOptions")]
 impl<'v> StarlarkValue<'v> for StarGlobalOptions {
-	starlark_type!("GlobalOptions");
-
 	fn get_attr(&self, attribute: &str, heap: &'v Heap) -> Option<Value<'v>> {
 		match attribute {
 			"c_standard" => Some(heap.alloc(self.c_standard.clone())),
@@ -247,9 +245,8 @@ impl fmt::Display for StarPackageOptions {
 	}
 }
 
+#[starlark::values::starlark_value(type = "PackageOptions")]
 impl<'v> StarlarkValue<'v> for StarPackageOptions {
-	starlark_type!("PackageOptions");
-
 	fn get_attr(&self, attribute: &str, heap: &'v Heap) -> Option<Value<'v>> {
 		match self.0.get(attribute) {
 			None => None,
@@ -298,9 +295,8 @@ impl fmt::Display for StarToolchain {
 	}
 }
 
+#[starlark::values::starlark_value(type = "Toolchain")]
 impl<'v> StarlarkValue<'v> for StarToolchain {
-	starlark_type!("Toolchain");
-
 	fn get_attr(&self, attribute: &str, heap: &'v Heap) -> Option<Value<'v>> {
 		match attribute {
 			"c_compiler" => Some(heap.alloc(self.c_compiler.clone())),
@@ -346,9 +342,8 @@ impl fmt::Display for StarCompiler {
 	}
 }
 
+#[starlark::values::starlark_value(type = "Compiler")]
 impl<'v> StarlarkValue<'v> for StarCompiler {
-	starlark_type!("Compiler");
-
 	fn get_attr(&self, attribute: &str, heap: &'v Heap) -> Option<Value<'v>> {
 		match attribute {
 			"id" => Some(heap.alloc(self.id.clone())),
@@ -412,9 +407,8 @@ impl fmt::Display for StarVersion {
 	}
 }
 
+#[starlark::values::starlark_value(type = "Version")]
 impl<'v> StarlarkValue<'v> for StarVersion {
-	starlark_type!("Version");
-
 	fn get_attr(&self, attribute: &str, heap: &'v Heap) -> Option<Value<'v>> {
 		match attribute {
 			"str" => Some(heap.alloc(self.str.clone())),
