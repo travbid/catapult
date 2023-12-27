@@ -153,12 +153,9 @@ fn main() -> ExitCode {
 
 	// Check selected profile is provided by toolchain
 	let profile = if let Some(prof) = profile_opt {
-		match generator {
-			Generator::Msvc => {
-				println!("--profile is incompatible with MSVC generator");
-				return ExitCode::FAILURE;
-			}
-			_ => {}
+		if let Generator::Msvc = generator {
+			println!("--profile is incompatible with MSVC generator");
+			return ExitCode::FAILURE;
 		};
 		match toolchain.profile.get(&prof) {
 			None => {
