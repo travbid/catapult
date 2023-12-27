@@ -1,15 +1,11 @@
 use core::{cell::Cell, fmt};
-use std::{
-	collections::HashMap, //
-	sync::{Arc, Mutex},
-};
+use std::sync::{Arc, Mutex};
 
 use allocative::Allocative;
 use starlark::{
-	docs::DocType,
 	environment::GlobalsBuilder,
 	eval::Arguments,
-	starlark_type,
+	typing::Ty,
 	values::{
 		type_repr::StarlarkTypeRepr, //
 		AllocValue,
@@ -51,8 +47,9 @@ impl<'v> AllocValue<'v> for Context {
 		heap.alloc_simple(self)
 	}
 }
+
+#[starlark::values::starlark_value(type = "Context")]
 impl<'v> StarlarkValue<'v> for Context {
-	starlark_type!("Context");
 	fn get_attr(&self, attribute: &str, heap: &'v Heap) -> Option<Value<'v>> {
 		println!("Context::get_attr({attribute})");
 		match attribute {
@@ -80,7 +77,7 @@ fn get_link_targets(links: Vec<Value>) -> Result<Vec<Arc<dyn StarLinkTarget>>, a
 				Some(x) => link_targets.push(x.0.clone()),
 				None => return err_msg(format!("Could not unpack \"link\" {}", link.get_type())),
 			},
-			"Library" => match StarLibraryWrapper::from_value(link) {
+			"StaticLibrary" => match StarLibraryWrapper::from_value(link) {
 				Some(x) => link_targets.push(x.0.clone()),
 				None => return err_msg(format!("Could not unpack \"link\" {}", link.get_type())),
 			},
@@ -267,28 +264,30 @@ pub(crate) fn build_api(project: &Arc<Mutex<StarProject>>, builder: &mut Globals
 		sig_builder.optional("link_flags_public");
 		let signature = sig_builder.finish();
 		let documentation = {
-			let parameter_types = HashMap::from([
-				(0, DocType { raw_type: <&str>::starlark_type_repr() }),
-				(1, DocType { raw_type: <Vec<&str>>::starlark_type_repr() }),
-				(2, DocType { raw_type: <Vec<Value>>::starlark_type_repr() }),
-				(3, DocType { raw_type: <Vec<Value>>::starlark_type_repr() }),
-				(4, DocType { raw_type: <Value>::starlark_type_repr() }),
-				(5, DocType { raw_type: <Vec<&str>>::starlark_type_repr() }),
-				(6, DocType { raw_type: <Vec<&str>>::starlark_type_repr() }),
-				(7, DocType { raw_type: <Vec<&str>>::starlark_type_repr() }),
+			let parameter_types = Vec::<Ty>::from([
+				<&str>::starlark_type_repr(),
+				<Vec<&str>>::starlark_type_repr(),
+				<Vec<Value>>::starlark_type_repr(),
+				<Vec<Value>>::starlark_type_repr(),
+				<Value>::starlark_type_repr(),
+				<Vec<&str>>::starlark_type_repr(),
+				<Vec<&str>>::starlark_type_repr(),
+				<Vec<&str>>::starlark_type_repr(),
 			]);
 			starlark::values::function::NativeCallableRawDocs {
 				rust_docstring: None,
 				signature: signature.clone(),
 				parameter_types,
-				return_type: Some(DocType { raw_type: <Value>::starlark_type_repr() }),
-				dot_type: None,
+				return_type: <Value>::starlark_type_repr(),
+				as_type: None,
 			}
 		};
 		builder.set_function(
 			function_name,
 			false,
 			documentation,
+			None,
+			Some(StarLibraryWrapper::starlark_type_repr()),
 			None,
 			ImplAddStaticLibrary { signature, project: project.clone() },
 		);
@@ -303,25 +302,27 @@ pub(crate) fn build_api(project: &Arc<Mutex<StarProject>>, builder: &mut Globals
 		sig_builder.optional("link_flags");
 		let signature = sig_builder.finish();
 		let documentation = {
-			let parameter_types = HashMap::from([
-				(0, DocType { raw_type: <&str>::starlark_type_repr() }),
-				(1, DocType { raw_type: <Value>::starlark_type_repr() }),
-				(2, DocType { raw_type: <Vec<&str>>::starlark_type_repr() }),
-				(3, DocType { raw_type: <Vec<&str>>::starlark_type_repr() }),
-				(4, DocType { raw_type: <Vec<&str>>::starlark_type_repr() }),
+			let parameter_types = Vec::<Ty>::from([
+				<&str>::starlark_type_repr(),
+				<Value>::starlark_type_repr(),
+				<Vec<&str>>::starlark_type_repr(),
+				<Vec<&str>>::starlark_type_repr(),
+				<Vec<&str>>::starlark_type_repr(),
 			]);
 			starlark::values::function::NativeCallableRawDocs {
 				rust_docstring: None,
 				signature: signature.clone(),
 				parameter_types,
-				return_type: Some(DocType { raw_type: <Value>::starlark_type_repr() }),
-				dot_type: None,
+				return_type: <Value>::starlark_type_repr(),
+				as_type: None,
 			}
 		};
 		builder.set_function(
 			"add_interface_library",
 			false,
 			documentation,
+			None,
+			Some(StarIfaceLibraryWrapper::starlark_type_repr()),
 			None,
 			ImplAddInterfaceLibrary { signature, project: project.clone() },
 		);
@@ -338,20 +339,20 @@ pub(crate) fn build_api(project: &Arc<Mutex<StarProject>>, builder: &mut Globals
 		let signature = sig_builder.finish();
 
 		let documentation = {
-			let parameter_types = HashMap::from([
-				(0, DocType { raw_type: <&str>::starlark_type_repr() }),
-				(1, DocType { raw_type: <Vec<&str>>::starlark_type_repr() }),
-				(2, DocType { raw_type: <Value>::starlark_type_repr() }),
-				(3, DocType { raw_type: <Vec<String>>::starlark_type_repr() }),
-				(4, DocType { raw_type: <Vec<String>>::starlark_type_repr() }),
-				(5, DocType { raw_type: <Vec<String>>::starlark_type_repr() }),
+			let parameter_types = Vec::<Ty>::from([
+				<&str>::starlark_type_repr(),
+				<Vec<&str>>::starlark_type_repr(),
+				<Value>::starlark_type_repr(),
+				<Vec<String>>::starlark_type_repr(),
+				<Vec<String>>::starlark_type_repr(),
+				<Vec<String>>::starlark_type_repr(),
 			]);
 			starlark::values::function::NativeCallableRawDocs {
 				rust_docstring: None,
 				signature: signature.clone(),
 				parameter_types,
-				return_type: Some(DocType { raw_type: <Value>::starlark_type_repr() }),
-				dot_type: None,
+				return_type: <Value>::starlark_type_repr(),
+				as_type: None,
 			}
 		};
 
@@ -359,6 +360,8 @@ pub(crate) fn build_api(project: &Arc<Mutex<StarProject>>, builder: &mut Globals
 			"add_executable",
 			false,
 			documentation,
+			None,
+			Some(StarExecutableWrapper::starlark_type_repr()),
 			None,
 			ImplAddExecutable { signature, project: project.clone() },
 		);

@@ -15,7 +15,6 @@ use starlark::{
 	// starlark_complex_value,
 	starlark_module,
 	starlark_simple_value,
-	starlark_type,
 	values::{
 		Heap, //
 		NoSerialize,
@@ -60,8 +59,8 @@ fn project_methods() -> Option<&'static Methods> {
 	RES.methods(project_methods_impl)
 }
 
+#[starlark::values::starlark_value(type = "Project")]
 impl<'v> StarlarkValue<'v> for StarProject {
-	starlark_type!("Project");
 	fn get_methods() -> Option<&'static Methods> {
 		project_methods()
 	}

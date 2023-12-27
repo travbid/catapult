@@ -13,7 +13,6 @@ use starlark::{
 	},
 	starlark_module, //
 	starlark_simple_value,
-	starlark_type,
 	values::{
 		Heap, //
 		NoSerialize,
@@ -174,9 +173,8 @@ impl fmt::Display for StarLibraryWrapper {
 	}
 }
 
-// #[starlark_value(type = "Library")] //, UnpackValue, StarlarkTypeRepr)]
+#[starlark::values::starlark_value(type = "StaticLibrary")]
 impl<'v> StarlarkValue<'v> for StarLibraryWrapper {
-	starlark_type!("Library");
 	fn get_methods() -> Option<&'static Methods> {
 		library_methods()
 	}
