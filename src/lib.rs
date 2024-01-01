@@ -190,7 +190,7 @@ fn download_from_registry(
 	let pkg_cache_path = cache_dir.join("catapult").join("cache").join(name).join(channel);
 	println!("pkg_cache_path: {:?}", pkg_cache_path);
 
-	let hash_path = pkg_cache_path.join("hash.catapult");
+	let hash_path = pkg_cache_path.join("catapult.hash");
 	if let Ok(hash) = fs::read_to_string(&hash_path) {
 		if hash.trim() == resp_json.hash.trim() {
 			// This package already exists in the cache. Don't download it again.
