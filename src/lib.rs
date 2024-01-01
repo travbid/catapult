@@ -230,13 +230,13 @@ Registry hash: {}"#,
 	let mut archive = Archive::new(tar);
 	archive.unpack(&pkg_cache_path)?;
 
-	let manifest_path = pkg_cache_path.join("catapult.toml");
+	let manifest_path = pkg_cache_path.join(CATAPULT_TOML);
 
 	match fs::write(manifest_path, manifest_bytes) {
 		Ok(x) => x,
 		Err(e) => return Err(anyhow!(e)),
 	};
-	let recipe_path = pkg_cache_path.join("build.catapult");
+	let recipe_path = pkg_cache_path.join(BUILD_CATAPULT);
 	let recipe_bytes = base64::engine::general_purpose::STANDARD_NO_PAD.decode(resp_json.recipe)?;
 	match fs::write(recipe_path, recipe_bytes) {
 		Ok(x) => x,
