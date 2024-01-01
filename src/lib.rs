@@ -133,7 +133,7 @@ pub fn parse_project(toolchain: &Toolchain) -> Result<(Arc<Project>, GlobalOptio
 struct PackageRecord {
 	// pkg_name: String,
 	// version: String,
-	// hash: String,
+	hash: String,
 	manifest: String,
 	recipe: String,
 	// datetime_added: i64,
@@ -189,6 +189,25 @@ fn download_from_registry(
 	};
 	let pkg_cache_path = cache_dir.join("catapult").join("cache").join(name).join(channel);
 	println!("pkg_cache_path: {:?}", pkg_cache_path);
+
+	let hash_path = pkg_cache_path.join("hash.catapult");
+	if let Ok(hash) = fs::read_to_string(&hash_path) {
+		if hash.trim() == resp_json.hash.trim() {
+			// This package already exists in the cache. Don't download it again.
+			log::debug!("Package found in cache. It will not be downloaded: {name}");
+			return Ok(pkg_cache_path);
+		} else {
+			log::info!(
+				r#"A cached package was found but its hash does not match the one reported by the registry. It will be re-downloaded.
+      Package: {name}
+ On-disk hash: {}
+Registry hash: {}"#,
+				hash.trim(),
+				resp_json.hash
+			);
+		}
+	}
+
 	let manifest_bytes = base64::engine::general_purpose::STANDARD_NO_PAD.decode(resp_json.manifest)?;
 	let manifest_str = std::str::from_utf8(&manifest_bytes)?;
 	let manifest = match toml::from_str::<Manifest>(manifest_str) {
@@ -223,6 +242,11 @@ fn download_from_registry(
 		Ok(x) => x,
 		Err(e) => return Err(anyhow!(e)),
 	};
+
+	match fs::write(hash_path, resp_json.hash.as_bytes()) {
+		Ok(x) => x,
+		Err(e) => return Err(anyhow!(e)),
+	}
 
 	Ok(pkg_cache_path)
 }
