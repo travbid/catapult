@@ -22,14 +22,14 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - run: cargo fmt --check --verbose
   test:
     name: Cargo Test
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - run: cargo test
 
   ubuntu-ninja-gcc:
@@ -41,7 +41,7 @@ jobs:
           llvm
           ninja-build
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - run: cargo build
       - run: ./target/debug/catapult -S test_data/test_01 -B build -G Ninja -T test_data/toolchain_gcc.toml
       - run: tree build
@@ -60,7 +60,7 @@ jobs:
           llvm
           ninja-build
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - run: cargo build
 
       - run: ./target/debug/catapult --source-dir test_data/test_01 --build-dir build_debug --generator Ninja --toolchain test_data/toolchain_clang.toml --profile Debug
@@ -84,7 +84,7 @@ jobs:
     runs-on: windows-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - run: cargo build
       - run: ./target/debug/catapult --source-dir test_data/test_01 --build-dir build --generator MSVC --toolchain test_data/toolchain_msvc.toml
       - run: tree /f build
@@ -122,7 +122,7 @@ jobs:
     runs-on: windows-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - run: choco install ninja
       - run: cargo build
       - run: ./target/debug/catapult --source-dir test_data/test_01 --build-dir build --generator Ninja --toolchain test_data/toolchain_clang.toml --profile Debug
