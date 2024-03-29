@@ -40,6 +40,7 @@ use starlark::{
 	syntax::{
 		AstModule, //
 		Dialect,
+		DialectTypes,
 	},
 };
 use tar::Archive;
@@ -389,7 +390,12 @@ pub(crate) fn parse_module(
 	current_dir: PathBuf,
 	starlark_code: String,
 ) -> Result<StarProject, anyhow::Error> {
-	let ast = match AstModule::parse(BUILD_CATAPULT, starlark_code, &Dialect::Standard) {
+	let dialect = Dialect {
+		enable_types: DialectTypes::Enable,
+		enable_f_strings: true,
+		..Dialect::default()
+	};
+	let ast = match AstModule::parse(BUILD_CATAPULT, starlark_code, &dialect) {
 		Ok(x) => x,
 		Err(e) => panic!("{}", e),
 	};
