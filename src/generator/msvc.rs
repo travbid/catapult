@@ -317,9 +317,6 @@ impl Msvc {
 		}
 
 		for lib in &project.static_libraries {
-			let target_name = &lib.name;
-			let configuration_type = "StaticLibrary";
-			let target_ext = ".lib";
 			let project_info = &lib.project().info;
 			let mut includes = lib.public_includes_recursive();
 			includes.extend_from_slice(&lib.private_includes());
@@ -340,9 +337,9 @@ impl Msvc {
 				build_dir,
 				profiles,
 				guid_map,
-				target_name,
-				configuration_type,
-				target_ext,
+				&lib.name,
+				"StaticLibrary",
+				".lib",
 				project_info,
 				opts,
 				&includes,
