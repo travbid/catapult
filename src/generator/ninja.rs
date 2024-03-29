@@ -335,7 +335,7 @@ impl Ninja {
 		}
 		for lib in &project.static_libraries {
 			let mut inputs = Vec::<String>::new();
-			if !lib.c_sources.is_empty() {
+			if !lib.sources.c.is_empty() {
 				let c_compiler = get_c_compiler(toolchain, &lib.name())?;
 				let rule = if let Some(rule) = &rules.compile_c_object {
 					rule
@@ -352,7 +352,7 @@ impl Ninja {
 						c_compile_opts.push(fpic_flag);
 					}
 				}
-				for src in &lib.c_sources {
+				for src in &lib.sources.c {
 					build_lines.push(add_lib_source(
 						&src.full,
 						lib,
@@ -364,7 +364,7 @@ impl Ninja {
 				}
 			}
 
-			if !lib.cpp_sources.is_empty() {
+			if !lib.sources.cpp.is_empty() {
 				let cpp_compiler = get_cpp_compiler(toolchain, &lib.name())?;
 				let rule = if let Some(rule) = &rules.compile_cpp_object {
 					rule
@@ -381,7 +381,7 @@ impl Ninja {
 						cpp_compile_opts.push(fpic_flag);
 					}
 				}
-				for src in &lib.cpp_sources {
+				for src in &lib.sources.cpp {
 					build_lines.push(add_lib_source(
 						&src.full,
 						lib,
@@ -483,7 +483,7 @@ impl Ninja {
 			for exe in &project.executables {
 				log::debug!("   exe target: {}", exe.name);
 				let mut inputs = Vec::<String>::new();
-				if !exe.c_sources.is_empty() {
+				if !exe.sources.c.is_empty() {
 					let c_compiler = get_c_compiler(toolchain, &exe.name())?;
 					let rule_compile_c = if let Some(rule) = &rules.compile_c_object {
 						rule
@@ -500,7 +500,7 @@ impl Ninja {
 							c_compile_opts.push(fpic_flag);
 						}
 					}
-					for src in &exe.c_sources {
+					for src in &exe.sources.c {
 						build_lines.push(add_exe_source(
 							&src.full,
 							exe,
@@ -511,7 +511,7 @@ impl Ninja {
 						));
 					}
 				}
-				if !exe.cpp_sources.is_empty() {
+				if !exe.sources.cpp.is_empty() {
 					let cpp_compiler = get_cpp_compiler(toolchain, &exe.name())?;
 					let rule_compile_cpp = if let Some(rule) = &rules.compile_cpp_object {
 						rule
@@ -528,7 +528,7 @@ impl Ninja {
 							cpp_compile_opts.push(fpic_flag);
 						}
 					}
-					for src in &exe.cpp_sources {
+					for src in &exe.sources.cpp {
 						build_lines.push(add_exe_source(
 							&src.full,
 							exe,
@@ -617,7 +617,8 @@ fn get_cpp_compiler<'a>(toolchain: &'a Toolchain, name: &str) -> Result<&'a dyn 
 
 #[test]
 fn test_position_independent_code() {
-	use crate::misc::SourcePath;
+	use crate::misc::{SourcePath, Sources};
+	use core::default::Default;
 	use std::path::PathBuf;
 
 	struct TestCompiler {}
@@ -674,8 +675,10 @@ fn test_position_independent_code() {
 				add_lib = Some(Arc::new(StaticLibrary {
 					parent_project: weak_parent.clone(),
 					name: "add".to_owned(),
-					c_sources: Vec::new(),
-					cpp_sources: vec![SourcePath { full: PathBuf::from("add.cpp"), name: "add.cpp".to_owned() }],
+					sources: Sources {
+						cpp: vec![SourcePath { full: PathBuf::from("add.cpp"), name: "add.cpp".to_owned() }],
+						..Default::default()
+					},
 					link_public: Vec::new(),
 					link_private: Vec::new(),
 					include_dirs_public: Vec::new(),
@@ -694,8 +697,10 @@ fn test_position_independent_code() {
 		executables: vec![Arc::new(Executable {
 			parent_project: weak_parent.clone(),
 			name: "main".to_owned(),
-			c_sources: Vec::new(),
-			cpp_sources: vec![SourcePath { full: PathBuf::from("main.cpp"), name: "main.cpp".to_owned() }],
+			sources: Sources {
+				cpp: vec![SourcePath { full: PathBuf::from("main.cpp"), name: "main.cpp".to_owned() }],
+				..Default::default()
+			},
 			links: vec![LinkPtr::Static(create_lib(weak_parent))],
 			include_dirs: Vec::new(),
 			defines: Vec::new(),

@@ -6,7 +6,7 @@ use std::{
 
 use crate::{
 	link_type::LinkPtr,
-	misc::SourcePath,
+	misc::{SourcePath, Sources},
 	project::Project,
 	target::{LinkTarget, Target},
 };
@@ -16,8 +16,7 @@ pub struct Executable {
 	pub parent_project: Weak<Project>,
 
 	pub name: String,
-	pub c_sources: Vec<SourcePath>,
-	pub cpp_sources: Vec<SourcePath>,
+	pub sources: Sources,
 	pub links: Vec<LinkPtr>,
 	pub include_dirs: Vec<SourcePath>,
 	pub defines: Vec<String>,
@@ -32,8 +31,7 @@ impl fmt::Display for Executable {
 			f,
 			r#"Executable{{
    name: {},
-   c_sources: [{}],
-   cpp_sources: [{}],
+   sources: [{}],
    links: [{}],
    include_dirs: [{}],
    defines: [{}],
@@ -41,11 +39,7 @@ impl fmt::Display for Executable {
    output_name: {},
 }}"#,
 			self.name,
-			self.c_sources
-				.iter()
-				.map(|x| &x.name)
-				.fold(String::new(), |acc, x| acc + ", " + x),
-			self.cpp_sources
+			self.sources
 				.iter()
 				.map(|x| &x.name)
 				.fold(String::new(), |acc, x| acc + ", " + x),

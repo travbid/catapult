@@ -26,7 +26,7 @@ use starlark::{
 use super::{
 	executable::Executable,
 	link_type::LinkPtr,
-	misc::{is_c_source, is_cpp_source, join_parent},
+	misc::{join_parent, split_sources},
 	project::Project,
 	starlark_fmt::{format_link_targets, format_strings},
 	starlark_link_target::{PtrLinkTarget, StarLinkTarget},
@@ -76,6 +76,7 @@ impl StarExecutable {
 		parent_path: &Path,
 		link_map: &mut StarLinkTargetCache,
 	) -> Result<Executable, String> {
+		let sources = split_sources(&self.sources, parent_path)?;
 		let mut links = Vec::<LinkPtr>::new();
 		for link in &self.links {
 			let ptr = PtrLinkTarget(link.clone());
@@ -88,18 +89,7 @@ impl StarExecutable {
 		Ok(Executable {
 			parent_project: parent_project.clone(),
 			name: self.name.clone(),
-			c_sources: self
-				.sources
-				.iter()
-				.filter(is_c_source)
-				.map(|x| join_parent(parent_path, x))
-				.collect(),
-			cpp_sources: self
-				.sources
-				.iter()
-				.filter(is_cpp_source)
-				.map(|x| join_parent(parent_path, x))
-				.collect(),
+			sources,
 			links,
 			include_dirs: self.include_dirs.iter().map(|x| join_parent(parent_path, x)).collect(),
 			defines: self.defines.clone(),
