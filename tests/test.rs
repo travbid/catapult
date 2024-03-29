@@ -10,7 +10,7 @@ fn test_01() {
 
 	let toolchain = Toolchain::default();
 	let (project, global_options) = catapult::parse_project(&toolchain).expect("Could not parse project");
-	assert_eq!(project.dependencies.len(), 2);
+	assert_eq!(project.dependencies.len(), 3);
 
 	assert_eq!(global_options.c_standard, Some("17".to_owned()));
 	assert_eq!(global_options.cpp_standard, Some("17".to_owned()));
@@ -26,10 +26,23 @@ fn test_01() {
 	assert_eq!(my_depend.executables.len(), 1);
 	assert_eq!(my_depend.static_libraries.len(), 1);
 
-	let lib = my_depend.static_libraries.first().unwrap();
-	assert_eq!(lib.name, "my_depend_lib");
-	assert_eq!(lib.sources.cpp.len(), 1);
-	assert_eq!(lib.sources.cpp[0].full, cwd.join("submodules").join("my_depend").join("my_depend.cpp"));
+	let static_lib = my_depend.static_libraries.first().unwrap();
+	assert_eq!(static_lib.name, "my_depend_lib");
+	assert_eq!(static_lib.sources.cpp.len(), 1);
+	assert_eq!(static_lib.sources.cpp[0].full, cwd.join("submodules").join("my_depend").join("my_depend.cpp"));
+
+	let blobjects = project
+		.dependencies
+		.iter()
+		.filter(|x| x.info.name == "blobject")
+		.collect::<Vec<_>>();
+	assert_eq!(blobjects.len(), 1);
+	let blobject = blobjects.first().unwrap();
+	assert_eq!(blobject.object_libraries.len(), 1);
+	let obj_lib = blobject.object_libraries.first().unwrap();
+	assert_eq!(obj_lib.name, "blobject");
+	assert_eq!(obj_lib.sources.cpp.len(), 2);
+	assert_eq!(obj_lib.sources.cpp[0].full, cwd.join("submodules").join("blobject").join("blobject1.cpp"));
 
 	assert_eq!(project.info.name, "test_one");
 	let test_one = project;
@@ -41,10 +54,11 @@ fn test_01() {
 	assert_eq!(exe.name, "myexe");
 	assert_eq!(exe.sources.cpp.len(), 1);
 	assert_eq!(exe.sources.cpp[0].full, cwd.join("main.cpp"));
-	assert_eq!(exe.links.len(), 3);
+	assert_eq!(exe.links.len(), 4);
 	assert_eq!(exe.links[0].name(), "mylib");
 	assert_eq!(exe.links[1].name(), "my_depend_lib");
-	assert_eq!(exe.links[2].name(), "zstd");
+	assert_eq!(exe.links[2].name(), "blobject");
+	assert_eq!(exe.links[3].name(), "zstd");
 
 	let lib = test_one.static_libraries.first().unwrap();
 	assert_eq!(lib.name, "mylib");

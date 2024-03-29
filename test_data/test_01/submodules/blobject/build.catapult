@@ -1,0 +1,9 @@
+
+blobject = add_object_library(
+    name = "blobject",
+    sources = [
+        "blobject1.cpp",
+        "blobject2.cpp",
+    ],
+    include_dirs_public = ["."],
+)

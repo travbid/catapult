@@ -27,10 +27,12 @@ use starlark::{
 use crate::{
 	interface_library::InterfaceLibrary,
 	link_type::LinkPtr,
+	object_library::ObjectLibrary,
 	project::{Project, ProjectInfo},
 	starlark_executable::StarExecutable, //
 	starlark_interface_library::{StarIfaceLibrary, StarIfaceLibraryWrapper},
 	starlark_link_target::PtrLinkTarget,
+	starlark_object_library::{StarObjLibWrapper, StarObjectLibrary},
 	starlark_static_library::{StarLibraryWrapper, StarStaticLibrary},
 	static_library::StaticLibrary,
 };
@@ -42,6 +44,7 @@ pub(super) struct StarProject {
 	pub dependencies: Vec<Arc<StarProject>>,
 	pub executables: Vec<Arc<StarExecutable>>,
 	pub static_libraries: Vec<Arc<StarStaticLibrary>>,
+	pub object_libraries: Vec<Arc<StarObjectLibrary>>,
 	pub interface_libraries: Vec<Arc<StarIfaceLibrary>>,
 }
 
@@ -70,6 +73,11 @@ impl<'v> StarlarkValue<'v> for StarProject {
 				return Some(heap.alloc(StarLibraryWrapper(lib.clone())));
 			}
 		}
+		for lib in &self.object_libraries {
+			if lib.name == attribute {
+				return Some(heap.alloc(StarObjLibWrapper(lib.clone())));
+			}
+		}
 		for lib in &self.interface_libraries {
 			if lib.name == attribute {
 				return Some(heap.alloc(StarIfaceLibraryWrapper(lib.clone())));
@@ -79,6 +87,11 @@ impl<'v> StarlarkValue<'v> for StarProject {
 	}
 	fn has_attr(&self, attribute: &str, _: &'v Heap) -> bool {
 		for lib in &self.static_libraries {
+			if lib.name == attribute {
+				return true;
+			}
+		}
+		for lib in &self.object_libraries {
 			if lib.name == attribute {
 				return true;
 			}
@@ -96,6 +109,9 @@ impl<'v> StarlarkValue<'v> for StarProject {
 		for lib in &self.static_libraries {
 			attrs.push(lib.name.to_owned());
 		}
+		for lib in &self.object_libraries {
+			attrs.push(lib.name.to_owned());
+		}
 		for lib in &self.interface_libraries {
 			attrs.push(lib.name.to_owned());
 		}
@@ -108,6 +124,7 @@ starlark_simple_value!(StarProject);
 pub(super) struct StarLinkTargetCache {
 	all_targets: HashSet<PtrLinkTarget>,
 	static_libs: HashMap<PtrLinkTarget, Arc<StaticLibrary>>,
+	object_libs: HashMap<PtrLinkTarget, Arc<ObjectLibrary>>,
 	interface_libs: HashMap<PtrLinkTarget, Arc<InterfaceLibrary>>,
 }
 
@@ -116,12 +133,20 @@ impl StarLinkTargetCache {
 		StarLinkTargetCache {
 			all_targets: HashSet::new(),
 			static_libs: HashMap::new(),
+			object_libs: HashMap::new(),
 			interface_libs: HashMap::new(),
 		}
 	}
 	pub fn get_static(&self, key: &PtrLinkTarget) -> Option<&Arc<StaticLibrary>> {
 		if self.all_targets.contains(key) {
 			self.static_libs.get(key)
+		} else {
+			None
+		}
+	}
+	pub fn get_object(&self, key: &PtrLinkTarget) -> Option<&Arc<ObjectLibrary>> {
+		if self.all_targets.contains(key) {
+			self.object_libs.get(key)
 		} else {
 			None
 		}
@@ -137,6 +162,9 @@ impl StarLinkTargetCache {
 		if let Some(x) = self.get_static(key) {
 			return Some(LinkPtr::Static(x.clone()));
 		}
+		if let Some(x) = self.get_object(key) {
+			return Some(LinkPtr::Object(x.clone()));
+		}
 		if let Some(x) = self.get_interface(key) {
 			return Some(LinkPtr::Interface(x.clone()));
 		}
@@ -144,6 +172,10 @@ impl StarLinkTargetCache {
 	}
 	pub fn insert_static(&mut self, key: PtrLinkTarget, value: Arc<StaticLibrary>) {
 		self.static_libs.insert(key.clone(), value);
+		self.all_targets.insert(key);
+	}
+	pub fn insert_object(&mut self, key: PtrLinkTarget, value: Arc<ObjectLibrary>) {
+		self.object_libs.insert(key.clone(), value);
 		self.all_targets.insert(key);
 	}
 	pub fn insert_interface(&mut self, key: PtrLinkTarget, value: Arc<InterfaceLibrary>) {
@@ -160,6 +192,7 @@ impl StarProject {
 			dependencies,
 			executables: Vec::new(),
 			static_libraries: Vec::new(),
+			object_libraries: Vec::new(),
 			interface_libraries: Vec::new(),
 		}
 	}
@@ -200,6 +233,21 @@ impl StarProject {
 					}
 				})
 				.collect::<Result<_,_>>()?,
+			object_libraries: self
+				.object_libraries
+				.iter()
+				.map(|x| -> Result<Arc<_>,String>{
+					let ptr = PtrLinkTarget(x.clone());
+					if let Some(lib) = link_map.get_object(&ptr) {
+						Ok(lib.clone())
+					} else {
+						let data = x.as_library(Weak::new(), &self.path, link_map)?;
+						let arc = Arc::new(data);
+						link_map.insert_object(ptr, arc.clone());
+						Ok(arc)
+					}
+				})
+				.collect::<Result<_,_>>()?,
 			interface_libraries: self
 				.interface_libraries
 				.iter()
@@ -225,6 +273,10 @@ impl StarProject {
 				Arc::get_mut(exe).unwrap().set_parent(weak_parent.clone());
 			}
 			for lib in &mut project.static_libraries {
+				let lib_mut = unsafe { &mut (*Arc::as_ptr(lib).cast_mut()) };
+				lib_mut.set_parent(weak_parent.clone());
+			}
+			for lib in &mut project.object_libraries {
 				let lib_mut = unsafe { &mut (*Arc::as_ptr(lib).cast_mut()) };
 				lib_mut.set_parent(weak_parent.clone());
 			}

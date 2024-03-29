@@ -353,6 +353,40 @@ impl Msvc {
 			guid_map.insert(LinkPtr::Static(lib.clone()), vsproj.clone());
 			project_vec.push(vsproj);
 		}
+		for lib in &project.object_libraries {
+			let project_info = &lib.project().info;
+			let mut includes = lib.public_includes_recursive();
+			includes.extend_from_slice(&lib.private_includes());
+			let includes = includes
+				.into_iter()
+				// Visual Studio doesn't seem to support extended-length name syntax
+				// .map(|x| x.trim_start_matches(r"\\?\").to_owned())
+				.map(|x| x.to_string_lossy().trim_start_matches(r"\\?\").to_owned())
+				.collect::<Vec<String>>();
+			let defines = lib.public_defines_recursive();
+			let project_links = lib
+				.link_private
+				.iter()
+				.cloned()
+				.chain(lib.link_public.iter().cloned())
+				.collect();
+			let vsproj = make_vcxproj(
+				build_dir,
+				profiles,
+				guid_map,
+				&lib.name,
+				"StaticLibrary",
+				".lib",
+				project_info,
+				opts,
+				&includes,
+				&defines,
+				&lib.sources,
+				&project_links,
+			)?;
+			guid_map.insert(LinkPtr::Object(lib.clone()), vsproj.clone());
+			project_vec.push(vsproj);
+		}
 		for exe in &project.executables {
 			let target_name = &exe.name;
 			let configuration_type = "Application";
@@ -504,23 +538,24 @@ fn make_vcxproj(
 					continue;
 				}
 			};
-			match link {
-				LinkPtr::Static(x) => {
-					dependencies.push(proj_ref.clone());
-					let proj_ref_include = build_dir.join(&proj_ref.vcxproj_path);
-					out_str += &format!(
-						r#"    <ProjectReference Include="{}">
-      <Project>{{{}}}</Project>
-      <Name>{}</Name>
-      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
-      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
-    </ProjectReference>
+			let mut add_dependency = || {
+				dependencies.push(proj_ref.clone());
+				let proj_ref_include = build_dir.join(&proj_ref.vcxproj_path);
+				out_str += &format!(
+					r#"    <ProjectReference Include="{}">
+	<Project>{{{}}}</Project>
+	<Name>{}</Name>
+	<ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+	<CopyToOutputDirectory>Never</CopyToOutputDirectory>
+ </ProjectReference>
 "#,
-						proj_ref_include.to_string_lossy(),
-						proj_ref.guid,
-						x.name()
-					);
-				}
+					proj_ref_include.to_string_lossy(),
+					proj_ref.guid,
+					link.name()
+				);
+			};
+			match link {
+				LinkPtr::Static(_) | LinkPtr::Object(_) => add_dependency(),
 				LinkPtr::Interface(_) => {}
 			}
 		}
