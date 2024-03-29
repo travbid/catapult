@@ -29,10 +29,38 @@ pub(crate) fn join_parent(parent_path: &Path, x: &String) -> SourcePath {
 	// Implement dunce::canonicalize() ?
 }
 
-pub(crate) fn is_c_source(src_filename: &&String) -> bool {
+pub(crate) fn is_c_source(src_filename: &str) -> bool {
 	src_filename.ends_with(".c") || src_filename.ends_with(".C")
 }
 
-pub(crate) fn is_cpp_source(src_filename: &&String) -> bool {
-	!is_c_source(src_filename)
+pub(crate) fn is_cpp_source(src_filename: &str) -> bool {
+	src_filename.ends_with(".cpp") || src_filename.ends_with(".cc")
+}
+
+#[derive(Debug, Default)]
+pub struct Sources {
+	pub c: Vec<SourcePath>,
+	pub cpp: Vec<SourcePath>,
+}
+
+impl Sources {
+	pub fn iter(&self) -> impl Iterator<Item = &SourcePath> {
+		self.c.iter().chain(self.cpp.iter())
+	}
+}
+
+pub(crate) fn split_sources(sources: &[String], parent_path: &Path) -> Result<Sources, String> {
+	sources
+		.iter()
+		.map(|x| join_parent(&parent_path, x))
+		.try_fold(Sources::default(), |mut acc, src| {
+			if is_c_source(&src.name) {
+				acc.c.push(src);
+			} else if is_cpp_source(&src.name) {
+				acc.cpp.push(src);
+			} else {
+				return Err(format!("Unknown source type: {}", &src.name));
+			}
+			Ok(acc)
+		})
 }

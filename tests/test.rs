@@ -28,8 +28,8 @@ fn test_01() {
 
 	let lib = my_depend.static_libraries.first().unwrap();
 	assert_eq!(lib.name, "my_depend_lib");
-	assert_eq!(lib.cpp_sources.len(), 1);
-	assert_eq!(lib.cpp_sources[0].full, cwd.join("submodules").join("my_depend").join("my_depend.cpp"));
+	assert_eq!(lib.sources.cpp.len(), 1);
+	assert_eq!(lib.sources.cpp[0].full, cwd.join("submodules").join("my_depend").join("my_depend.cpp"));
 
 	assert_eq!(project.info.name, "test_one");
 	let test_one = project;
@@ -39,8 +39,8 @@ fn test_01() {
 
 	let exe = test_one.executables.first().unwrap();
 	assert_eq!(exe.name, "myexe");
-	assert_eq!(exe.cpp_sources.len(), 1);
-	assert_eq!(exe.cpp_sources[0].full, cwd.join("main.cpp"));
+	assert_eq!(exe.sources.cpp.len(), 1);
+	assert_eq!(exe.sources.cpp[0].full, cwd.join("main.cpp"));
 	assert_eq!(exe.links.len(), 3);
 	assert_eq!(exe.links[0].name(), "mylib");
 	assert_eq!(exe.links[1].name(), "my_depend_lib");
@@ -48,6 +48,6 @@ fn test_01() {
 
 	let lib = test_one.static_libraries.first().unwrap();
 	assert_eq!(lib.name, "mylib");
-	assert_eq!(lib.cpp_sources.len(), 1);
-	assert_eq!(lib.cpp_sources[0].full, cwd.join("mylib.cpp"));
+	assert_eq!(lib.sources.cpp.len(), 1);
+	assert_eq!(lib.sources.cpp[0].full, cwd.join("mylib.cpp"));
 }

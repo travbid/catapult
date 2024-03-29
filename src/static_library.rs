@@ -5,7 +5,7 @@ use std::{
 
 use crate::{
 	link_type::LinkPtr,
-	misc::SourcePath,
+	misc::{SourcePath, Sources},
 	project::Project, //
 	target::{LinkTarget, Target},
 };
@@ -14,8 +14,7 @@ use crate::{
 pub struct StaticLibrary {
 	pub parent_project: Weak<Project>,
 	pub name: String,
-	pub c_sources: Vec<SourcePath>,
-	pub cpp_sources: Vec<SourcePath>,
+	pub sources: Sources,
 	pub link_private: Vec<LinkPtr>,
 	pub link_public: Vec<LinkPtr>,
 	pub include_dirs_public: Vec<SourcePath>,

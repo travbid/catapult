@@ -10,7 +10,7 @@ use uuid::Uuid;
 
 use crate::{
 	link_type::LinkPtr,
-	misc::SourcePath,
+	misc::Sources,
 	project::{Project, ProjectInfo},
 	target::{LinkTarget, Target},
 	toolchain::{Profile, VcxprojProfile},
@@ -347,8 +347,7 @@ impl Msvc {
 				opts,
 				&includes,
 				&defines,
-				&lib.c_sources,
-				&lib.cpp_sources,
+				&lib.sources,
 				&project_links,
 			)?;
 			guid_map.insert(LinkPtr::Static(lib.clone()), vsproj.clone());
@@ -377,8 +376,7 @@ impl Msvc {
 				opts,
 				&includes,
 				&defines,
-				&exe.c_sources,
-				&exe.cpp_sources,
+				&exe.sources,
 				&exe.links,
 			)?;
 			project_vec.push(vsproj);
@@ -398,11 +396,10 @@ fn make_vcxproj(
 	opts: &Options,
 	includes: &[String],
 	defines: &[String],
-	c_sources: &[SourcePath],
-	cpp_sources: &[SourcePath],
+	sources: &Sources,
 	project_links: &Vec<LinkPtr>,
 ) -> Result<VsProject, String> {
-	if !c_sources.is_empty() && !cpp_sources.is_empty() {
+	if !sources.c.is_empty() && !sources.cpp.is_empty() {
 		return Err(format!("This generator does not support mixing C and C++ sources. Consider splitting them into separate libraries. Target: {target_name}"));
 	}
 	const PLATFORM_TOOLSET: &str = "v143";
@@ -471,21 +468,21 @@ fn make_vcxproj(
 
 	// let include_dirs = include_dirs.iter().map(|x| input_path(x, &project_path)).collect::<Vec<String>>();
 	// let compile_flags = Vec::new(); // TODO(Travers)
-	let compile_as_c = cpp_sources.is_empty() && !c_sources.is_empty();
+	let compile_as_c = sources.cpp.is_empty() && !sources.c.is_empty();
 	for (profile_name, profile) in profiles {
 		out_str += &item_definition_group(profile_name, profile, includes, defines, opts, compile_as_c);
 	}
-	if !c_sources.is_empty() {
+	if !sources.c.is_empty() {
 		out_str += "  <ItemGroup>\n";
-		for src in c_sources {
+		for src in &sources.c {
 			let input = input_path(&src.full, &project_info.path);
 			out_str += &format!("    <ClCompile Include=\"{input}\" />\n");
 		}
 		out_str += "  </ItemGroup>\n";
 	}
-	if !cpp_sources.is_empty() {
+	if !sources.cpp.is_empty() {
 		out_str += "  <ItemGroup>\n";
-		for src in cpp_sources {
+		for src in &sources.cpp {
 			let input = input_path(&src.full, &project_info.path);
 			out_str += &format!("    <ClCompile Include=\"{input}\" />\n");
 		}
