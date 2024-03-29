@@ -75,17 +75,17 @@ impl StarExecutable {
 		parent_project: Weak<Project>,
 		parent_path: &Path,
 		link_map: &mut StarLinkTargetCache,
-	) -> Executable {
+	) -> Result<Executable, String> {
 		let mut links = Vec::<LinkPtr>::new();
 		for link in &self.links {
 			let ptr = PtrLinkTarget(link.clone());
 			let link_target = match link_map.get(&ptr) {
 				Some(x) => x,
-				None => link.as_link_target(parent_project.clone(), parent_path, ptr, link_map),
+				None => link.as_link_target(parent_project.clone(), parent_path, ptr, link_map)?,
 			};
 			links.push(link_target);
 		}
-		Executable {
+		Ok(Executable {
 			parent_project: parent_project.clone(),
 			name: self.name.clone(),
 			c_sources: self
@@ -105,7 +105,7 @@ impl StarExecutable {
 			defines: self.defines.clone(),
 			link_flags: self.link_flags.clone(),
 			output_name: self.output_name.clone(),
-		}
+		})
 	}
 }
 

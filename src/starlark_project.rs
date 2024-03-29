@@ -2,7 +2,7 @@ use core::fmt;
 use std::{
 	collections::{HashMap, HashSet},
 	path::PathBuf,
-	sync::Arc,
+	sync::{Arc, Weak},
 };
 
 use allocative::Allocative;
@@ -164,49 +164,77 @@ impl StarProject {
 		}
 	}
 
-	pub fn into_project(self) -> Arc<Project> {
+	pub fn into_project(self) -> Result<Arc<Project>, String> {
 		let mut cache = StarLinkTargetCache::new();
 		self.as_project_inner(&mut cache)
 	}
-	fn as_project_inner(&self, link_map: &mut StarLinkTargetCache) -> Arc<Project> {
-		let project = Arc::<Project>::new_cyclic(|weak_parent| Project {
+
+	fn as_project_inner(&self, link_map: &mut StarLinkTargetCache) -> Result<Arc<Project>, String> {
+		let mut project = //Arc::<Project>::new_cyclic(|weak_parent| 
+		Project {
 			info: Arc::new(ProjectInfo { name: self.name.clone(), path: self.path.clone() }),
-			dependencies: self.dependencies.iter().map(|x| x.as_project_inner(link_map)).collect(),
+			dependencies: self.dependencies.iter().map(|x| x.as_project_inner(link_map)).collect::<Result<_,_>>()?,
 			executables: self
 				.executables
 				.iter()
-				.map(|x| Arc::new(x.as_executable(weak_parent.clone(), &self.path, link_map)))
-				.collect(),
+				.map(|x| -> Result<Arc<_>,String> {
+					let data = x.as_executable(Weak::new(), &self.path, link_map)?;
+					Ok(Arc::new(
+						data
+					))
+				}
+			)
+				.collect::<Result<_,_>>()?,
 			static_libraries: self
 				.libraries
 				.iter()
-				.map(|x| {
+				.map(|x| -> Result<Arc<_>,String>{
 					let ptr = PtrLinkTarget(x.clone());
 					if let Some(lib) = link_map.get_static(&ptr) {
-						lib.clone()
+						Ok(lib.clone())
 					} else {
-						let arc = Arc::new(x.as_library(weak_parent.clone(), &self.path, link_map));
+						let data = x.as_library(Weak::new(), &self.path, link_map)?;
+						let arc = Arc::new(data);
 						link_map.insert_static(ptr, arc.clone());
-						arc
+						Ok(arc)
 					}
 				})
-				.collect(),
+				.collect::<Result<_,_>>()?,
 			interface_libraries: self
 				.interface_libraries
 				.iter()
-				.map(|x| {
+				.map(|x| -> Result<_,String>{
 					let ptr = PtrLinkTarget(x.clone());
 					if let Some(lib) = link_map.get_interface(&ptr) {
-						lib.clone()
+						Ok(lib.clone())
 					} else {
-						let arc = Arc::new(x.as_library(weak_parent.clone(), &self.path, link_map));
+						let data = x.as_library(Weak::new(), &self.path, link_map)?;
+						let arc = Arc::new(data);
 						link_map.insert_interface(ptr, arc.clone());
-						arc
+						Ok(arc)
 					}
 				})
-				.collect(),
+				.collect::<Result<_,_>>()?,
+		}; //);
+
+		let ret = Arc::<Project>::new_cyclic(move |weak_parent: &Weak<Project>| -> Project {
+			// We need one of the following to set the Weak parent without using unsafe:
+			// - https://github.com/rust-lang/libs-team/issues/90
+			// - https://github.com/rust-lang/rust/issues/112566
+			for exe in &mut project.executables {
+				Arc::get_mut(exe).unwrap().set_parent(weak_parent.clone());
+			}
+			for lib in &mut project.static_libraries {
+				let lib_mut = unsafe { &mut (*Arc::as_ptr(lib).cast_mut()) };
+				lib_mut.set_parent(weak_parent.clone());
+			}
+			for lib in &mut project.interface_libraries {
+				let lib_mut = unsafe { &mut (*Arc::as_ptr(lib).cast_mut()) };
+				lib_mut.set_parent(weak_parent.clone());
+			}
+			project
 		});
 
-		project
+		Ok(ret)
 	}
 }
