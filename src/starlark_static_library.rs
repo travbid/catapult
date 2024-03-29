@@ -81,11 +81,11 @@ impl StarLinkTarget for StarStaticLibrary {
 		parent_path: &Path,
 		ptr: PtrLinkTarget,
 		link_map: &mut StarLinkTargetCache,
-	) -> LinkPtr {
-		let arc = Arc::new(self.as_library(parent, parent_path, link_map));
+	) -> Result<LinkPtr, String> {
+		let arc = Arc::new(self.as_library(parent, parent_path, link_map)?);
 		// let ptr = PtrLinkTarget(arc.clone());
 		link_map.insert_static(ptr, arc.clone());
-		LinkPtr::Static(arc)
+		Ok(LinkPtr::Static(arc))
 	}
 
 	fn name(&self) -> String {
@@ -107,8 +107,8 @@ impl StarStaticLibrary {
 		parent_project: Weak<Project>,
 		parent_path: &Path,
 		link_map: &mut StarLinkTargetCache,
-	) -> StaticLibrary {
-		StaticLibrary {
+	) -> Result<StaticLibrary, String> {
+		Ok(StaticLibrary {
 			parent_project: parent_project.clone(),
 			name: self.name.clone(),
 			c_sources: self
@@ -139,28 +139,28 @@ impl StarStaticLibrary {
 				.map(|x| {
 					let ptr = PtrLinkTarget(x.clone());
 					if let Some(lt) = link_map.get(&ptr) {
-						lt
+						Ok(lt)
 					} else {
 						x.as_link_target(parent_project.clone(), parent_path, ptr, link_map)
 					}
 				})
-				.collect(),
+				.collect::<Result<_, _>>()?,
 			link_public: self
 				.link_public
 				.iter()
 				.map(|x| {
 					let ptr = PtrLinkTarget(x.clone());
 					if let Some(lt) = link_map.get(&ptr) {
-						lt
+						Ok(lt)
 					} else {
 						x.as_link_target(parent_project.clone(), parent_path, ptr, link_map)
 					}
 				})
-				.collect(),
+				.collect::<Result<_, _>>()?,
 			defines_public: self.defines_public.clone(),
 			link_flags_public: self.link_flags_public.clone(),
 			output_name: self.output_name.clone(),
-		}
+		})
 	}
 }
 

@@ -23,11 +23,10 @@ use starlark::{
 	},
 };
 
-use crate::misc::join_parent;
+use crate::{link_type::LinkPtr, misc::join_parent};
 
 use super::{
 	interface_library::InterfaceLibrary, //
-	link_type::LinkPtr,
 	project::Project,
 	starlark_fmt::{format_link_targets, format_strings},
 	starlark_link_target::{PtrLinkTarget, StarLinkTarget},
@@ -71,11 +70,12 @@ impl StarLinkTarget for StarIfaceLibrary {
 		parent_path: &Path,
 		ptr: PtrLinkTarget,
 		link_map: &mut StarLinkTargetCache,
-	) -> LinkPtr {
-		let arc = Arc::new(self.as_library(parent, parent_path, link_map));
+	) -> Result<LinkPtr, String> {
+		let data = self.as_library(parent, parent_path, link_map)?;
+		let arc = Arc::new(data);
 		// let ptr = PtrLinkTarget(arc.clone());
 		link_map.insert_interface(ptr, arc.clone());
-		LinkPtr::Interface(arc)
+		Ok(LinkPtr::Interface(arc))
 	}
 
 	fn public_includes_recursive(&self) -> Vec<String> {
@@ -97,8 +97,8 @@ impl StarIfaceLibrary {
 		parent_project: Weak<Project>,
 		parent_path: &Path,
 		link_map: &mut StarLinkTargetCache,
-	) -> InterfaceLibrary {
-		InterfaceLibrary {
+	) -> Result<InterfaceLibrary, String> {
+		Ok(InterfaceLibrary {
 			parent_project: parent_project.clone(),
 			name: self.name.clone(),
 			include_dirs: self.include_dirs.iter().map(|x| join_parent(parent_path, x)).collect(),
@@ -108,15 +108,15 @@ impl StarIfaceLibrary {
 				.map(|x| {
 					let ptr = PtrLinkTarget(x.clone());
 					if let Some(lt) = link_map.get(&ptr) {
-						lt
+						Ok(lt)
 					} else {
 						x.as_link_target(parent_project.clone(), parent_path, ptr, link_map)
 					}
 				})
-				.collect(),
+				.collect::<Result<_, _>>()?,
 			defines: self.defines.clone(),
 			link_flags: self.link_flags.clone(),
-		}
+		})
 	}
 }
 
@@ -163,3 +163,67 @@ fn library_methods() -> Option<&'static Methods> {
 	static RES: MethodsStatic = MethodsStatic::new();
 	RES.methods(library_methods_impl)
 }
+
+// pub(crate) struct InterfaceLibPartial {
+// 	base: Arc<StarIfaceLibrary>,
+// 	links: Vec<LinkPtrPartial>,
+// 	project_path: PathBuf,
+// }
+
+// impl InterfaceLibPartial {
+// 	fn as_link_target(
+// 		lt: Arc<dyn StarLinkTarget>,
+// 		project_path: PathBuf,
+// 		ptr: PtrLinkTarget,
+// 		link_map: &mut StarLinkTargetCache,
+// 	) -> Result<LinkPtrPartial, String> {
+// 		lt;
+// 		let arc = Arc::new(InterfaceLibPartial{
+// 			base: lt,
+// 			links: lt.links.iter().map,
+// 			project_path
+// 		});
+// 		let ptr = PtrLinkTarget(arc.clone());
+// 		link_map.insert_interface(ptr, arc.clone());
+// 		Ok(LinkPtrPartial::Interface(arc))
+// 	}
+// 	pub fn as_library(
+// 		base: Arc<StarIfaceLibrary>,
+// 		project_path: PathBuf,
+// 		link_map: &mut StarLinkTargetCache,
+// 	) -> Result<InterfaceLibPartial, String> {
+// 		let links = base
+// 			.links
+// 			.iter()
+// 			.map(|x| {
+// 				let ptr = PtrLinkTarget(x.clone());
+// 				if let Some(lt) = link_map.get(&ptr) {
+// 					lt
+// 				} else {
+// 					as_link_target(x, &project_path, ptr, link_map)?
+// 				}
+// 			})
+// 			.collect()?;
+// 		Ok(InterfaceLibPartial { base, links, project_path })
+// 	}
+// 	pub fn into_interface_library(
+// 		&self,
+// 		parent: Weak<Project>,
+// 		// parent_path: &Path,
+// 		// link_map: &mut StarLinkTargetCache,
+// 	) -> InterfaceLibrary {
+// 		InterfaceLibrary {
+// 			parent_project: parent,
+// 			name: self.base.name.clone(),
+// 			include_dirs: self
+// 				.base
+// 				.include_dirs
+// 				.iter()
+// 				.map(|x| join_parent(&self.project_path, x))
+// 				.collect(),
+// 			links: self.links.into_iter().map(|x| x.into_link_target(&parent)).collect(),
+// 			defines: self.base.defines.clone(),
+// 			link_flags: self.base.link_flags.clone(),
+// 		}
+// 	}
+// }

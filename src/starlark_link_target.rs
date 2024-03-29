@@ -19,7 +19,7 @@ pub(super) trait StarLinkTarget: Send + Sync + fmt::Debug + Allocative {
 		parent_path: &Path,
 		ptr: PtrLinkTarget,
 		link_map: &mut StarLinkTargetCache,
-	) -> LinkPtr;
+	) -> Result<LinkPtr, String>;
 
 	fn name(&self) -> String;
 	fn public_includes_recursive(&self) -> Vec<String>;

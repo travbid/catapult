@@ -112,3 +112,9 @@ impl LinkTarget for InterfaceLibrary {
 		links
 	}
 }
+
+impl InterfaceLibrary {
+	pub(crate) fn set_parent(&mut self, parent: Weak<Project>) {
+		self.parent_project = parent;
+	}
+}

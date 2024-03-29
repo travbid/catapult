@@ -126,4 +126,7 @@ impl Executable {
 		}
 		flags
 	}
+	pub(crate) fn set_parent(&mut self, parent: Weak<Project>) {
+		self.parent_project = parent;
+	}
 }

@@ -126,7 +126,10 @@ pub fn parse_project(toolchain: &Toolchain) -> Result<(Arc<Project>, GlobalOptio
 	let project =
 		parse_project_inner(".", &global_options, &HashMap::new(), HashMap::new(), toolchain, &mut combined_deps)?;
 
-	Ok((project.into_project(), global_options))
+	match project.into_project() {
+		Ok(x) => Ok((x, global_options)),
+		Err(e) => Err(anyhow!(e)),
+	}
 }
 
 #[derive(Deserialize)]

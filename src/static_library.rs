@@ -145,4 +145,7 @@ impl StaticLibrary {
 		// TODO(Travers)
 		Vec::new()
 	}
+	pub(crate) fn set_parent(&mut self, parent: Weak<Project>) {
+		self.parent_project = parent;
+	}
 }
