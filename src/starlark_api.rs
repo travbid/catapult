@@ -99,8 +99,8 @@ impl ImplAddStaticLibrary {
 		sources: Vec<&str>,
 		link_private: Vec<Value>,
 		link_public: Vec<Value>,
-		include_dirs_public: Vec<&str>,
 		include_dirs_private: Vec<&str>,
+		include_dirs_public: Vec<&str>,
 		defines_public: Vec<&str>,
 		link_flags_public: Vec<&str>,
 		// list_or_lambda: Arc<ListOrLambdaFrozen>,
@@ -115,8 +115,8 @@ impl ImplAddStaticLibrary {
 			sources: to_vec_strs(&sources),
 			link_private: get_link_targets(link_private)?,
 			link_public: get_link_targets(link_public)?,
-			include_dirs_public: to_vec_strs(&include_dirs_public),
 			include_dirs_private: to_vec_strs(&include_dirs_private),
+			include_dirs_public: to_vec_strs(&include_dirs_public),
 			defines_public: defines_public.into_iter().map(String::from).collect(),
 			link_flags_public: link_flags_public.into_iter().map(String::from).collect(),
 			output_name: None, // TODO(Travers)
@@ -138,8 +138,8 @@ impl starlark::values::function::NativeFunc for ImplAddStaticLibrary {
 			Arguments::check_required("sources", args[1].get())?,
 			Arguments::check_optional("link_private", args[2].get())?.unwrap_or_default(),
 			Arguments::check_optional("link_public", args[3].get())?.unwrap_or_default(),
-			Arguments::check_optional("include_dirs_public", args[4].get())?.unwrap_or_default(),
-			Arguments::check_optional("include_dirs_private", args[5].get())?.unwrap_or_default(),
+			Arguments::check_optional("include_dirs_private", args[4].get())?.unwrap_or_default(),
+			Arguments::check_optional("include_dirs_public", args[5].get())?.unwrap_or_default(),
 			Arguments::check_optional("defines_public", args[6].get())?.unwrap_or_default(),
 			Arguments::check_optional("link_flags_public", args[7].get())?.unwrap_or_default(),
 		)?;
@@ -258,8 +258,8 @@ pub(crate) fn build_api(project: &Arc<Mutex<StarProject>>, builder: &mut Globals
 		sig_builder.required("sources");
 		sig_builder.optional("link_private");
 		sig_builder.optional("link_public");
-		sig_builder.optional("include_dirs_public");
 		sig_builder.optional("include_dirs_private");
+		sig_builder.optional("include_dirs_public");
 		sig_builder.optional("defines_public");
 		sig_builder.optional("link_flags_public");
 		let signature = sig_builder.finish();
@@ -267,10 +267,10 @@ pub(crate) fn build_api(project: &Arc<Mutex<StarProject>>, builder: &mut Globals
 			let parameter_types = Vec::<Ty>::from([
 				<&str>::starlark_type_repr(),
 				<Vec<&str>>::starlark_type_repr(),
-				<Vec<Value>>::starlark_type_repr(),
-				<Vec<Value>>::starlark_type_repr(),
-				<Value>::starlark_type_repr(),
 				<Vec<&str>>::starlark_type_repr(),
+				<Vec<&str>>::starlark_type_repr(),
+				<Vec<Value>>::starlark_type_repr(),
+				<Vec<Value>>::starlark_type_repr(),
 				<Vec<&str>>::starlark_type_repr(),
 				<Vec<&str>>::starlark_type_repr(),
 			]);
@@ -304,7 +304,7 @@ pub(crate) fn build_api(project: &Arc<Mutex<StarProject>>, builder: &mut Globals
 		let documentation = {
 			let parameter_types = Vec::<Ty>::from([
 				<&str>::starlark_type_repr(),
-				<Value>::starlark_type_repr(),
+				<Vec<Value>>::starlark_type_repr(),
 				<Vec<&str>>::starlark_type_repr(),
 				<Vec<&str>>::starlark_type_repr(),
 				<Vec<&str>>::starlark_type_repr(),
@@ -342,10 +342,10 @@ pub(crate) fn build_api(project: &Arc<Mutex<StarProject>>, builder: &mut Globals
 			let parameter_types = Vec::<Ty>::from([
 				<&str>::starlark_type_repr(),
 				<Vec<&str>>::starlark_type_repr(),
-				<Value>::starlark_type_repr(),
-				<Vec<String>>::starlark_type_repr(),
-				<Vec<String>>::starlark_type_repr(),
-				<Vec<String>>::starlark_type_repr(),
+				<Vec<Value>>::starlark_type_repr(),
+				<Vec<&str>>::starlark_type_repr(),
+				<Vec<&str>>::starlark_type_repr(),
+				<Vec<&str>>::starlark_type_repr(),
 			]);
 			starlark::values::function::NativeCallableRawDocs {
 				rust_docstring: None,
