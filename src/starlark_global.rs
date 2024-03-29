@@ -162,7 +162,11 @@ impl<'v> StarlarkValue<'v> for StarGlobal {
 	}
 
 	fn dir_attr(&self) -> Vec<String> {
-		let attrs = vec!["options".to_owned(), "toolchain".to_owned()];
+		let attrs = vec![
+			"global_options".to_owned(),
+			"package_options".to_owned(),
+			"toolchain".to_owned(),
+		];
 		attrs
 	}
 }
