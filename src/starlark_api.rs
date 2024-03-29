@@ -332,7 +332,7 @@ pub(crate) fn build_api(project: &Arc<Mutex<StarProject>>, builder: &mut Globals
 		sig_builder.no_more_positional_only_args();
 		sig_builder.required("name");
 		sig_builder.required("sources");
-		sig_builder.optional("links");
+		sig_builder.optional("link");
 		sig_builder.optional("include_dirs");
 		sig_builder.optional("defines");
 		sig_builder.optional("link_flags");

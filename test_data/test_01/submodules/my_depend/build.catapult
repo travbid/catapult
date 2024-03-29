@@ -13,7 +13,7 @@ def build():
         add_executable(
             name = "mytest",
             sources = ["mytest.cpp"],
-            links = [my_depend_lib],
+            link = [my_depend_lib],
         )
 
 build()
