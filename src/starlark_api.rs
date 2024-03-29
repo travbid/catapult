@@ -52,19 +52,16 @@ impl<'v> AllocValue<'v> for Context {
 #[starlark::values::starlark_value(type = "Context")]
 impl<'v> StarlarkValue<'v> for Context {
 	fn get_attr(&self, attribute: &str, heap: &'v Heap) -> Option<Value<'v>> {
-		println!("Context::get_attr({attribute})");
 		match attribute {
 			"compiler_id" => Some(heap.alloc(self.compiler_id.clone())),
 			_ => None,
 		}
 	}
 	fn has_attr(&self, attribute: &str, _: &'v Heap) -> bool {
-		println!("Context::has_attr({attribute})");
 		attribute == "compiler_id"
 	}
 
 	fn dir_attr(&self) -> Vec<String> {
-		println!("Context::dir_attr()");
 		let attrs = vec!["compiler_id".to_owned()];
 		attrs
 	}

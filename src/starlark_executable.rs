@@ -123,7 +123,6 @@ impl fmt::Display for StarExecutableWrapper {
 #[starlark::values::starlark_value(type = "Executable")]
 impl<'v> StarlarkValue<'v> for StarExecutableWrapper {
 	fn get_methods() -> Option<&'static Methods> {
-		println!("Executable::get_methods()");
 		executable_methods()
 	}
 
