@@ -121,7 +121,7 @@ impl ImplAddStaticLibrary {
 			link_flags_public: link_flags_public.into_iter().map(String::from).collect(),
 			output_name: None, // TODO(Travers)
 		});
-		project.libraries.push(lib.clone());
+		project.static_libraries.push(lib.clone());
 		Ok(lib)
 	}
 }

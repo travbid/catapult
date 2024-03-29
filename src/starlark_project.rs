@@ -41,7 +41,7 @@ pub(super) struct StarProject {
 	pub path: PathBuf,
 	pub dependencies: Vec<Arc<StarProject>>,
 	pub executables: Vec<Arc<StarExecutable>>,
-	pub libraries: Vec<Arc<StarStaticLibrary>>,
+	pub static_libraries: Vec<Arc<StarStaticLibrary>>,
 	pub interface_libraries: Vec<Arc<StarIfaceLibrary>>,
 }
 
@@ -65,7 +65,7 @@ impl<'v> StarlarkValue<'v> for StarProject {
 		project_methods()
 	}
 	fn get_attr(&self, attribute: &str, heap: &'v Heap) -> Option<Value<'v>> {
-		for lib in &self.libraries {
+		for lib in &self.static_libraries {
 			if lib.name == attribute {
 				return Some(heap.alloc(StarLibraryWrapper(lib.clone())));
 			}
@@ -78,7 +78,7 @@ impl<'v> StarlarkValue<'v> for StarProject {
 		None
 	}
 	fn has_attr(&self, attribute: &str, _: &'v Heap) -> bool {
-		for lib in &self.libraries {
+		for lib in &self.static_libraries {
 			if lib.name == attribute {
 				return true;
 			}
@@ -93,7 +93,7 @@ impl<'v> StarlarkValue<'v> for StarProject {
 
 	fn dir_attr(&self) -> Vec<String> {
 		let mut attrs = Vec::new();
-		for lib in &self.libraries {
+		for lib in &self.static_libraries {
 			attrs.push(lib.name.to_owned());
 		}
 		for lib in &self.interface_libraries {
@@ -159,7 +159,7 @@ impl StarProject {
 			path,
 			dependencies,
 			executables: Vec::new(),
-			libraries: Vec::new(),
+			static_libraries: Vec::new(),
 			interface_libraries: Vec::new(),
 		}
 	}
@@ -186,7 +186,7 @@ impl StarProject {
 			)
 				.collect::<Result<_,_>>()?,
 			static_libraries: self
-				.libraries
+				.static_libraries
 				.iter()
 				.map(|x| -> Result<Arc<_>,String>{
 					let ptr = PtrLinkTarget(x.clone());
