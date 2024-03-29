@@ -4,6 +4,7 @@
 
 #include "zstd.h"
 
+#include "blobject.hpp"
 #include "mylib.hpp"
 
 int main(int argc, char**) {  //
@@ -15,8 +16,7 @@ int main(int argc, char**) {  //
   std::array<char, 100> fbuf{1, 2, 3, 4, 5, 6, 7, 8, 9};
   std::array<char, 100> cbuf{0};
 
-  size_t const csz =
-      ZSTD_compress(cbuf.data(), cbuf.size(), fbuf.data(), fbuf.size(), 1);
+  size_t const csz = ZSTD_compress(cbuf.data(), cbuf.size(), fbuf.data(), fbuf.size(), 1);
 
   std::cout << "ZSTD_compress size: " << csz << "\n";
 
@@ -33,6 +33,9 @@ int main(int argc, char**) {  //
     std::cout << static_cast<int>(cbuf[i]) << " ";
   }
   std::cout << "\n\n";
+
+  blobject::DoBlob1();
+  blobject::DoBlob2();
 
   return EXIT_SUCCESS;
 }

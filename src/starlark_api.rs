@@ -21,6 +21,7 @@ use crate::{
 	starlark_executable::{StarExecutable, StarExecutableWrapper},
 	starlark_interface_library::{StarIfaceLibrary, StarIfaceLibraryWrapper},
 	starlark_link_target::StarLinkTarget,
+	starlark_object_library::{StarObjLibWrapper, StarObjectLibrary},
 	starlark_project::StarProject,
 	starlark_static_library::{StarLibraryWrapper, StarStaticLibrary},
 };
@@ -81,7 +82,11 @@ fn get_link_targets(links: Vec<Value>) -> Result<Vec<Arc<dyn StarLinkTarget>>, a
 				Some(x) => link_targets.push(x.0.clone()),
 				None => return err_msg(format!("Could not unpack \"link\" {}", link.get_type())),
 			},
-			_ => return err_msg(format!("Could not match \"link\" {}: {}", link.to_str(), link.get_type())),
+			"ObjectLibrary" => match StarObjLibWrapper::from_value(link) {
+				Some(x) => link_targets.push(x.0.clone()),
+				None => return err_msg(format!("Could not unpack \"link\" {}", link.get_type())),
+			},
+			_ => return err_msg(format!("Could not match link {}: {}", link.to_str(), link.get_type())),
 		}
 	}
 	Ok(link_targets)
@@ -144,6 +149,66 @@ impl starlark::values::function::NativeFunc for ImplAddStaticLibrary {
 			Arguments::check_optional("link_flags_public", args[7].get())?.unwrap_or_default(),
 		)?;
 		Ok(eval.heap().alloc(StarLibraryWrapper(v)))
+	}
+}
+
+struct ImplAddObjectLibrary {
+	signature: starlark::eval::ParametersSpec<starlark::values::FrozenValue>,
+	project: Arc<Mutex<StarProject>>,
+}
+impl ImplAddObjectLibrary {
+	#[allow(clippy::too_many_arguments)]
+	fn add_object_library_impl(
+		&self,
+		name: &str,
+		sources: Vec<&str>,
+		link_private: Vec<Value>,
+		link_public: Vec<Value>,
+		include_dirs_public: Vec<&str>,
+		include_dirs_private: Vec<&str>,
+		defines_public: Vec<&str>,
+		link_flags_public: Vec<&str>,
+		// list_or_lambda: Arc<ListOrLambdaFrozen>,
+	) -> anyhow::Result<Arc<StarObjectLibrary>> {
+		let mut project = match self.project.lock() {
+			Ok(x) => x,
+			Err(e) => return err_msg(e.to_string()),
+		};
+		let lib = Arc::new(StarObjectLibrary {
+			parent_project: Arc::downgrade(&self.project),
+			name: String::from(name),
+			sources: to_vec_strs(&sources),
+			link_private: get_link_targets(link_private)?,
+			link_public: get_link_targets(link_public)?,
+			include_dirs_private: to_vec_strs(&include_dirs_private),
+			include_dirs_public: to_vec_strs(&include_dirs_public),
+			defines_public: defines_public.into_iter().map(String::from).collect(),
+			link_flags_public: link_flags_public.into_iter().map(String::from).collect(),
+			output_name: None, // TODO(Travers)
+		});
+		project.object_libraries.push(lib.clone());
+		Ok(lib)
+	}
+}
+
+impl starlark::values::function::NativeFunc for ImplAddObjectLibrary {
+	fn invoke<'v>(
+		&self,
+		eval: &mut starlark::eval::Evaluator<'v, '_>,
+		parameters: &Arguments<'v, '_>,
+	) -> anyhow::Result<starlark::values::Value<'v>> {
+		let args: [Cell<Option<Value<'v>>>; 8] = self.signature.collect_into(parameters, eval.heap())?;
+		let v = self.add_object_library_impl(
+			Arguments::check_required("name", args[0].get())?,
+			Arguments::check_required("sources", args[1].get())?,
+			Arguments::check_optional("link_private", args[2].get())?.unwrap_or_default(),
+			Arguments::check_optional("link_public", args[3].get())?.unwrap_or_default(),
+			Arguments::check_optional("include_dirs_private", args[5].get())?.unwrap_or_default(),
+			Arguments::check_optional("include_dirs_public", args[4].get())?.unwrap_or_default(),
+			Arguments::check_optional("defines_public", args[6].get())?.unwrap_or_default(),
+			Arguments::check_optional("link_flags_public", args[7].get())?.unwrap_or_default(),
+		)?;
+		Ok(eval.heap().alloc(StarObjLibWrapper(v)))
 	}
 }
 
@@ -290,6 +355,48 @@ pub(crate) fn build_api(project: &Arc<Mutex<StarProject>>, builder: &mut Globals
 			Some(StarLibraryWrapper::starlark_type_repr()),
 			None,
 			ImplAddStaticLibrary { signature, project: project.clone() },
+		);
+	}
+	{
+		let function_name = "add_object_library";
+		let mut sig_builder = starlark::eval::ParametersSpec::new(function_name.to_owned());
+		sig_builder.no_more_positional_only_args();
+		sig_builder.required("name");
+		sig_builder.required("sources");
+		sig_builder.optional("link_private");
+		sig_builder.optional("link_public");
+		sig_builder.optional("include_dirs_private");
+		sig_builder.optional("include_dirs_public");
+		sig_builder.optional("defines_public");
+		sig_builder.optional("link_flags_public");
+		let signature = sig_builder.finish();
+		let documentation = {
+			let parameter_types = Vec::<Ty>::from([
+				<&str>::starlark_type_repr(),
+				<Vec<&str>>::starlark_type_repr(),
+				<Vec<&str>>::starlark_type_repr(),
+				<Vec<&str>>::starlark_type_repr(),
+				<Vec<Value>>::starlark_type_repr(),
+				<Vec<Value>>::starlark_type_repr(),
+				<Vec<&str>>::starlark_type_repr(),
+				<Vec<&str>>::starlark_type_repr(),
+			]);
+			starlark::values::function::NativeCallableRawDocs {
+				rust_docstring: None,
+				signature: signature.clone(),
+				parameter_types,
+				return_type: <Value>::starlark_type_repr(),
+				as_type: None,
+			}
+		};
+		builder.set_function(
+			function_name,
+			false,
+			documentation,
+			None,
+			Some(StarLibraryWrapper::starlark_type_repr()),
+			None,
+			ImplAddObjectLibrary { signature, project: project.clone() },
 		);
 	}
 	{

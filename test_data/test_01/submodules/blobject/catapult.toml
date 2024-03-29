@@ -1,0 +1,3 @@
+[package]
+name = "blobject"
+description = "Another test dependency"

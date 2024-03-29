@@ -20,7 +20,7 @@ print('=== C Compiler Version string: ' + str(c_compiler and c_compiler.version.
 myexe = add_executable(
     name = "myexe",
     sources = ["main.cpp"],
-    link = [mylib, my_depend.my_depend_lib, zstd.zstd],
+    link = [mylib, my_depend.my_depend_lib, blobject.blobject, zstd.zstd],
     defines = ['MY_DEFINE="myexe defined"']
 )
 
