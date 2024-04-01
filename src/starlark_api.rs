@@ -7,12 +7,14 @@ use starlark::{
 	eval::Arguments,
 	typing::Ty,
 	values::{
+		list::UnpackList,
 		type_repr::StarlarkTypeRepr, //
 		AllocValue,
 		Heap,
 		NoSerialize,
 		ProvidesStaticType,
 		StarlarkValue,
+		UnpackValue,
 		Value,
 	},
 };
@@ -133,17 +135,17 @@ impl starlark::values::function::NativeFunc for ImplAddStaticLibrary {
 		&self,
 		eval: &mut starlark::eval::Evaluator<'v, '_>,
 		parameters: &Arguments<'v, '_>,
-	) -> anyhow::Result<starlark::values::Value<'v>> {
+	) -> Result<starlark::values::Value<'v>, starlark::Error> {
 		let args: [Cell<Option<Value<'v>>>; 8] = self.signature.collect_into(parameters, eval.heap())?;
 		let v = self.add_static_library_impl(
 			Arguments::check_required("name", args[0].get())?,
-			Arguments::check_required("sources", args[1].get())?,
-			Arguments::check_optional("link_private", args[2].get())?.unwrap_or_default(),
-			Arguments::check_optional("link_public", args[3].get())?.unwrap_or_default(),
-			Arguments::check_optional("include_dirs_private", args[4].get())?.unwrap_or_default(),
-			Arguments::check_optional("include_dirs_public", args[5].get())?.unwrap_or_default(),
-			Arguments::check_optional("defines_public", args[6].get())?.unwrap_or_default(),
-			Arguments::check_optional("link_flags_public", args[7].get())?.unwrap_or_default(),
+			required_list("sources", args[1].get())?,
+			optional_list("link_private", args[2].get())?,
+			optional_list("link_public", args[3].get())?,
+			optional_list("include_dirs_private", args[4].get())?,
+			optional_list("include_dirs_public", args[5].get())?,
+			optional_list("defines_public", args[6].get())?,
+			optional_list("link_flags_public", args[7].get())?,
 		)?;
 		Ok(eval.heap().alloc(StarLibraryWrapper(v)))
 	}
@@ -193,17 +195,17 @@ impl starlark::values::function::NativeFunc for ImplAddObjectLibrary {
 		&self,
 		eval: &mut starlark::eval::Evaluator<'v, '_>,
 		parameters: &Arguments<'v, '_>,
-	) -> anyhow::Result<starlark::values::Value<'v>> {
+	) -> Result<starlark::values::Value<'v>, starlark::Error> {
 		let args: [Cell<Option<Value<'v>>>; 8] = self.signature.collect_into(parameters, eval.heap())?;
 		let v = self.add_object_library_impl(
 			Arguments::check_required("name", args[0].get())?,
-			Arguments::check_required("sources", args[1].get())?,
-			Arguments::check_optional("link_private", args[2].get())?.unwrap_or_default(),
-			Arguments::check_optional("link_public", args[3].get())?.unwrap_or_default(),
-			Arguments::check_optional("include_dirs_private", args[5].get())?.unwrap_or_default(),
-			Arguments::check_optional("include_dirs_public", args[4].get())?.unwrap_or_default(),
-			Arguments::check_optional("defines_public", args[6].get())?.unwrap_or_default(),
-			Arguments::check_optional("link_flags_public", args[7].get())?.unwrap_or_default(),
+			required_list("sources", args[1].get())?,
+			optional_list("link_private", args[2].get())?,
+			optional_list("link_public", args[3].get())?,
+			optional_list("include_dirs_private", args[5].get())?,
+			optional_list("include_dirs_public", args[4].get())?,
+			optional_list("defines_public", args[6].get())?,
+			optional_list("link_flags_public", args[7].get())?,
 		)?;
 		Ok(eval.heap().alloc(StarObjLibWrapper(v)))
 	}
@@ -245,14 +247,14 @@ impl starlark::values::function::NativeFunc for ImplAddInterfaceLibrary {
 		&self,
 		eval: &mut starlark::eval::Evaluator<'v, '_>,
 		parameters: &Arguments<'v, '_>,
-	) -> anyhow::Result<starlark::values::Value<'v>> {
+	) -> Result<starlark::values::Value<'v>, starlark::Error> {
 		let args: [Cell<Option<Value<'v>>>; 5] = self.signature.collect_into(parameters, eval.heap())?;
 		let v = self.add_interface_library_impl(
 			Arguments::check_required("name", args[0].get())?,
-			Arguments::check_optional("link", args[1].get())?.unwrap_or_default(),
-			Arguments::check_optional("include_dirs", args[2].get())?.unwrap_or_default(),
-			Arguments::check_optional("defines", args[3].get())?.unwrap_or_default(),
-			Arguments::check_optional("link_flags", args[4].get())?.unwrap_or_default(),
+			optional_list("link", args[1].get())?,
+			optional_list("include_dirs", args[2].get())?,
+			optional_list("defines", args[3].get())?,
+			optional_list("link_flags", args[4].get())?,
 			// listorlambda,
 		)?;
 		Ok(eval.heap().alloc(StarIfaceLibraryWrapper(v)))
@@ -297,15 +299,15 @@ impl starlark::values::function::NativeFunc for ImplAddExecutable {
 		&self,
 		eval: &mut starlark::eval::Evaluator<'v, '_>,
 		parameters: &Arguments<'v, '_>,
-	) -> anyhow::Result<starlark::values::Value<'v>> {
+	) -> Result<starlark::values::Value<'v>, starlark::Error> {
 		let args: [_; 6] = self.signature.collect_into(parameters, eval.heap())?;
 		let v = self.add_executable_impl(
 			Arguments::check_required("name", args[0].get())?,
-			Arguments::check_required("sources", args[1].get())?,
-			Arguments::check_optional("links", args[2].get())?.unwrap_or_default(),
-			Arguments::check_optional("include_dirs", args[3].get())?.unwrap_or_default(),
-			Arguments::check_optional("defines", args[4].get())?.unwrap_or_default(),
-			Arguments::check_optional("link_flags", args[5].get())?.unwrap_or_default(),
+			required_list("sources", args[1].get())?,
+			optional_list("links", args[2].get())?,
+			optional_list("include_dirs", args[3].get())?,
+			optional_list("defines", args[4].get())?,
+			optional_list("link_flags", args[5].get())?,
 		)?;
 		Ok(eval.heap().alloc(v))
 	}
@@ -469,5 +471,27 @@ pub(crate) fn build_api(project: &Arc<Mutex<StarProject>>, builder: &mut Globals
 			None,
 			ImplAddExecutable { signature, project: project.clone() },
 		);
+	}
+}
+
+fn required_list<'a, T: UnpackValue<'a>>(name: &str, arg: Option<Value<'a>>) -> anyhow::Result<Vec<T>> {
+	let x = arg.ok_or_else(|| starlark::values::ValueError::MissingRequired(name.to_owned()))?;
+	let items = UnpackList::unpack_named_param(x, name)?.items;
+	Ok(items)
+}
+
+fn optional_list<'a, T: UnpackValue<'a>>(name: &str, arg: Option<Value<'a>>) -> anyhow::Result<Vec<T>> {
+	match arg {
+		None => Ok(Vec::new()),
+		Some(x) => Ok(UnpackList::unpack_value(x)
+			.ok_or_else::<anyhow::Error, _>(|| {
+				starlark::values::ValueError::IncorrectParameterTypeNamedWithExpected(
+					name.to_owned(),
+					UnpackList::<Value>::expected(),
+					x.get_type().to_owned(),
+				)
+				.into()
+			})?
+			.items),
 	}
 }

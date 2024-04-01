@@ -410,7 +410,7 @@ pub(crate) fn parse_module(
 	}
 	let mut eval = Evaluator::new(&module);
 	let globals = setup(&project_writable, global_options, package_options, toolchain);
-	eval.eval_module(ast, &globals)?;
+	eval.eval_module(ast, &globals).map_err(|e| e.into_anyhow())?;
 	let project = match project_writable.lock() {
 		Ok(x) => x.clone(),
 		Err(e) => return err_msg(e.to_string()),
