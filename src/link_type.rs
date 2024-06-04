@@ -50,14 +50,14 @@ impl hash::Hash for LinkPtr {
 }
 
 impl Target for LinkPtr {
-	fn name(&self) -> String {
+	fn name(&self) -> &str {
 		match self {
 			Self::Static(x) => x.name(),
 			Self::Object(x) => x.name(),
 			Self::Interface(x) => x.name(),
 		}
 	}
-	fn output_name(&self) -> String {
+	fn output_name(&self) -> &str {
 		match self {
 			Self::Static(x) => x.output_name(),
 			Self::Object(x) => x.output_name(),

@@ -43,7 +43,7 @@ impl fmt::Display for Executable {
 				.iter()
 				.map(|x| &x.name)
 				.fold(String::new(), |acc, x| acc + ", " + x),
-			self.links.iter().map(|x| x.name()).collect::<Vec<String>>().join(", "),
+			self.links.iter().map(|x| x.name()).collect::<Vec<_>>().join(", "),
 			self.include_dirs
 				.iter()
 				.map(|x| &x.name)
@@ -56,13 +56,13 @@ impl fmt::Display for Executable {
 }
 
 impl Target for Executable {
-	fn name(&self) -> String {
-		self.name.clone()
+	fn name(&self) -> &str {
+		&self.name
 	}
-	fn output_name(&self) -> String {
+	fn output_name(&self) -> &str {
 		match &self.output_name {
-			Some(output_name) => output_name.clone(),
-			None => self.name.clone(),
+			Some(output_name) => output_name,
+			None => &self.name,
 		}
 	}
 	fn project(&self) -> Arc<Project> {
