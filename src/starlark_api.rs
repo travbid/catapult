@@ -105,6 +105,7 @@ impl ImplAddStaticLibrary {
 		link_public: Vec<Value>,
 		include_dirs_private: Vec<&str>,
 		include_dirs_public: Vec<&str>,
+		defines_private: Vec<&str>,
 		defines_public: Vec<&str>,
 		link_flags_public: Vec<&str>,
 		// list_or_lambda: Arc<ListOrLambdaFrozen>,
@@ -121,6 +122,7 @@ impl ImplAddStaticLibrary {
 			link_public: get_link_targets(link_public)?,
 			include_dirs_private: to_vec_strs(&include_dirs_private),
 			include_dirs_public: to_vec_strs(&include_dirs_public),
+			defines_private: defines_private.into_iter().map(String::from).collect(),
 			defines_public: defines_public.into_iter().map(String::from).collect(),
 			link_flags_public: link_flags_public.into_iter().map(String::from).collect(),
 			output_name: None, // TODO(Travers)
@@ -136,7 +138,7 @@ impl starlark::values::function::NativeFunc for ImplAddStaticLibrary {
 		eval: &mut starlark::eval::Evaluator<'v, '_>,
 		parameters: &Arguments<'v, '_>,
 	) -> Result<starlark::values::Value<'v>, starlark::Error> {
-		let args: [Cell<Option<Value<'v>>>; 8] = self.signature.collect_into(parameters, eval.heap())?;
+		let args: [Cell<Option<Value<'v>>>; 9] = self.signature.collect_into(parameters, eval.heap())?;
 		let v = self.add_static_library_impl(
 			Arguments::check_required("name", args[0].get())?,
 			required_list("sources", args[1].get())?,
@@ -144,8 +146,9 @@ impl starlark::values::function::NativeFunc for ImplAddStaticLibrary {
 			optional_list("link_public", args[3].get())?,
 			optional_list("include_dirs_private", args[4].get())?,
 			optional_list("include_dirs_public", args[5].get())?,
-			optional_list("defines_public", args[6].get())?,
-			optional_list("link_flags_public", args[7].get())?,
+			optional_list("defines_private", args[6].get())?,
+			optional_list("defines_public", args[7].get())?,
+			optional_list("link_flags_public", args[8].get())?,
 		)?;
 		Ok(eval.heap().alloc(StarLibraryWrapper(v)))
 	}
@@ -163,8 +166,9 @@ impl ImplAddObjectLibrary {
 		sources: Vec<&str>,
 		link_private: Vec<Value>,
 		link_public: Vec<Value>,
-		include_dirs_public: Vec<&str>,
 		include_dirs_private: Vec<&str>,
+		include_dirs_public: Vec<&str>,
+		defines_private: Vec<&str>,
 		defines_public: Vec<&str>,
 		link_flags_public: Vec<&str>,
 		// list_or_lambda: Arc<ListOrLambdaFrozen>,
@@ -181,6 +185,7 @@ impl ImplAddObjectLibrary {
 			link_public: get_link_targets(link_public)?,
 			include_dirs_private: to_vec_strs(&include_dirs_private),
 			include_dirs_public: to_vec_strs(&include_dirs_public),
+			defines_private: defines_private.into_iter().map(String::from).collect(),
 			defines_public: defines_public.into_iter().map(String::from).collect(),
 			link_flags_public: link_flags_public.into_iter().map(String::from).collect(),
 			output_name: None, // TODO(Travers)
@@ -196,16 +201,17 @@ impl starlark::values::function::NativeFunc for ImplAddObjectLibrary {
 		eval: &mut starlark::eval::Evaluator<'v, '_>,
 		parameters: &Arguments<'v, '_>,
 	) -> Result<starlark::values::Value<'v>, starlark::Error> {
-		let args: [Cell<Option<Value<'v>>>; 8] = self.signature.collect_into(parameters, eval.heap())?;
+		let args: [Cell<Option<Value<'v>>>; 9] = self.signature.collect_into(parameters, eval.heap())?;
 		let v = self.add_object_library_impl(
 			Arguments::check_required("name", args[0].get())?,
 			required_list("sources", args[1].get())?,
 			optional_list("link_private", args[2].get())?,
 			optional_list("link_public", args[3].get())?,
-			optional_list("include_dirs_private", args[5].get())?,
-			optional_list("include_dirs_public", args[4].get())?,
-			optional_list("defines_public", args[6].get())?,
-			optional_list("link_flags_public", args[7].get())?,
+			optional_list("include_dirs_private", args[4].get())?,
+			optional_list("include_dirs_public", args[5].get())?,
+			optional_list("defines_private", args[6].get())?,
+			optional_list("defines_public", args[7].get())?,
+			optional_list("link_flags_public", args[8].get())?,
 		)?;
 		Ok(eval.heap().alloc(StarObjLibWrapper(v)))
 	}
@@ -324,6 +330,7 @@ pub(crate) fn build_api(project: &Arc<Mutex<StarProject>>, builder: &mut Globals
 		sig_builder.optional("link_public");
 		sig_builder.optional("include_dirs_private");
 		sig_builder.optional("include_dirs_public");
+		sig_builder.optional("defines_private");
 		sig_builder.optional("defines_public");
 		sig_builder.optional("link_flags_public");
 		let signature = sig_builder.finish();
@@ -335,6 +342,7 @@ pub(crate) fn build_api(project: &Arc<Mutex<StarProject>>, builder: &mut Globals
 				<Vec<&str>>::starlark_type_repr(),
 				<Vec<Value>>::starlark_type_repr(),
 				<Vec<Value>>::starlark_type_repr(),
+				<Vec<&str>>::starlark_type_repr(),
 				<Vec<&str>>::starlark_type_repr(),
 				<Vec<&str>>::starlark_type_repr(),
 			]);
@@ -366,6 +374,7 @@ pub(crate) fn build_api(project: &Arc<Mutex<StarProject>>, builder: &mut Globals
 		sig_builder.optional("link_public");
 		sig_builder.optional("include_dirs_private");
 		sig_builder.optional("include_dirs_public");
+		sig_builder.optional("defines_private");
 		sig_builder.optional("defines_public");
 		sig_builder.optional("link_flags_public");
 		let signature = sig_builder.finish();
@@ -373,10 +382,11 @@ pub(crate) fn build_api(project: &Arc<Mutex<StarProject>>, builder: &mut Globals
 			let parameter_types = Vec::<Ty>::from([
 				<&str>::starlark_type_repr(),
 				<Vec<&str>>::starlark_type_repr(),
-				<Vec<&str>>::starlark_type_repr(),
-				<Vec<&str>>::starlark_type_repr(),
 				<Vec<Value>>::starlark_type_repr(),
 				<Vec<Value>>::starlark_type_repr(),
+				<Vec<&str>>::starlark_type_repr(),
+				<Vec<&str>>::starlark_type_repr(),
+				<Vec<&str>>::starlark_type_repr(),
 				<Vec<&str>>::starlark_type_repr(),
 				<Vec<&str>>::starlark_type_repr(),
 			]);

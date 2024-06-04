@@ -17,8 +17,9 @@ pub struct ObjectLibrary {
 	pub sources: Sources,
 	pub link_private: Vec<LinkPtr>,
 	pub link_public: Vec<LinkPtr>,
-	pub include_dirs_public: Vec<SourcePath>,
 	pub include_dirs_private: Vec<SourcePath>,
+	pub include_dirs_public: Vec<SourcePath>,
+	pub defines_private: Vec<String>,
 	pub defines_public: Vec<String>,
 	pub link_flags_public: Vec<String>,
 
@@ -140,9 +141,8 @@ impl ObjectLibrary {
 	pub(crate) fn private_includes(&self) -> Vec<PathBuf> {
 		self.include_dirs_private.iter().map(|x| x.full.clone()).collect()
 	}
-	pub(crate) fn private_defines(&self) -> Vec<String> {
-		// TODO(Travers)
-		Vec::new()
+	pub(crate) fn private_defines(&self) -> &[String] {
+		&self.defines_private
 	}
 	pub(crate) fn set_parent(&mut self, parent: Weak<Project>) {
 		self.parent_project = parent;
