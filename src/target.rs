@@ -14,8 +14,8 @@ use crate::{
 };
 
 pub trait Target: fmt::Debug + Send + Sync {
-	fn name(&self) -> String;
-	fn output_name(&self) -> String;
+	fn name(&self) -> &str;
+	fn output_name(&self) -> &str;
 	fn project(&self) -> Arc<Project>;
 }
 

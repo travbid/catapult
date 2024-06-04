@@ -21,11 +21,11 @@ pub struct InterfaceLibrary {
 }
 
 impl Target for InterfaceLibrary {
-	fn name(&self) -> String {
-		self.name.clone()
+	fn name(&self) -> &str {
+		&self.name
 	}
-	fn output_name(&self) -> String {
-		self.name.clone()
+	fn output_name(&self) -> &str {
+		&self.name
 	}
 	fn project(&self) -> Arc<Project> {
 		self.parent_project.upgrade().unwrap()
