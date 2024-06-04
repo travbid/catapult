@@ -42,6 +42,7 @@ pub(super) struct StarStaticLibrary {
 	pub link_public: Vec<Arc<dyn StarLinkTarget>>,
 	pub include_dirs_public: Vec<String>,
 	pub include_dirs_private: Vec<String>,
+	pub defines_private: Vec<String>,
 	pub defines_public: Vec<String>,
 	pub link_flags_public: Vec<String>,
 
@@ -59,6 +60,7 @@ impl fmt::Display for StarStaticLibrary {
   link_public: [{}],
   include_dirs_public: [{}],
   include_dirs_private: [{}],
+  defines_private: [{}],
   defines_public: [{}],
   link_flags_public: [{}],
 }}"#,
@@ -68,6 +70,7 @@ impl fmt::Display for StarStaticLibrary {
 			format_link_targets(&self.link_public),
 			format_strings(&self.include_dirs_public),
 			format_strings(&self.include_dirs_private),
+			format_strings(&self.defines_private),
 			format_strings(&self.defines_public),
 			format_strings(&self.link_flags_public)
 		)
@@ -146,6 +149,7 @@ impl StarStaticLibrary {
 					}
 				})
 				.collect::<Result<_, _>>()?,
+			defines_private: self.defines_private.clone(),
 			defines_public: self.defines_public.clone(),
 			link_flags_public: self.link_flags_public.clone(),
 			output_name: self.output_name.clone(),

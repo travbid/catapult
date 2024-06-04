@@ -334,7 +334,8 @@ fn add_static_lib_target(
 	let sources = &lib.sources;
 	let mut includes = lib.public_includes_recursive();
 	includes.extend_from_slice(&lib.private_includes());
-	let defines = lib.public_defines_recursive();
+	let mut defines = lib.public_defines_recursive();
+	defines.extend_from_slice(lib.private_defines());
 
 	if !sources.c.is_empty() {
 		let c_compiler = get_c_compiler(toolchain, lib.name())?;
@@ -465,7 +466,8 @@ fn add_object_lib_target(
 	let sources = &lib.sources;
 	let mut includes = lib.public_includes_recursive();
 	includes.extend_from_slice(&lib.private_includes());
-	let defines = lib.public_defines_recursive();
+	let mut defines = lib.public_defines_recursive();
+	defines.extend_from_slice(lib.private_defines());
 
 	if !sources.c.is_empty() {
 		let c_compiler = get_c_compiler(toolchain, lib.name())?;
@@ -817,6 +819,7 @@ fn test_position_independent_code() {
 					link_private: Vec::new(),
 					include_dirs_public: Vec::new(),
 					include_dirs_private: Vec::new(),
+					defines_private: Vec::new(),
 					defines_public: Vec::new(),
 					link_flags_public: Vec::new(),
 					output_name: None,

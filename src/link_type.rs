@@ -92,8 +92,8 @@ impl LinkTarget for LinkPtr {
 
 	fn public_defines(&self) -> Vec<String> {
 		match self {
-			Self::Static(x) => x.private_defines(),
-			Self::Object(x) => x.private_defines(),
+			Self::Static(x) => x.public_defines(),
+			Self::Object(x) => x.public_defines(),
 			Self::Interface(x) => x.public_defines(),
 		}
 	}
