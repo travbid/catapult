@@ -1,5 +1,6 @@
 use core::fmt;
 use std::{
+	collections::HashMap,
 	path::Path,
 	sync::{Arc, Mutex, Weak},
 };
@@ -16,6 +17,7 @@ use starlark::{
 	values::{
 		Heap, //
 		NoSerialize,
+		OwnedFrozenValue,
 		ProvidesStaticType,
 		StarlarkValue,
 		StringValue,
@@ -46,6 +48,8 @@ pub(super) struct StarStaticLibrary {
 	pub defines_public: Vec<String>,
 	pub link_flags_public: Vec<String>,
 
+	pub generator_vars: Option<String>,
+
 	pub output_name: Option<String>,
 }
 
@@ -63,6 +67,7 @@ impl fmt::Display for StarStaticLibrary {
   defines_private: [{}],
   defines_public: [{}],
   link_flags_public: [{}],
+  generator_vars: {},
 }}"#,
 			self.name,
 			format_strings(&self.sources),
@@ -72,7 +77,12 @@ impl fmt::Display for StarStaticLibrary {
 			format_strings(&self.include_dirs_private),
 			format_strings(&self.defines_private),
 			format_strings(&self.defines_public),
-			format_strings(&self.link_flags_public)
+			format_strings(&self.link_flags_public),
+			if self.generator_vars.is_some() {
+				"(generated)"
+			} else {
+				"None"
+			},
 		)
 	}
 }
@@ -84,8 +94,9 @@ impl StarLinkTarget for StarStaticLibrary {
 		parent_path: &Path,
 		ptr: PtrLinkTarget,
 		link_map: &mut StarLinkTargetCache,
+		gen_name_map: &HashMap<String, OwnedFrozenValue>,
 	) -> Result<LinkPtr, String> {
-		let arc = Arc::new(self.as_library(parent, parent_path, link_map)?);
+		let arc = Arc::new(self.as_library(parent, parent_path, link_map, gen_name_map)?);
 		// let ptr = PtrLinkTarget(arc.clone());
 		link_map.insert_static(ptr, arc.clone());
 		Ok(LinkPtr::Static(arc))
@@ -110,6 +121,7 @@ impl StarStaticLibrary {
 		parent_project: Weak<Project>,
 		parent_path: &Path,
 		link_map: &mut StarLinkTargetCache,
+		gen_name_map: &HashMap<String, OwnedFrozenValue>,
 	) -> Result<StaticLibrary, String> {
 		Ok(StaticLibrary {
 			parent_project: parent_project.clone(),
@@ -133,7 +145,7 @@ impl StarStaticLibrary {
 					if let Some(lt) = link_map.get(&ptr) {
 						Ok(lt)
 					} else {
-						x.as_link_target(parent_project.clone(), parent_path, ptr, link_map)
+						x.as_link_target(parent_project.clone(), parent_path, ptr, link_map, gen_name_map)
 					}
 				})
 				.collect::<Result<_, _>>()?,
@@ -145,13 +157,20 @@ impl StarStaticLibrary {
 					if let Some(lt) = link_map.get(&ptr) {
 						Ok(lt)
 					} else {
-						x.as_link_target(parent_project.clone(), parent_path, ptr, link_map)
+						x.as_link_target(parent_project.clone(), parent_path, ptr, link_map, gen_name_map)
 					}
 				})
 				.collect::<Result<_, _>>()?,
 			defines_private: self.defines_private.clone(),
 			defines_public: self.defines_public.clone(),
 			link_flags_public: self.link_flags_public.clone(),
+			generator_vars: match &self.generator_vars {
+				None => None,
+				Some(id) => match gen_name_map.get(id) {
+					Some(x) => Some(x.clone()),
+					None => return Err(format!("Could not find generator id in map: {}", id)),
+				},
+			},
 			output_name: self.output_name.clone(),
 		})
 	}

@@ -1,5 +1,6 @@
 use core::fmt;
 use std::{
+	collections::HashMap,
 	path::Path,
 	sync::{Arc, Mutex, Weak},
 };
@@ -16,6 +17,7 @@ use starlark::{
 	values::{
 		Heap, //
 		NoSerialize,
+		OwnedFrozenValue,
 		ProvidesStaticType,
 		StarlarkValue,
 		StringValue,
@@ -70,8 +72,9 @@ impl StarLinkTarget for StarIfaceLibrary {
 		parent_path: &Path,
 		ptr: PtrLinkTarget,
 		link_map: &mut StarLinkTargetCache,
+		gen_name_map: &HashMap<String, OwnedFrozenValue>,
 	) -> Result<LinkPtr, String> {
-		let data = self.as_library(parent, parent_path, link_map)?;
+		let data = self.as_library(parent, parent_path, link_map, gen_name_map)?;
 		let arc = Arc::new(data);
 		// let ptr = PtrLinkTarget(arc.clone());
 		link_map.insert_interface(ptr, arc.clone());
@@ -97,6 +100,7 @@ impl StarIfaceLibrary {
 		parent_project: Weak<Project>,
 		parent_path: &Path,
 		link_map: &mut StarLinkTargetCache,
+		gen_name_map: &HashMap<String, OwnedFrozenValue>,
 	) -> Result<InterfaceLibrary, String> {
 		Ok(InterfaceLibrary {
 			parent_project: parent_project.clone(),
@@ -110,7 +114,7 @@ impl StarIfaceLibrary {
 					if let Some(lt) = link_map.get(&ptr) {
 						Ok(lt)
 					} else {
-						x.as_link_target(parent_project.clone(), parent_path, ptr, link_map)
+						x.as_link_target(parent_project.clone(), parent_path, ptr, link_map, gen_name_map)
 					}
 				})
 				.collect::<Result<_, _>>()?,

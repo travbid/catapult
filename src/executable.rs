@@ -4,6 +4,8 @@ use std::{
 	sync::{Arc, Weak},
 };
 
+use starlark::values::OwnedFrozenValue;
+
 use crate::{
 	link_type::LinkPtr,
 	misc::{SourcePath, Sources},
@@ -21,6 +23,8 @@ pub struct Executable {
 	pub include_dirs: Vec<SourcePath>,
 	pub defines: Vec<String>,
 	pub link_flags: Vec<String>,
+
+	pub generator_vars: Option<OwnedFrozenValue>,
 
 	pub output_name: Option<String>,
 }

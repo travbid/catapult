@@ -47,6 +47,12 @@ impl Sources {
 	pub fn iter(&self) -> impl Iterator<Item = &SourcePath> {
 		self.c.iter().chain(self.cpp.iter())
 	}
+	pub fn extended_with(&self, other: Self) -> Self {
+		Sources {
+			c: self.c.iter().chain(&other.c).cloned().collect(),
+			cpp: self.cpp.iter().chain(&other.cpp).cloned().collect(),
+		}
+	}
 }
 
 pub(crate) fn split_sources(sources: &[String], parent_path: &Path) -> Result<Sources, String> {
