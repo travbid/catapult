@@ -26,7 +26,7 @@ use starlark::{
 use super::{
 	executable::Executable,
 	link_type::LinkPtr,
-	misc::{join_parent, split_sources},
+	misc::{join_parent, Sources},
 	project::Project,
 	starlark_fmt::{format_link_targets, format_strings},
 	starlark_link_target::{PtrLinkTarget, StarLinkTarget},
@@ -76,7 +76,7 @@ impl StarExecutable {
 		parent_path: &Path,
 		link_map: &mut StarLinkTargetCache,
 	) -> Result<Executable, String> {
-		let sources = split_sources(&self.sources, parent_path)?;
+		let sources = Sources::from_slice(&self.sources, parent_path)?;
 		let mut links = Vec::<LinkPtr>::new();
 		for link in &self.links {
 			let ptr = PtrLinkTarget(link.clone());

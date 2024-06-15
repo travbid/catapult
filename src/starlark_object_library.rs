@@ -25,7 +25,7 @@ use starlark::{
 
 use super::{
 	link_type::LinkPtr,
-	misc::{join_parent, split_sources},
+	misc::{join_parent, Sources},
 	object_library::ObjectLibrary,
 	project::Project,
 	starlark_fmt::{format_link_targets, format_strings},
@@ -113,7 +113,7 @@ impl StarObjectLibrary {
 		Ok(ObjectLibrary {
 			parent_project: parent_project.clone(),
 			name: self.name.clone(),
-			sources: split_sources(&self.sources, parent_path)?,
+			sources: Sources::from_slice(&self.sources, parent_path)?,
 			include_dirs_private: self
 				.include_dirs_private
 				.iter()
