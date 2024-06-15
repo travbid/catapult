@@ -324,18 +324,6 @@ fn parse_project_inner<P: AsRef<Path> + ?Sized>(
 		} else {
 			return err_msg("Dependency must specify either \"registry\" or \"git\" or \"path\"".to_owned());
 		}
-
-		match env::set_current_dir(&original_dir) {
-			Ok(x) => x,
-			Err(e) => {
-				return err_msg(format!(
-					"Error changing to {} from {}: {}",
-					original_dir.display(),
-					env::current_dir()?.display(),
-					e
-				))
-			}
-		};
 	}
 
 	let mut option_overrides = manifest.package_options.unwrap_or_default();
@@ -367,6 +355,17 @@ fn parse_project_inner<P: AsRef<Path> + ?Sized>(
 		// context.clone(),
 	)?;
 
+	match env::set_current_dir(&original_dir) {
+		Ok(x) => x,
+		Err(e) => {
+			return err_msg(format!(
+				"Error changing to {} from {}: {}",
+				original_dir.display(),
+				env::current_dir()?.display(),
+				e
+			))
+		}
+	};
 	Ok(this_project)
 }
 
