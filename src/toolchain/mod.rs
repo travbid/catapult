@@ -8,6 +8,7 @@ use compiler::{identify_compiler, identify_linker, Compiler, ExeLinker};
 
 #[derive(Debug, Deserialize)]
 pub struct ToolchainFile {
+	msvc_platforms: Option<Vec<String>>,
 	c_compiler: Option<Vec<String>>,
 	cpp_compiler: Option<Vec<String>>,
 	static_linker: Option<Vec<String>>,
@@ -18,6 +19,7 @@ pub struct ToolchainFile {
 
 #[derive(Default)]
 pub struct Toolchain {
+	pub msvc_platforms: Vec<String>,
 	pub c_compiler: Option<Box<dyn Compiler>>,
 	pub cpp_compiler: Option<Box<dyn Compiler>>,
 	pub static_linker: Option<Vec<String>>,
@@ -36,7 +38,6 @@ pub struct Profile {
 
 #[derive(Clone, Debug, Default, Deserialize)]
 pub struct VcxprojProfile {
-	pub platform: String,
 	pub preprocessor_definitions: Vec<String>,
 	pub property_group: BTreeMap<String, String>,
 	pub cl_compile: BTreeMap<String, String>,
@@ -53,6 +54,8 @@ pub fn read_toolchain(toolchain_path: &Path) -> Result<Toolchain, String> {
 		Ok(x) => x,
 		Err(e) => return Err(format!("Error reading toolchain file \"{}\": {}", toolchain_path.display(), e)),
 	};
+
+	let msvc_platforms = toolchain_file.msvc_platforms.unwrap_or_default();
 
 	let c_compiler = match toolchain_file.c_compiler {
 		Some(x) => match identify_compiler(x) {
@@ -92,7 +95,14 @@ pub fn read_toolchain(toolchain_path: &Path) -> Result<Toolchain, String> {
 		}
 	}
 
-	let toolchain = Toolchain { c_compiler, cpp_compiler, static_linker, exe_linker, profile };
+	let toolchain = Toolchain {
+		msvc_platforms,
+		c_compiler,
+		cpp_compiler,
+		static_linker,
+		exe_linker,
+		profile,
+	};
 
 	Ok(toolchain)
 }
