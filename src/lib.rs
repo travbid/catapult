@@ -157,8 +157,14 @@ pub fn parse_project(
 	};
 	let mut combined_deps = BTreeMap::new();
 	let package_options = map_to_pkg_opt_map(package_options)?;
-	let project =
-		parse_project_inner(".", &global_options, &package_options, HashMap::new(), toolchain, &mut combined_deps)?;
+	let project = parse_project_inner(
+		&PathBuf::from("."),
+		&global_options,
+		&package_options,
+		HashMap::new(),
+		toolchain,
+		&mut combined_deps,
+	)?;
 
 	match project.into_project() {
 		Ok(x) => Ok((x, global_options)),
@@ -288,15 +294,15 @@ Registry hash: {}"#,
 	Ok(pkg_cache_path)
 }
 
-fn parse_project_inner<P: AsRef<Path> + ?Sized>(
-	src_dir: &P,
+fn parse_project_inner(
+	src_dir: &Path,
 	global_options: &GlobalOptions,
 	package_options: &PkgOptMap,
 	mut pkg_opt_underrides: HashMap<String, PkgOpt>,
 	toolchain: &Toolchain,
 	dep_map: &mut BTreeMap<String, Arc<StarProject>>,
 ) -> Result<StarProject, anyhow::Error> {
-	let src_dir = src_dir.as_ref();
+	log::debug!("parse_project_inner {}", src_dir.display());
 	let original_dir = match env::current_dir() {
 		Ok(x) => x,
 		Err(e) => return err_msg(format!("Error getting cwd: {}", e)),
@@ -347,8 +353,14 @@ fn parse_project_inner<P: AsRef<Path> + ?Sized>(
 			// Checkout to tmp dir
 			todo!();
 		} else if let Some(dep_path) = info.path {
-			let dep_proj =
-				parse_project_inner(&dep_path, global_options, &pkg_opts, pkg_opt_underrides, toolchain, dep_map)?; //, globals)?;
+			let dep_proj = parse_project_inner(
+				&PathBuf::from(&dep_path),
+				global_options,
+				&pkg_opts,
+				pkg_opt_underrides,
+				toolchain,
+				dep_map,
+			)?; //, globals)?;
 			let dep_proj = Arc::new(dep_proj);
 			dependent_projects.push(dep_proj.clone());
 			dep_map.insert(name, dep_proj);
