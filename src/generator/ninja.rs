@@ -849,6 +849,7 @@ fn test_position_independent_code() {
 		interface_libraries: Vec::new(),
 	});
 	let toolchain = Toolchain {
+		msvc_platforms: vec!["x64".to_owned(), "Win32".to_owned(), "ARM64".to_owned()],
 		c_compiler: Some(Box::new(TestCompiler {})),
 		cpp_compiler: Some(Box::new(TestCompiler {})),
 		static_linker: Some(vec!["llvm-ar".to_owned()]),

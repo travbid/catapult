@@ -94,28 +94,28 @@ jobs:
           call "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Auxiliary\Build\vcvars64.bat"
           && MSBuild build/test_one.sln
       - run: tree /f build
-      - run: ./build/test_one/Debug-x64/myexe.exe abc def
+      - run: ./build/x64/Debug/myexe.exe abc def
 
       - shell: cmd
         run: >
           call "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Auxiliary\Build\vcvars64.bat"
           && MSBuild build/test_one.sln -property:Configuration=MinSizeRel;Platform=x64
       - run: tree /f build
-      - run: ./build/test_one/MinSizeRel-x64/myexe.exe abc def
+      - run: ./build/x64/MinSizeRel/myexe.exe abc def
 
       - shell: cmd
         run: >
           call "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Auxiliary\Build\vcvars64.bat"
           && MSBuild build/test_one.sln -property:Configuration=RelWithDebInfo;Platform=x64
       - run: tree /f build
-      - run: ./build/test_one/RelWithDebInfo-x64/myexe.exe abc def
+      - run: ./build/x64/RelWithDebInfo/myexe.exe abc def
 
       - shell: cmd
         run: >
           call "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Auxiliary\Build\vcvars64.bat"
           && MSBuild build/test_one.sln -property:Configuration=Release;Platform=x64
       - run: tree /f build
-      - run: ./build/test_one/Release-x64/myexe.exe abc def
+      - run: ./build/x64/Release/myexe.exe abc def
 
   windows-ninja-clang:
     name: Build and Run (Windows / Ninja / Clang)

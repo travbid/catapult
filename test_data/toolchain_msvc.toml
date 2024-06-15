@@ -1,18 +1,14 @@
+msvc_platforms = ["x64", "Win32", "ARM64"]
 [vcxproj]
-platform = "x64"
-
-	[vcxproj.cl_compile]
-	SDLCheck = "true"
 
 [profile.Debug]
 
 	[profile.Debug.vcxproj]
-	platform = "x64"
 	preprocessor_definitions = [ "_DEBUG" ]
 
 		[profile.Debug.vcxproj.property_group]
-		UseDebugLibraries = "false"
-		WholeProgramOptimization = "true"
+		UseDebugLibraries = "true"
+		WholeProgramOptimization = "false"
 
 		[profile.Debug.vcxproj.cl_compile]
 		BasicRuntimeChecks = "EnableFastChecks"
@@ -23,12 +19,12 @@ platform = "x64"
 
 		[profile.Debug.vcxproj.link]
 		GenerateDebugInformation = "true"
+		SubSystem = "Console"
 
 
 [profile.Release]
 
 	[profile.Release.vcxproj]
-	platform = "x64"
 	preprocessor_definitions = [ "NDEBUG" ]
 
 		[profile.Release.vcxproj.property_group]
@@ -42,7 +38,7 @@ platform = "x64"
 		RuntimeLibrary = "MultiThreaded"
 
 		[profile.Release.vcxproj.link]
-		GenerateDebugInformation = "true"
+		GenerateDebugInformation = "false"
 		EnableCOMDATFolding = "true"
 		OptimizeReferences = "true"
 
@@ -50,7 +46,6 @@ platform = "x64"
 [profile.MinSizeRel]
 
 	[profile.MinSizeRel.vcxproj]
-	platform = "x64"
 	preprocessor_definitions = [ "NDEBUG" ]
 
 		[profile.MinSizeRel.vcxproj.property_group]
@@ -64,7 +59,7 @@ platform = "x64"
 		RuntimeLibrary = "MultiThreaded"
 
 		[profile.MinSizeRel.vcxproj.link]
-		GenerateDebugInformation = "true"
+		GenerateDebugInformation = "false"
 		EnableCOMDATFolding = "true"
 		OptimizeReferences = "true"
 
@@ -72,7 +67,6 @@ platform = "x64"
 [profile.RelWithDebInfo]
 
 	[profile.RelWithDebInfo.vcxproj]
-	platform = "x64"
 	preprocessor_definitions = [ "NDEBUG" ]
 
 		[profile.RelWithDebInfo.vcxproj.property_group]

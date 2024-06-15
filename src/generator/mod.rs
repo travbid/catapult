@@ -27,7 +27,7 @@ impl Generator {
 		profile: Profile,
 	) -> Result<(), String> {
 		match self {
-			Generator::Msvc => msvc::Msvc::generate(project, build_dir, toolchain.profile, global_opts),
+			Generator::Msvc => msvc::Msvc::generate(project, build_dir, toolchain, global_opts),
 			Generator::Ninja => {
 				let target_platform = if cfg!(windows) {
 					TargetPlatform {
