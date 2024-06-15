@@ -47,20 +47,20 @@ impl Sources {
 	pub fn iter(&self) -> impl Iterator<Item = &SourcePath> {
 		self.c.iter().chain(self.cpp.iter())
 	}
-}
 
-pub(crate) fn split_sources(sources: &[String], parent_path: &Path) -> Result<Sources, String> {
-	sources
-		.iter()
-		.map(|x| join_parent(&parent_path, x))
-		.try_fold(Sources::default(), |mut acc, src| {
-			if is_c_source(&src.name) {
-				acc.c.push(src);
-			} else if is_cpp_source(&src.name) {
-				acc.cpp.push(src);
-			} else {
-				return Err(format!("Unknown source type: {}", &src.name));
-			}
-			Ok(acc)
-		})
+	pub(crate) fn from_slice(sources: &[String], parent_path: &Path) -> Result<Self, String> {
+		sources
+			.iter()
+			.map(|x| join_parent(parent_path, x))
+			.try_fold(Sources::default(), |mut acc, src| {
+				if is_c_source(&src.name) {
+					acc.c.push(src);
+				} else if is_cpp_source(&src.name) {
+					acc.cpp.push(src);
+				} else {
+					return Err(format!("Unknown source type: {}", &src.name));
+				}
+				Ok(acc)
+			})
+	}
 }
