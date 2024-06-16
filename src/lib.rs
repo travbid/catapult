@@ -53,6 +53,8 @@ use starlark_global::{PkgOpt, StarGlobal};
 use starlark_project::StarProject;
 use toolchain::Toolchain;
 
+type PkgOptMap = HashMap<String, HashMap<String, PkgOpt>>;
+
 const CATAPULT_TOML: &str = "catapult.toml";
 const BUILD_CATAPULT: &str = "build.catapult";
 
@@ -118,7 +120,35 @@ fn read_manifest() -> Result<Manifest, anyhow::Error> {
 	Ok(manifest)
 }
 
-pub fn parse_project(toolchain: &Toolchain) -> Result<(Arc<Project>, GlobalOptions), anyhow::Error> {
+fn map_to_pkg_opt_map(opt_map: BTreeMap<String, BTreeMap<String, String>>) -> Result<PkgOptMap, anyhow::Error> {
+	type SerdeErr = toml::de::Error;
+
+	fn deserialize_pkg_opt(kv: (String, String)) -> Result<(String, PkgOpt), SerdeErr> {
+		let deserializer = toml::de::ValueDeserializer::new(&kv.1);
+		let opt_val = PkgOpt::deserialize(deserializer)?;
+		Ok((kv.0, opt_val))
+	}
+
+	match opt_map
+		.into_iter()
+		.map(|(k, im)| {
+			let val = im
+				.into_iter()
+				.map(deserialize_pkg_opt)
+				.collect::<Result<HashMap<String, PkgOpt>, _>>()?;
+			Ok((k, val))
+		})
+		.collect::<Result<PkgOptMap, SerdeErr>>()
+	{
+		Ok(x) => Ok(x),
+		Err(e) => Err(anyhow!(format!("Could not deserialize package option: {}", e))),
+	}
+}
+
+pub fn parse_project(
+	toolchain: &Toolchain,
+	package_options: BTreeMap<String, BTreeMap<String, String>>,
+) -> Result<(Arc<Project>, GlobalOptions), anyhow::Error> {
 	let manifest_options = read_manifest()?.options.unwrap_or_default();
 	let global_options = GlobalOptions {
 		c_standard: manifest_options.c_standard,
@@ -126,8 +156,9 @@ pub fn parse_project(toolchain: &Toolchain) -> Result<(Arc<Project>, GlobalOptio
 		position_independent_code: manifest_options.position_independent_code,
 	};
 	let mut combined_deps = BTreeMap::new();
+	let package_options = map_to_pkg_opt_map(package_options)?;
 	let project =
-		parse_project_inner(".", &global_options, &HashMap::new(), HashMap::new(), toolchain, &mut combined_deps)?;
+		parse_project_inner(".", &global_options, &package_options, HashMap::new(), toolchain, &mut combined_deps)?;
 
 	match project.into_project() {
 		Ok(x) => Ok((x, global_options)),
@@ -260,7 +291,7 @@ Registry hash: {}"#,
 fn parse_project_inner<P: AsRef<Path> + ?Sized>(
 	src_dir: &P,
 	global_options: &GlobalOptions,
-	package_options: &HashMap<String, HashMap<String, PkgOpt>>,
+	package_options: &PkgOptMap,
 	mut pkg_opt_underrides: HashMap<String, PkgOpt>,
 	toolchain: &Toolchain,
 	dep_map: &mut BTreeMap<String, Arc<StarProject>>,
