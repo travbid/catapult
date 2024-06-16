@@ -1,0 +1,17 @@
+
+def build():
+    if GLOBAL.package_options.for_windows == True:
+        defines = ['WIN64']  # TODO(Travers): Temporary hack
+    else:
+        defines = []
+
+    nasmobjs = add_object_library(
+        name = "nasmobjs",
+        sources = [
+            "nasmsrc.asm",
+        ],
+        defines_private = defines,
+        include_dirs_public = ["."],
+    )
+
+build()

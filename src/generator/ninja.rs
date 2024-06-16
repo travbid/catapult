@@ -17,7 +17,7 @@ use crate::{
 	static_library::StaticLibrary,
 	target::{LinkTarget, Target},
 	toolchain::{
-		compiler::{Compiler, ExeLinker},
+		compiler::{Assembler, Compiler, ExeLinker},
 		Profile,
 	},
 	GlobalOptions,
@@ -143,6 +143,7 @@ impl NinjaRule {
 struct NinjaRules {
 	compile_c_object: Option<NinjaRule>,
 	compile_cpp_object: Option<NinjaRule>,
+	assemble_nasm_object: Option<NinjaRule>,
 	link_static_lib: Option<NinjaRule>,
 	link_exe: Option<NinjaRule>,
 }
@@ -195,6 +196,18 @@ fn compile_cpp_object(compiler: &dyn Compiler) -> NinjaRule {
 		name: String::from("compile_cpp_object"),
 		command,
 		description: Some("Compiling C++ object $out".to_owned()),
+		..Default::default()
+	}
+}
+fn assemble_nasm_object(assembler: &dyn Assembler) -> NinjaRule {
+	let mut command = assembler.cmd();
+	command.extend(vec!["$DEFINES".to_string(), "$INCLUDES".to_string(), "$FLAGS".to_string()]);
+	command.extend(vec![assembler.out_flag(), "$out".to_owned()]);
+	command.extend(vec!["$in".to_string()]);
+	NinjaRule {
+		name: String::from("assemble_nasm_object"),
+		command,
+		description: Some("Assembling NASM object $out".to_owned()),
 		..Default::default()
 	}
 }
@@ -260,6 +273,9 @@ impl Ninja {
 			rules_str += &c.as_string();
 		}
 		if let Some(c) = rules.compile_cpp_object {
+			rules_str += &c.as_string();
+		}
+		if let Some(c) = rules.assemble_nasm_object {
 			rules_str += &c.as_string();
 		}
 		if let Some(c) = rules.link_static_lib {
@@ -540,6 +556,33 @@ fn add_object_lib_target(
 			));
 		}
 	}
+	if !sources.nasm.is_empty() {
+		let nasm_assembler = get_nasm_assembler(toolchain, lib.name())?;
+		let rule = if let Some(rule) = &rules.assemble_nasm_object {
+			rule
+		} else {
+			rules.assemble_nasm_object = Some(assemble_nasm_object(nasm_assembler));
+			rules.assemble_nasm_object.as_ref().unwrap()
+		};
+		let nasm_assemble_opts = &profile.nasm_assemble_flags;
+		for src in &sources.nasm {
+			build_lines.push(add_obj_source(
+				input_path(&src.full, &lib.project().info.path),
+				&includes,
+				&defines,
+				output_subfolder_path(
+					build_dir,
+					&lib.project().info.name,
+					&lib.name,
+					&src.name,
+					&target_platform.obj_ext,
+				),
+				rule.name.clone(),
+				nasm_assemble_opts.clone(),
+				&mut inputs,
+			));
+		}
+	}
 	for link in &lib.public_links_recursive() {
 		match link {
 			LinkPtr::Static(_) => {
@@ -751,11 +794,37 @@ fn get_cpp_compiler<'a>(toolchain: &'a Toolchain, name: &str) -> Result<&'a dyn 
 	}
 }
 
+fn get_nasm_assembler<'a>(toolchain: &'a Toolchain, name: &str) -> Result<&'a dyn Assembler, String> {
+	match toolchain.nasm_assembler {
+		Some(ref x) => Ok(x.as_ref()),
+		None => Err(format!(
+			"No NASM assembler specified in toolchain. A NASM assembler is required to build NASM sources in \"{}\".",
+			name
+		)),
+	}
+}
+
 #[test]
 fn test_position_independent_code() {
 	use crate::misc::{SourcePath, Sources};
 	use core::default::Default;
 	use std::path::PathBuf;
+
+	struct TestAssembler {}
+	impl Assembler for TestAssembler {
+		fn id(&self) -> String {
+			"nasm".to_owned()
+		}
+		fn version(&self) -> String {
+			"2.16.0".to_owned()
+		}
+		fn cmd(&self) -> Vec<String> {
+			vec!["nasm".to_owned()]
+		}
+		fn out_flag(&self) -> String {
+			"-o".to_owned()
+		}
+	}
 
 	struct TestCompiler {}
 	impl Compiler for TestCompiler {
@@ -852,6 +921,7 @@ fn test_position_independent_code() {
 		msvc_platforms: vec!["x64".to_owned(), "Win32".to_owned(), "ARM64".to_owned()],
 		c_compiler: Some(Box::new(TestCompiler {})),
 		cpp_compiler: Some(Box::new(TestCompiler {})),
+		nasm_assembler: Some(Box::new(TestAssembler {})),
 		static_linker: Some(vec!["llvm-ar".to_owned()]),
 		exe_linker: Some(Box::new(TestCompiler {})),
 		profile: Default::default(),

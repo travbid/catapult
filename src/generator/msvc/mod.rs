@@ -31,6 +31,7 @@ struct VsProject {
 	guid: String,
 	vcxproj_path: String,
 	dependencies: Vec<VsProject>,
+	has_nasm: bool,
 }
 
 fn input_path(src: &Path, project_path: &Path) -> String {
@@ -123,6 +124,9 @@ fn item_definition_group(
 	if !sources.c.is_empty() || !sources.cpp.is_empty() {
 		ret += &cl_compile(profile, include_dirs, defines, opts, sources.cpp.is_empty());
 	}
+	if !sources.nasm.is_empty() {
+		ret += &nasm_compile(profile, platform, include_dirs, defines)?;
+	}
 	if !profile.link.is_empty() {
 		ret += "    <Link>\n";
 		for (key, val) in &profile.link {
@@ -185,6 +189,34 @@ fn cl_compile(
 	// ret += r#"      <ObjectFileName>$(IntDir)</ObjectFileName>
 	ret += "    </ClCompile>\n";
 	ret
+}
+
+fn nasm_compile(
+	profile: &VcxprojProfile,
+	platform: &str,
+	include_dirs: &[String],
+	defines: &[String],
+) -> Result<String, String> {
+	let mut ret = "    <NASM>\n".to_owned();
+
+	ret += "      <Format>";
+	ret += map_platform_to_nasm_format(platform)?;
+	ret += "</Format>\n";
+
+	ret += "      <IncludePaths>";
+	ret += &include_dirs.join(";");
+	ret += "</IncludePaths>\n";
+
+	ret += "      <Define>";
+	ret += &profile
+		.preprocessor_definitions
+		.iter()
+		.chain(defines)
+		.fold(String::new(), |acc, x| acc + x + ";");
+	ret += "%(PreprocessorDefinitions)</Define>\n"; // TODO(Travers): Check this
+
+	ret += "    </NASM>\n";
+	Ok(ret)
 }
 
 pub struct Msvc {}
@@ -286,6 +318,18 @@ impl Msvc {
 
 		let sln_pathbuf = build_dir.join(project.info.name.clone() + ".sln");
 		write_file(&sln_pathbuf, &sln_content)?;
+
+		if guid_map.iter().any(|x| x.has_nasm) {
+			if let Some(nasm_assembler) = toolchain.nasm_assembler {
+				write_file(&build_dir.join("nasm.xml"), NASM_XML_CONTENT)?;
+				write_file(&build_dir.join("nasm.props"), &nasm_props_content(&nasm_assembler.cmd()))?;
+				write_file(&build_dir.join("nasm.targets"), NASM_TARGETS_CONTENT)?;
+			} else {
+				return Err(
+					"Toolchain does not contain a NASM assembler, required for files in this project".to_owned()
+				);
+			}
+		}
 
 		Ok(())
 	}
@@ -516,6 +560,11 @@ fn make_vcxproj(
 		}
 	}
 	let item_definition_groups = item_definition_groups;
+
+	if !sources.nasm.is_empty() {
+		out_str += r#"    <Import Project="..\..\nasm.props" />
+"#;
+	}
 	out_str += r#"  </ImportGroup>
   <ImportGroup Label="Shared">
   </ImportGroup>
@@ -552,6 +601,14 @@ fn make_vcxproj(
 		}
 		out_str += "  </ItemGroup>\n";
 	}
+	if !sources.nasm.is_empty() {
+		out_str += "  <ItemGroup>\n";
+		for src in &sources.nasm {
+			let input = input_path(&src.full, &project_info.path);
+			out_str += &format!("    <NASM Include=\"{input}\" />\n");
+		}
+		out_str += "  </ItemGroup>\n";
+	}
 
 	let mut dependencies = Vec::new();
 	if !project_links.is_empty() {
@@ -570,6 +627,10 @@ fn make_vcxproj(
 	out_str += r#"  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
 "#;
+	if !sources.nasm.is_empty() {
+		out_str += r#"    <Import Project="..\..\nasm.targets" />
+"#;
+	}
 	out_str += "  </ImportGroup>\n";
 	out_str += "</Project>\n";
 	let vcxproj_pathbuf = PathBuf::from(&project_info.name)
@@ -582,6 +643,7 @@ fn make_vcxproj(
 		guid: target_guid,
 		vcxproj_path,
 		dependencies,
+		has_nasm: !sources.nasm.is_empty(),
 	};
 
 	if let Err(e) = fs::create_dir_all(vcxproj_pathbuf_abs.parent().unwrap()) {
@@ -668,4 +730,23 @@ fn write_file(filepath: &Path, content: &str) -> Result<(), String> {
 		return Err(format!("Error writing to {}: {}", filepath.to_string_lossy(), e));
 	}
 	Ok(())
+}
+
+const NASM_XML_CONTENT: &str = include_str!("nasm.xml");
+const NASM_TARGETS_CONTENT: &str = include_str!("nasm.targets");
+
+fn nasm_props_content(nasm_cmd: &[String]) -> String {
+	let mapped_vec = nasm_cmd.iter().map(|x| format!("\"{}\"", x)).collect::<Vec<String>>();
+	format!(include_str!("nasm.props"), mapped_vec.join(" "))
+}
+
+fn map_platform_to_nasm_format(platform: &str) -> Result<&'static str, String> {
+	let platform_target = [("Win32", "win32"), ("x64", "win64")];
+	match platform_target.iter().find(|x| platform == x.0) {
+		Some(x) => Ok(x.1),
+		None => Err(format!(
+			"Unknown platform: {platform}. Known platforms are {}",
+			platform_target.map(|x| format!("\"{}\"", x.0)).join(", ")
+		)),
+	}
 }

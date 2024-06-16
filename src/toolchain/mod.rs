@@ -4,13 +4,21 @@ use std::{collections::BTreeMap, fs, path::Path};
 
 use serde::Deserialize;
 
-use compiler::{identify_compiler, identify_linker, Compiler, ExeLinker};
+use compiler::{
+	identify_assembler, //
+	identify_compiler,
+	identify_linker,
+	Assembler,
+	Compiler,
+	ExeLinker,
+};
 
 #[derive(Debug, Deserialize)]
 pub struct ToolchainFile {
 	msvc_platforms: Option<Vec<String>>,
 	c_compiler: Option<Vec<String>>,
 	cpp_compiler: Option<Vec<String>>,
+	nasm_assembler: Option<Vec<String>>,
 	static_linker: Option<Vec<String>>,
 	exe_linker: Option<Vec<String>>,
 	profile: Option<BTreeMap<String, Profile>>,
@@ -22,6 +30,7 @@ pub struct Toolchain {
 	pub msvc_platforms: Vec<String>,
 	pub c_compiler: Option<Box<dyn Compiler>>,
 	pub cpp_compiler: Option<Box<dyn Compiler>>,
+	pub nasm_assembler: Option<Box<dyn Assembler>>,
 	pub static_linker: Option<Vec<String>>,
 	pub exe_linker: Option<Box<dyn ExeLinker>>,
 	pub profile: BTreeMap<String, Profile>,
@@ -33,6 +42,8 @@ pub struct Profile {
 	pub c_compile_flags: Vec<String>,
 	#[serde(default)]
 	pub cpp_compile_flags: Vec<String>,
+	#[serde(default)]
+	pub nasm_assemble_flags: Vec<String>,
 	pub vcxproj: Option<VcxprojProfile>,
 }
 
@@ -57,6 +68,13 @@ pub fn read_toolchain(toolchain_path: &Path) -> Result<Toolchain, String> {
 
 	let msvc_platforms = toolchain_file.msvc_platforms.unwrap_or_default();
 
+	let nasm_assembler = match toolchain_file.nasm_assembler {
+		Some(x) => match identify_assembler(x) {
+			Ok(y) => Some(y),
+			Err(e) => return Err(format!("Error identifying NASM assembler: {}", e)),
+		},
+		None => None,
+	};
 	let c_compiler = match toolchain_file.c_compiler {
 		Some(x) => match identify_compiler(x) {
 			Ok(y) => Some(y),
@@ -97,6 +115,7 @@ pub fn read_toolchain(toolchain_path: &Path) -> Result<Toolchain, String> {
 
 	let toolchain = Toolchain {
 		msvc_platforms,
+		nasm_assembler,
 		c_compiler,
 		cpp_compiler,
 		static_linker,

@@ -1,11 +1,21 @@
 mod clang;
 mod gcc;
+mod nasm;
 
 use std::process;
 
 const CLANG_ID: &str = "clang version ";
 const GCC_ID: &str = "gcc version ";
+const NASM_ID: &str = "NASM version ";
 const TARGET_PREFIX: &str = "Target: ";
+
+pub trait Assembler {
+	fn id(&self) -> String;
+	fn version(&self) -> String;
+
+	fn cmd(&self) -> Vec<String>;
+	fn out_flag(&self) -> String;
+}
 
 pub trait Compiler {
 	fn id(&self) -> String;
@@ -26,6 +36,42 @@ pub trait StaticLinker {
 pub trait ExeLinker {
 	fn cmd(&self) -> Vec<String>;
 	fn position_independent_executable_flag(&self) -> Option<String>;
+}
+
+pub(super) fn identify_assembler(cmd: Vec<String>) -> Result<Box<dyn Assembler>, String> {
+	log::debug!("identify_assembler() cmd: {}", cmd.join(" "));
+	let exe = match cmd.first() {
+		Some(x) => x,
+		None => return Err("Assembler command is empty".to_owned()),
+	};
+	let version_output = match process::Command::new(exe).arg("-v").output() {
+		Ok(x) => {
+			if !x.status.success() {
+				return Err(format!("Assembler command returned non-success exit code: \"{} -v\": {}", exe, x.status));
+			}
+			String::from_utf8_lossy(&x.stdout).into_owned() + &String::from_utf8_lossy(&x.stderr)
+		}
+		Err(e) => {
+			return Err(format!("Error executing assembler command \"{} -v\": {}", exe, e));
+		}
+	};
+	log::debug!("{} -v output: {}", exe, version_output);
+
+	let lines = version_output.lines().collect::<Vec<&str>>();
+	let first_line = match lines.first() {
+		None => return Err("Assembler command output empty. Could not identify assembler".to_owned()),
+		Some(x) => x,
+	};
+
+	if first_line.starts_with(NASM_ID) {
+		log::info!("assembler: NASM");
+		let version = find_version(first_line, NASM_ID);
+		log::info!("assembler version: {}", version);
+
+		return Ok(Box::new(nasm::Nasm { cmd, version }));
+	}
+
+	Err(format!("Could not identify assembler \"{}\"", exe))
 }
 
 pub(super) fn identify_compiler(cmd: Vec<String>) -> Result<Box<dyn Compiler>, String> {

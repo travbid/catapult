@@ -37,15 +37,20 @@ pub(crate) fn is_cpp_source(src_filename: &str) -> bool {
 	src_filename.ends_with(".cpp") || src_filename.ends_with(".cc")
 }
 
+pub(crate) fn is_nasm_source(src_filename: &str) -> bool {
+	src_filename.ends_with(".asm")
+}
+
 #[derive(Debug, Default)]
 pub struct Sources {
 	pub c: Vec<SourcePath>,
 	pub cpp: Vec<SourcePath>,
+	pub nasm: Vec<SourcePath>,
 }
 
 impl Sources {
 	pub fn iter(&self) -> impl Iterator<Item = &SourcePath> {
-		self.c.iter().chain(self.cpp.iter())
+		self.c.iter().chain(self.cpp.iter()).chain(self.nasm.iter())
 	}
 
 	pub(crate) fn from_slice(sources: &[String], parent_path: &Path) -> Result<Self, String> {
@@ -57,6 +62,8 @@ impl Sources {
 					acc.c.push(src);
 				} else if is_cpp_source(&src.name) {
 					acc.cpp.push(src);
+				} else if is_nasm_source(&src.name) {
+					acc.nasm.push(src);
 				} else {
 					return Err(format!("Unknown source type: {}", &src.name));
 				}

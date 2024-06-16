@@ -1,0 +1,167 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ProjectSchemaDefinitions xmlns="http://schemas.microsoft.com/build/2009/properties"
+  xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+  xmlns:sys="clr-namespace:System;assembly=mscorlib">
+  <Rule
+    Name="NASM"
+    PageTemplate="tool"
+    DisplayName="Microsoft Macro Assembler"
+    Order="200">
+    <Rule.DataSource>
+      <DataSource
+        Persistence="ProjectFile"
+        ItemType="NASM" />
+    </Rule.DataSource>
+    <Rule.Categories>
+      <Category
+        Name="General">
+        <Category.DisplayName>
+          <sys:String>General</sys:String>
+        </Category.DisplayName>
+      </Category>
+      <Category
+        Name="Command Line"
+        Subtype="CommandLine">
+        <Category.DisplayName>
+          <sys:String>Command Line</sys:String>
+        </Category.DisplayName>
+      </Category>
+    </Rule.Categories>
+    <StringProperty
+      Name="Inputs"
+      Category="Command Line"
+      IsRequired="true">
+      <StringProperty.DataSource>
+        <DataSource
+          Persistence="ProjectFile"
+          ItemType="NASM"
+          SourceType="Item" />
+      </StringProperty.DataSource>
+    </StringProperty>
+    <StringProperty
+      Name="OutFile"
+      Category="Object File"
+      DisplayName="write output to outfile"
+      Switch="-o &quot;[value]&quot;" />
+    <StringProperty
+      Name="Format"
+      Category="General"
+      DisplayName="select output file format"
+      Switch="-f[value]" />
+    <BoolProperty
+      Name="GenerateDebuggingInformation"
+      Category="Listing File"
+      DisplayName="generate debugging information"
+      Switch="-g" />
+    <EnumProperty
+      Name="Optimization"
+      DisplayName="optimize opcodes, immediates and branch offsets">
+      <EnumValue
+        Name="O0"
+        DisplayName="no optimization"
+        Switch="-O0" />
+      <EnumValue
+        Name="O1"
+        DisplayName="minimal optimization"
+        Switch="-O1" />
+      <EnumValue
+        Name="Ox"
+        DisplayName="multipass optimization (default)"
+        Switch="-Ox" />
+    </EnumProperty>
+    <StringListProperty
+      Name="IncludePaths"
+      DisplayName="add a pathname to the include file path"
+      Switch="-I&quot;[value]&quot;" />
+    <StringListProperty
+      Name="Define"
+      DisplayName="pre-define a macro"
+      Switch="-D&quot;[value]&quot;" />
+    <StringListProperty
+      Name="Undefine"
+      DisplayName="undefine a macro"
+      Switch="-U&quot;[value]&quot;" />
+    <StringProperty
+      Name="CommandLineTemplate"
+      DisplayName="Command Line"
+      Visible="False"
+      IncludeInCommandLine="False" />
+    <DynamicEnumProperty
+      Name="NASMBeforeTargets"
+      Category="General"
+      EnumProvider="Targets"
+      IncludeInCommandLine="False">
+      <DynamicEnumProperty.DisplayName>
+        <sys:String>Execute Before</sys:String>
+      </DynamicEnumProperty.DisplayName>
+      <DynamicEnumProperty.Description>
+        <sys:String>Specifies the targets for the build customization to run before.</sys:String>
+      </DynamicEnumProperty.Description>
+      <DynamicEnumProperty.ProviderSettings>
+        <NameValuePair
+          Name="Exclude"
+          Value="^NASMBeforeTargets|^Compute" />
+      </DynamicEnumProperty.ProviderSettings>
+      <DynamicEnumProperty.DataSource>
+        <DataSource
+          Persistence="ProjectFile"
+          ItemType=""
+          HasConfigurationCondition="true" />
+      </DynamicEnumProperty.DataSource>
+    </DynamicEnumProperty>
+    <DynamicEnumProperty
+      Name="NASMAfterTargets"
+      Category="General"
+      EnumProvider="Targets"
+      IncludeInCommandLine="False">
+      <DynamicEnumProperty.DisplayName>
+        <sys:String>Execute After</sys:String>
+      </DynamicEnumProperty.DisplayName>
+      <DynamicEnumProperty.Description>
+        <sys:String>Specifies the targets for the build customization to run after.</sys:String>
+      </DynamicEnumProperty.Description>
+      <DynamicEnumProperty.ProviderSettings>
+        <NameValuePair
+          Name="Exclude"
+          Value="^NASMAfterTargets|^Compute" />
+      </DynamicEnumProperty.ProviderSettings>
+      <DynamicEnumProperty.DataSource>
+        <DataSource
+          Persistence="ProjectFile"
+          ItemType=""
+          HasConfigurationCondition="true" />
+      </DynamicEnumProperty.DataSource>
+    </DynamicEnumProperty>
+    <StringProperty
+      Name="ExecutionDescription"
+      DisplayName="Execution Description"
+      IncludeInCommandLine="False"
+      Visible="False" />
+    <StringListProperty
+      Name="AdditionalDependencies"
+      DisplayName="Additional Dependencies"
+      IncludeInCommandLine="False"
+      Visible="False" />
+    <StringProperty
+      Subtype="AdditionalOptions"
+      Name="AdditionalOptions"
+      Category="Command Line">
+      <StringProperty.DisplayName>
+        <sys:String>Additional Options</sys:String>
+      </StringProperty.DisplayName>
+      <StringProperty.Description>
+        <sys:String>Additional Options</sys:String>
+      </StringProperty.Description>
+    </StringProperty>
+  </Rule>
+  <ItemType
+    Name="NASM"
+    DisplayName="Netwide Assembler" />
+  <FileExtension
+    Name="*.asm"
+    ContentType="NASM" />
+  <ContentType
+    Name="NASM"
+    DisplayName="Netwide Assembler"
+    ItemType="NASM" />
+</ProjectSchemaDefinitions>
