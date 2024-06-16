@@ -1,4 +1,7 @@
-use std::env;
+use std::{
+	collections::BTreeMap, //
+	env,
+};
 
 use catapult::{target::Target, toolchain::Toolchain};
 
@@ -9,7 +12,8 @@ fn test_01() {
 	let cwd = env::current_dir().unwrap().canonicalize().unwrap();
 
 	let toolchain = Toolchain::default();
-	let (project, global_options) = catapult::parse_project(&toolchain).expect("Could not parse project");
+	let (project, global_options) =
+		catapult::parse_project(&toolchain, BTreeMap::new()).expect("Could not parse project");
 	assert_eq!(project.dependencies.len(), 3);
 
 	assert_eq!(global_options.c_standard, Some("17".to_owned()));

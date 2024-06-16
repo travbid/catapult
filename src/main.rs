@@ -1,4 +1,5 @@
 use std::{
+	collections::BTreeMap,
 	env, //
 	fs,
 	path,
@@ -27,6 +28,7 @@ fn main() -> ExitCode {
 	const GENERATOR: &str = "generator";
 	const TOOLCHAIN: &str = "toolchain";
 	const PROFILE: &str = "profile";
+	const PACKAGE_OPTION: &str = "package-option";
 
 	let mut opts = Options::new();
 	opts.optopt("S", SOURCE_DIR, "Specify the source directory", "<path-to-source>");
@@ -34,6 +36,7 @@ fn main() -> ExitCode {
 	opts.optopt("G", GENERATOR, "Specify a build system generator", "<generator-name>");
 	opts.optopt("T", TOOLCHAIN, "Specify a path to a toolchain file", "<path-to-toolchain-file>");
 	opts.optopt("P", PROFILE, "Specify the profile to build", "<profile-name>");
+	opts.optmulti("p", PACKAGE_OPTION, "Override a package option", "<package name>:<option>=<value>");
 	opts.optflag("h", "help", "print this help menu");
 	let matches = match opts.parse(&args[1..]) {
 		Ok(m) => m,
@@ -95,11 +98,48 @@ fn main() -> ExitCode {
 
 	let profile_opt = matches.opt_str(PROFILE);
 
-	println!("source-dir: {}", src_dir);
-	println!(" build-dir: {}", build_dir);
-	println!(" generator: {}", generator_str);
-	println!(" toolchain: {}", toolchain_path.display());
-	println!("   profile: {}", profile_opt.as_deref().unwrap_or_default());
+	let package_opts_vec = matches.opt_strs(PACKAGE_OPTION);
+	type InnerMap = BTreeMap<String, String>;
+	let mut package_options = BTreeMap::<String, InnerMap>::new();
+	for pkg_opt in package_opts_vec {
+		let (pkg_name, opt) = match pkg_opt.split_once(':') {
+			Some(x) => x,
+			None => {
+				println!("Invalid package-option. Option must be specified as <package name>:<package option>=<value>");
+				return ExitCode::FAILURE;
+			}
+		};
+		let (opt_name, opt_val) = match opt.split_once('=') {
+			Some(x) => x,
+			None => {
+				println!("Invalid package-option. Option must be specified as <package name>:<package option>=<value>");
+				return ExitCode::FAILURE;
+			}
+		};
+		if let Some(map) = package_options.get_mut(pkg_name) {
+			map.insert(opt_name.to_owned(), opt_val.to_owned());
+		} else {
+			let mut inner_map = InnerMap::new();
+			inner_map.insert(opt_name.to_owned(), opt_val.to_owned());
+			package_options.insert(pkg_name.to_owned(), inner_map);
+		}
+	}
+
+	println!("     source-dir: {}", src_dir);
+	println!("      build-dir: {}", build_dir);
+	println!("      generator: {}", generator_str);
+	println!("      toolchain: {}", toolchain_path.display());
+	println!("        profile: {}", profile_opt.as_deref().unwrap_or_default());
+	println!("package-options: {}", {
+		let mut ret = String::new();
+		for (pkg_name, opts) in &package_options {
+			for (opt_name, opt_val) in opts {
+				ret += &format!("{pkg_name}:{opt_name}={opt_val} ");
+			}
+		}
+		ret.pop();
+		ret
+	});
 
 	let generator = match generator_str.as_str() {
 		"Ninja" => Generator::Ninja,
@@ -168,7 +208,7 @@ fn main() -> ExitCode {
 		Default::default()
 	};
 
-	let (project, global_opts) = match catapult::parse_project(&toolchain) {
+	let (project, global_opts) = match catapult::parse_project(&toolchain, package_options) {
 		Ok(x) => x,
 		Err(e) => {
 			println!("{}", e);
