@@ -5,6 +5,7 @@ name = "test_one"
 zstd = { version = "1.5.5", registry = "https://catapult.trav.bid:6400/api", channel = "travbid/main"}
 blobject = { path = "submodules/blobject" }
 mydep = { path = "submodules/my_depend", options = { build_tests = true, foo = "bar" } }
+nasmproj = { path = "submodules/nasmproj" }
 
 [options]
 c_standard = "17"

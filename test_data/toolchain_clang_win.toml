@@ -1,15 +1,15 @@
 c_compiler = ["clang"]
 cpp_compiler = ["clang++"]
-nasm_assembler = ["nasm", "-felf64"]
+nasm_assembler = ["C:/Program Files/NASM/nasm", "-fwin64"]
 static_linker = ["llvm-ar", "qc"]
 exe_linker = ["clang++"]
 
 [profile.Debug]
 c_compile_flags = ["-g", "-Xclang", "-gcodeview", "-O0", "-D_DEBUG", "-Xclang", "--dependent-lib=libcmtd"]
 cpp_compile_flags = ["-g", "-Xclang", "-gcodeview", "-O0", "-D_DEBUG", "-Xclang", "--dependent-lib=libcmtd"]
-nasm_assemble_flags = ["-O0",]
+nasm_assemble_flags = ["-O0"]
 
 [profile.Release]
 c_compile_flags = ["-O3", "-DNDEBUG"]
 cpp_compile_flags = ["-O3", "-DNDEBUG"]
-nasm_assemble_flags = ["-Ox",]
+nasm_assemble_flags = ["-Ox"]

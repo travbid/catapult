@@ -114,6 +114,10 @@ impl StarGlobal {
 			id: compiler.id(),
 			version: StarVersion::from_str(compiler.version()),
 		});
+		let nasm_assembler = toolchain.nasm_assembler.as_ref().map(|assembler| StarAssembler {
+			id: assembler.id(),
+			version: StarVersion::from_str(assembler.version()),
+		});
 		StarGlobal {
 			global_options: StarGlobalOptions {
 				c_standard: options.c_standard.clone(),
@@ -121,7 +125,7 @@ impl StarGlobal {
 				position_independent_code: options.position_independent_code,
 			},
 			package_options: StarPackageOptions(package_options),
-			toolchain: StarToolchain { c_compiler, cpp_compiler },
+			toolchain: StarToolchain { c_compiler, cpp_compiler, nasm_assembler },
 		}
 	}
 }
@@ -278,6 +282,7 @@ starlark_simple_value!(StarPackageOptions);
 pub(super) struct StarToolchain {
 	c_compiler: Option<StarCompiler>,
 	cpp_compiler: Option<StarCompiler>,
+	nasm_assembler: Option<StarAssembler>,
 }
 
 impl fmt::Display for StarToolchain {
@@ -305,6 +310,7 @@ impl<'v> StarlarkValue<'v> for StarToolchain {
 		match attribute {
 			"c_compiler" => Some(heap.alloc(self.c_compiler.clone())),
 			"cpp_compiler" => Some(heap.alloc(self.cpp_compiler.clone())),
+			"nasm_assembler" => Some(heap.alloc(self.nasm_assembler.clone())),
 			_ => None,
 		}
 	}
@@ -312,13 +318,17 @@ impl<'v> StarlarkValue<'v> for StarToolchain {
 	fn has_attr(&self, attribute: &str, _: &'v Heap) -> bool {
 		#[allow(clippy::match_like_matches_macro)]
 		match attribute {
-			"c_compiler" | "cpp_compiler" => true,
+			"c_compiler" | "cpp_compiler" | "nasm_assembler" => true,
 			_ => false,
 		}
 	}
 
 	fn dir_attr(&self) -> Vec<String> {
-		let attrs = vec!["c_compiler".to_owned(), "cpp_compiler".to_owned()];
+		let attrs = vec![
+			"c_compiler".to_owned(),
+			"cpp_compiler".to_owned(),
+			"nasm_assembler".to_owned(),
+		];
 		attrs
 	}
 }
@@ -371,6 +381,53 @@ impl<'v> StarlarkValue<'v> for StarCompiler {
 }
 
 starlark_simple_value!(StarCompiler);
+
+#[derive(Clone, Debug, Allocative, ProvidesStaticType, NoSerialize)]
+pub(super) struct StarAssembler {
+	id: String,
+	version: StarVersion,
+}
+
+impl fmt::Display for StarAssembler {
+	fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> fmt::Result {
+		let width = f.width().unwrap_or(0);
+		let width_plus = width + INDENT_SIZE;
+		write!(
+			f,
+			r#"Compiler{{
+{PAD:width_plus$}id: "{}",
+{PAD:width_plus$}version: {:width_plus$},
+{PAD:width$}}}"#,
+			self.id, self.version
+		)
+	}
+}
+
+#[starlark::values::starlark_value(type = "Assembler")]
+impl<'v> StarlarkValue<'v> for StarAssembler {
+	fn get_attr(&self, attribute: &str, heap: &'v Heap) -> Option<Value<'v>> {
+		match attribute {
+			"id" => Some(heap.alloc(self.id.clone())),
+			"version" => Some(heap.alloc(self.version.clone())),
+			_ => None,
+		}
+	}
+
+	fn has_attr(&self, attribute: &str, _: &'v Heap) -> bool {
+		#[allow(clippy::match_like_matches_macro)]
+		match attribute {
+			"id" | "version" => true,
+			_ => false,
+		}
+	}
+
+	fn dir_attr(&self) -> Vec<String> {
+		let attrs = vec!["id".to_owned(), "version".to_owned()];
+		attrs
+	}
+}
+
+starlark_simple_value!(StarAssembler);
 
 #[derive(Clone, Debug, Allocative, ProvidesStaticType, NoSerialize)]
 pub(super) struct StarVersion {

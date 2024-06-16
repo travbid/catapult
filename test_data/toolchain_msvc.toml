@@ -1,7 +1,12 @@
-msvc_platforms = ["x64", "Win32", "ARM64"]
+nasm_assembler = ["C:/Program Files/NASM/nasm"]
+
+msvc_platforms = ["x64", "Win32"]  # TODO(Travrs): Bring back "ARM64"
+
 [vcxproj]
 
 [profile.Debug]
+
+nasm_assemble_flags = ["-O0"]  # TODO(Travers): Make this work
 
 	[profile.Debug.vcxproj]
 	preprocessor_definitions = [ "_DEBUG" ]
@@ -23,6 +28,8 @@ msvc_platforms = ["x64", "Win32", "ARM64"]
 
 
 [profile.Release]
+
+nasm_assemble_flags = ["-Ox"]
 
 	[profile.Release.vcxproj]
 	preprocessor_definitions = [ "NDEBUG" ]

@@ -6,6 +6,7 @@
 
 #include "blobject.hpp"
 #include "mylib.hpp"
+#include "nasmproj.h"
 
 int main(int argc, char**) {  //
   std::cout << MY_DEFINE << "\n";
@@ -37,5 +38,9 @@ int main(int argc, char**) {  //
   blobject::DoBlob1();
   blobject::DoBlob2();
 
-  return EXIT_SUCCESS;
+  const int asm_result = asm_add_two_numbers(argc, argc);
+  std::cout << "      argc: " << argc << "\n";
+  std::cout << "asm_result: " << asm_result << "\n";
+
+  return asm_result - (argc + argc);
 }

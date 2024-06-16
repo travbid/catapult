@@ -14,7 +14,7 @@ fn test_01() {
 	let toolchain = Toolchain::default();
 	let (project, global_options) =
 		catapult::parse_project(&toolchain, BTreeMap::new()).expect("Could not parse project");
-	assert_eq!(project.dependencies.len(), 3);
+	assert_eq!(project.dependencies.len(), 4);
 
 	assert_eq!(global_options.c_standard, Some("17".to_owned()));
 	assert_eq!(global_options.cpp_standard, Some("17".to_owned()));
@@ -58,11 +58,12 @@ fn test_01() {
 	assert_eq!(exe.name, "myexe");
 	assert_eq!(exe.sources.cpp.len(), 1);
 	assert_eq!(exe.sources.cpp[0].full, cwd.join("main.cpp"));
-	assert_eq!(exe.links.len(), 4);
+	assert_eq!(exe.links.len(), 5);
 	assert_eq!(exe.links[0].name(), "mylib");
 	assert_eq!(exe.links[1].name(), "my_depend_lib");
 	assert_eq!(exe.links[2].name(), "blobject");
-	assert_eq!(exe.links[3].name(), "zstd");
+	assert_eq!(exe.links[3].name(), "nasmobjs");
+	assert_eq!(exe.links[4].name(), "zstd");
 
 	let lib = test_one.static_libraries.first().unwrap();
 	assert_eq!(lib.name, "mylib");

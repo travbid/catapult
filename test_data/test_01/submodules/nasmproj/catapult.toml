@@ -1,0 +1,6 @@
+[package]
+name = "nasmproj"
+description = "A test dependency for NASM sources"
+
+[package_options]
+for_windows = false  # TODO(Travers): Temporary hack
