@@ -70,25 +70,3 @@ Bazel / Buck are geared toward building Google/Facebook's gigantic monorepos and
 Catapult has some similarities with Meson. I found Meson to be too opinionated for a build system and didn't like how it managed subprojects.
 
 Many other build systems don't support Windows / Visual Studio.
-
-# To Do
-- VSCode extension
-- `catapult add`
-- Toolchain generator
-- MSVC runtime MT MD
-- "SYSTEM includes" (Ignore warnings from dependency headers)
-- Ninja / MSVC rebuild when manifest/recipe changes
-- "Generator expressions"
-- Object libraries
-- Shared libraries
-- `catapult install`
-- Warnings
-  - Warnings as errors
-- cuda
-- cppfront
-- `catapult test`
-- Recipe-less standard layout builds (C++20 modules?)
-- Third-party recipes
-  - libjpeg
-  - [x] Eigen
-- [x] Profiles (Release / Debug / RelWithDebInfo / MinSizeRel)
