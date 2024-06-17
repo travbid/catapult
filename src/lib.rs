@@ -20,10 +20,9 @@ pub mod toolchain;
 
 use std::{
 	collections::{BTreeMap, HashMap},
-	env, fs,
+	fs,
 	path::{Path, PathBuf},
-	sync::Arc,
-	sync::Mutex,
+	sync::{Arc, Mutex},
 	time::Duration,
 };
 
@@ -102,19 +101,16 @@ pub struct GlobalOptions {
 	pub position_independent_code: Option<bool>,
 }
 
-fn read_manifest() -> Result<Manifest, anyhow::Error> {
-	let catapult_toml = match fs::read_to_string(CATAPULT_TOML) {
+fn read_manifest(src_dir: &Path) -> Result<Manifest, anyhow::Error> {
+	let manifest_path = src_dir.join(CATAPULT_TOML);
+	let catapult_toml = match fs::read_to_string(&manifest_path) {
 		Ok(x) => x,
-		Err(e) => {
-			return err_msg(format!("Error opening {}: {}", env::current_dir()?.join(CATAPULT_TOML).display(), e))
-		}
+		Err(e) => return err_msg(format!("Error opening {}: {}", manifest_path.display(), e)),
 	};
 
 	let manifest = match toml::from_str::<Manifest>(&catapult_toml) {
 		Ok(x) => x,
-		Err(e) => {
-			return err_msg(format!("Error reading {}: {}", env::current_dir()?.join(CATAPULT_TOML).display(), e))
-		}
+		Err(e) => return err_msg(format!("Error reading {}: {}", manifest_path.display(), e)),
 	};
 
 	Ok(manifest)
@@ -149,7 +145,8 @@ pub fn parse_project(
 	toolchain: &Toolchain,
 	package_options: BTreeMap<String, BTreeMap<String, String>>,
 ) -> Result<(Arc<Project>, GlobalOptions), anyhow::Error> {
-	let manifest_options = read_manifest()?.options.unwrap_or_default();
+	let src_dir = PathBuf::from(".");
+	let manifest_options = read_manifest(&src_dir)?.options.unwrap_or_default();
 	let global_options = GlobalOptions {
 		c_standard: manifest_options.c_standard,
 		cpp_standard: manifest_options.cpp_standard,
@@ -157,14 +154,8 @@ pub fn parse_project(
 	};
 	let mut combined_deps = BTreeMap::new();
 	let package_options = map_to_pkg_opt_map(package_options)?;
-	let project = parse_project_inner(
-		&PathBuf::from("."),
-		&global_options,
-		&package_options,
-		HashMap::new(),
-		toolchain,
-		&mut combined_deps,
-	)?;
+	let project =
+		parse_project_inner(src_dir, &global_options, &package_options, HashMap::new(), toolchain, &mut combined_deps)?;
 
 	match project.into_project() {
 		Ok(x) => Ok((x, global_options)),
@@ -295,7 +286,7 @@ Registry hash: {}"#,
 }
 
 fn parse_project_inner(
-	src_dir: &Path,
+	src_dir: PathBuf,
 	global_options: &GlobalOptions,
 	package_options: &PkgOptMap,
 	mut pkg_opt_underrides: HashMap<String, PkgOpt>,
@@ -303,26 +294,8 @@ fn parse_project_inner(
 	dep_map: &mut BTreeMap<String, Arc<StarProject>>,
 ) -> Result<StarProject, anyhow::Error> {
 	log::debug!("parse_project_inner {}", src_dir.display());
-	let original_dir = match env::current_dir() {
-		Ok(x) => x,
-		Err(e) => return err_msg(format!("Error getting cwd: {}", e)),
-	};
 
-	if let Err(e) = env::set_current_dir(src_dir) {
-		return err_msg(format!(
-			"Error changing to {} from {}: {}",
-			src_dir.to_string_lossy(),
-			original_dir.display(),
-			e
-		));
-	}
-
-	let current_dir = match env::current_dir() {
-		Ok(x) => x,
-		Err(e) => return err_msg(format!("Error getting new cwd: {}", e)),
-	};
-
-	let manifest = read_manifest()?;
+	let manifest = read_manifest(&src_dir)?;
 
 	if let Some(pkg_opts) = package_options.get(&manifest.package.name) {
 		for (opt_name, opt_val) in pkg_opts {
@@ -345,7 +318,7 @@ fn parse_project_inner(
 		if let Some(registry) = info.registry {
 			let dep_path = download_from_registry(registry, &name, info.version, info.channel)?;
 			let dep_proj =
-				parse_project_inner(&dep_path, global_options, &pkg_opts, pkg_opt_underrides, toolchain, dep_map)?;
+				parse_project_inner(dep_path, global_options, &pkg_opts, pkg_opt_underrides, toolchain, dep_map)?;
 			let dep_proj = Arc::new(dep_proj);
 			dependent_projects.push(dep_proj.clone());
 			dep_map.insert(name, dep_proj);
@@ -354,7 +327,7 @@ fn parse_project_inner(
 			todo!();
 		} else if let Some(dep_path) = info.path {
 			let dep_proj = parse_project_inner(
-				&PathBuf::from(&dep_path),
+				PathBuf::from(&dep_path),
 				global_options,
 				&pkg_opts,
 				pkg_opt_underrides,
@@ -381,11 +354,10 @@ fn parse_project_inner(
 		}
 	}
 
-	let starlark_code = match fs::read_to_string(BUILD_CATAPULT) {
+	let recipe_path = src_dir.join(BUILD_CATAPULT);
+	let starlark_code = match fs::read_to_string(&recipe_path) {
 		Ok(x) => x,
-		Err(e) => {
-			return err_msg(format!("Error reading {}: {}", env::current_dir()?.join(BUILD_CATAPULT).display(), e))
-		}
+		Err(e) => return err_msg(format!("Error reading \"{}\": {e}", recipe_path.display())),
 	};
 	let this_project = parse_module(
 		manifest.package.name.clone(),
@@ -393,22 +365,11 @@ fn parse_project_inner(
 		global_options,
 		option_overrides,
 		toolchain,
-		current_dir.to_path_buf(),
+		src_dir,
 		starlark_code,
 		// context.clone(),
 	)?;
 
-	match env::set_current_dir(&original_dir) {
-		Ok(x) => x,
-		Err(e) => {
-			return err_msg(format!(
-				"Error changing to {} from {}: {}",
-				original_dir.display(),
-				env::current_dir()?.display(),
-				e
-			))
-		}
-	};
 	Ok(this_project)
 }
 
