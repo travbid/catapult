@@ -449,6 +449,33 @@ fn add_static_lib_target(
 			));
 		}
 	}
+	if !sources.nasm.is_empty() {
+		let nasm_assembler = get_nasm_assembler(toolchain, lib.name())?;
+		let rule = if let Some(rule) = &rules.assemble_nasm_object {
+			rule
+		} else {
+			rules.assemble_nasm_object = Some(assemble_nasm_object(nasm_assembler));
+			rules.assemble_nasm_object.as_ref().unwrap()
+		};
+		let nasm_assemble_opts = &profile.nasm_assemble_flags;
+		for src in &sources.nasm {
+			build_lines.push(add_obj_source(
+				input_path(&src.full, &lib.project().info.path),
+				&includes,
+				&defines,
+				output_subfolder_path(
+					build_dir,
+					&lib.project().info.name,
+					&lib.name,
+					&src.name,
+					&target_platform.obj_ext,
+				),
+				rule.name.clone(),
+				nasm_assemble_opts.clone(),
+				&mut inputs,
+			));
+		}
+	}
 	for link in &lib.public_links_recursive() {
 		match link {
 			LinkPtr::Static(static_lib) => {
@@ -754,6 +781,33 @@ fn add_executable_target(
 				output_path(build_dir, &exe.project().info.name, &src.name, &target_platform.obj_ext),
 				rule_compile_cpp.name.clone(),
 				cpp_compile_opts.clone(),
+				&mut inputs,
+			));
+		}
+	}
+	if !sources.nasm.is_empty() {
+		let nasm_assembler = get_nasm_assembler(toolchain, exe.name())?;
+		let rule = if let Some(rule) = &rules.assemble_nasm_object {
+			rule
+		} else {
+			rules.assemble_nasm_object = Some(assemble_nasm_object(nasm_assembler));
+			rules.assemble_nasm_object.as_ref().unwrap()
+		};
+		let nasm_assemble_opts = &profile.nasm_assemble_flags;
+		for src in &sources.nasm {
+			build_lines.push(add_obj_source(
+				input_path(&src.full, &exe.project().info.path),
+				&includes,
+				&defines,
+				output_subfolder_path(
+					build_dir,
+					&exe.project().info.name,
+					&exe.name,
+					&src.name,
+					&target_platform.obj_ext,
+				),
+				rule.name.clone(),
+				nasm_assemble_opts.clone(),
 				&mut inputs,
 			));
 		}
