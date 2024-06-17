@@ -1,5 +1,6 @@
 use core::fmt;
 use std::{
+	collections::HashMap,
 	path::Path,
 	sync::{Arc, Mutex, Weak},
 };
@@ -16,9 +17,11 @@ use starlark::{
 	values::{
 		Heap, //
 		NoSerialize,
+		OwnedFrozenValue,
 		ProvidesStaticType,
 		StarlarkValue,
 		StringValue,
+		UnpackValue,
 		Value,
 	},
 };
@@ -46,6 +49,8 @@ pub(super) struct StarObjectLibrary {
 	pub defines_public: Vec<String>,
 	pub link_flags_public: Vec<String>,
 
+	pub generator_vars: Option<String>,
+
 	pub output_name: Option<String>,
 }
 
@@ -63,6 +68,7 @@ impl fmt::Display for StarObjectLibrary {
   defines_private: [{}],
   defines_public: [{}],
   link_flags_public: [{}],
+  generator_vars: {},
 }}"#,
 			self.name,
 			format_strings(&self.sources),
@@ -73,6 +79,11 @@ impl fmt::Display for StarObjectLibrary {
 			format_strings(&self.defines_private),
 			format_strings(&self.defines_public),
 			format_strings(&self.link_flags_public),
+			if self.generator_vars.is_some() {
+				"(generated)"
+			} else {
+				"None"
+			},
 		)
 	}
 }
@@ -84,8 +95,9 @@ impl StarLinkTarget for StarObjectLibrary {
 		parent_path: &Path,
 		ptr: PtrLinkTarget,
 		link_map: &mut StarLinkTargetCache,
+		gen_name_map: &HashMap<String, OwnedFrozenValue>,
 	) -> Result<LinkPtr, String> {
-		let arc = Arc::new(self.as_library(parent, parent_path, link_map)?);
+		let arc = Arc::new(self.as_library(parent, parent_path, link_map, gen_name_map)?);
 		link_map.insert_object(ptr, arc.clone());
 		Ok(LinkPtr::Object(arc))
 	}
@@ -109,6 +121,7 @@ impl StarObjectLibrary {
 		parent_project: Weak<Project>,
 		parent_path: &Path,
 		link_map: &mut StarLinkTargetCache,
+		gen_name_map: &HashMap<String, OwnedFrozenValue>,
 	) -> Result<ObjectLibrary, String> {
 		Ok(ObjectLibrary {
 			parent_project: parent_project.clone(),
@@ -132,7 +145,7 @@ impl StarObjectLibrary {
 					if let Some(lt) = link_map.get(&ptr) {
 						Ok(lt)
 					} else {
-						x.as_link_target(parent_project.clone(), parent_path, ptr, link_map)
+						x.as_link_target(parent_project.clone(), parent_path, ptr, link_map, gen_name_map)
 					}
 				})
 				.collect::<Result<_, _>>()?,
@@ -144,13 +157,20 @@ impl StarObjectLibrary {
 					if let Some(lt) = link_map.get(&ptr) {
 						Ok(lt)
 					} else {
-						x.as_link_target(parent_project.clone(), parent_path, ptr, link_map)
+						x.as_link_target(parent_project.clone(), parent_path, ptr, link_map, gen_name_map)
 					}
 				})
 				.collect::<Result<_, _>>()?,
 			defines_private: self.defines_private.clone(),
 			defines_public: self.defines_public.clone(),
 			link_flags_public: self.link_flags_public.clone(),
+			generator_vars: match &self.generator_vars {
+				None => None,
+				Some(id) => match gen_name_map.get(id) {
+					Some(x) => Some(x.clone()),
+					None => return Err(format!("Could not find generator id in map: {}", id)),
+				},
+			},
 			output_name: self.output_name.clone(),
 		})
 	}
@@ -199,3 +219,41 @@ fn library_methods() -> Option<&'static Methods> {
 	static RES: MethodsStatic = MethodsStatic::new();
 	RES.methods(library_methods_impl)
 }
+
+#[derive(Clone, Debug, Default, ProvidesStaticType, NoSerialize, Allocative)]
+pub(super) struct StarGeneratorVars {
+	pub sources: Vec<String>,
+	pub include_dirs: Vec<String>,
+	pub defines: Vec<String>,
+	pub link_flags: Vec<String>,
+}
+
+impl fmt::Display for StarGeneratorVars {
+	fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+		write!(
+			f,
+			r#"ObjectLibrary {{
+  sources: [{}],
+  include_dirs: [{}],
+  defines: [{}],
+  link_flags: [{}],
+}}"#,
+			format_strings(&self.sources),
+			format_strings(&self.include_dirs),
+			format_strings(&self.defines),
+			format_strings(&self.link_flags),
+		)
+	}
+}
+
+impl<'a> UnpackValue<'a> for StarGeneratorVars {
+	fn unpack_value(v: Value<'a>) -> Option<Self> {
+		let vl = starlark::values::ValueLike::downcast_ref::<StarGeneratorVars>(v);
+		vl.cloned()
+	}
+}
+
+#[starlark::values::starlark_value(type = "GeneratorVars")]
+impl<'v> StarlarkValue<'v> for StarGeneratorVars {}
+
+starlark_simple_value!(StarGeneratorVars);

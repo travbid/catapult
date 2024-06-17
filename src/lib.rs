@@ -6,8 +6,10 @@ mod misc;
 mod object_library;
 pub mod project;
 mod starlark_api;
+mod starlark_context;
 mod starlark_executable;
 mod starlark_fmt;
+mod starlark_generator;
 mod starlark_global;
 mod starlark_interface_library;
 mod starlark_link_target;
@@ -402,7 +404,7 @@ pub(crate) fn parse_module(
 	};
 	let ast = match AstModule::parse(BUILD_CATAPULT, starlark_code, &dialect) {
 		Ok(x) => x,
-		Err(e) => panic!("{}", e),
+		Err(e) => panic!("AstModule::parse: {}", e),
 	};
 	let project_writable = Arc::new(Mutex::new(StarProject::new(name, current_dir, deps.clone())));
 
@@ -411,12 +413,22 @@ pub(crate) fn parse_module(
 		let proj_value = module.heap().alloc(StarProject::clone(&dep_proj));
 		module.set(&dep_proj.name, proj_value);
 	}
-	let mut eval = Evaluator::new(&module);
-	let globals = setup(&project_writable, global_options, package_options, toolchain);
-	eval.eval_module(ast, &globals).map_err(|e| e.into_anyhow())?;
-	let project = match project_writable.lock() {
+	{
+		let mut eval = Evaluator::new(&module);
+		// eval.enable_static_typechecking(true);
+		// eval.enable_profile(&starlark::eval::ProfileMode::Typecheck)?;
+		let globals = setup(&project_writable, global_options, package_options, toolchain);
+		eval.eval_module(ast, &globals).map_err(|e| e.into_anyhow())?;
+	}
+	let frozen_module = module.freeze()?;
+	let mut project = match project_writable.lock() {
 		Ok(x) => x.clone(),
-		Err(e) => return err_msg(e.to_string()),
+		Err(e) => return err_msg(format!("Could not lock project mutex: {e}")),
 	};
+	project.generator_names = frozen_module
+		.names()
+		.filter(|name| name.as_str().starts_with("__gen_"))
+		.map(|name| (name.as_str().to_string(), frozen_module.get(name.as_str()).unwrap()))
+		.collect();
 	Ok(project)
 }

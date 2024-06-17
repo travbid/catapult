@@ -8,13 +8,17 @@ use std::{
 	sync::Arc,
 };
 
+use starlark::values::OwnedFrozenValue;
 use uuid::Uuid;
 
 use crate::{
-	link_type::LinkPtr,
-	misc::Sources,
+	link_type::LinkPtr, //
+	misc::{join_parent, Sources},
 	object_library::ObjectLibrary,
 	project::{Project, ProjectInfo},
+	starlark_context::{StarContext, StarContextCompiler},
+	starlark_generator::eval_vars,
+	starlark_object_library::StarGeneratorVars,
 	static_library::StaticLibrary,
 	target::{LinkTarget, Target},
 	toolchain::{Toolchain, VcxprojProfile},
@@ -144,6 +148,39 @@ fn item_definition_group(
 	Ok(ret)
 }
 
+fn item_group_conditional(sources: &Sources, project_info: &ProjectInfo, platform: &str) -> String {
+	let item_group_tag = format!(
+		r#"  <ItemGroup Condition="'$(Platform)'=='{platform}'">
+"#
+	);
+	let mut ret = String::new();
+	if !sources.c.is_empty() {
+		ret += &item_group_tag;
+		for src in &sources.c {
+			let input = input_path(&src.full, &project_info.path);
+			ret += &format!("    <ClCompile Include=\"{input}\" />\n");
+		}
+		ret += "  </ItemGroup>\n";
+	}
+	if !sources.cpp.is_empty() {
+		ret += &item_group_tag;
+		for src in &sources.cpp {
+			let input = input_path(&src.full, &project_info.path);
+			ret += &format!("    <ClCompile Include=\"{input}\" />\n");
+		}
+		ret += "  </ItemGroup>\n";
+	}
+	if !sources.nasm.is_empty() {
+		ret += &item_group_tag;
+		for src in &sources.nasm {
+			let input = input_path(&src.full, &project_info.path);
+			ret += &format!("    <NASM Include=\"{input}\" />\n");
+		}
+		ret += "  </ItemGroup>\n";
+	}
+	ret
+}
+
 fn cl_compile(
 	profile: &VcxprojProfile,
 	include_dirs: &[String],
@@ -231,9 +268,11 @@ fn nasm_compile(
 
 struct TargetData {
 	name: String,
+	sources: Sources,
 	includes: Vec<String>,
 	defines: Vec<String>,
 	links: Vec<LinkPtr>,
+	generator_vars: Option<OwnedFrozenValue>,
 }
 
 struct VcxprojOpts {
@@ -391,8 +430,9 @@ impl Msvc {
 		for exe in &project.executables {
 			let configuration_type = "Application";
 			let project_info = &exe.project().info;
-			let target_flags = TargetData {
+			let target_data = TargetData {
 				name: exe.name.clone(),
+				sources: exe.sources.clone(),
 				// Visual Studio doesn't seem to support extended-length name syntax
 				includes: exe
 					.public_includes_recursive()
@@ -401,9 +441,9 @@ impl Msvc {
 					.collect::<Vec<String>>(),
 				defines: exe.public_defines_recursive(),
 				links: exe.links.clone(),
+				generator_vars: exe.generator_vars.clone(),
 			};
-			let vsproj =
-				make_vcxproj(proj_opts, guid_map, configuration_type, project_info, &target_flags, &exe.sources)?;
+			let vsproj = make_vcxproj(proj_opts, guid_map, configuration_type, project_info, &target_data)?;
 			guid_map.insert_exe(vsproj);
 		}
 		Ok(())
@@ -432,8 +472,15 @@ fn add_static_lib(
 		.cloned()
 		.chain(lib.link_public.iter().cloned())
 		.collect();
-	let target_flags = TargetData { name: lib.name.clone(), includes, defines, links };
-	let vsproj = make_vcxproj(proj_opts, guid_map, "StaticLibrary", project_info, &target_flags, &lib.sources)?;
+	let target_data = TargetData {
+		name: lib.name.clone(),
+		sources: lib.sources.clone(),
+		includes,
+		defines,
+		links,
+		generator_vars: lib.generator_vars.clone(),
+	};
+	let vsproj = make_vcxproj(proj_opts, guid_map, "StaticLibrary", project_info, &target_data)?;
 	let link_ptr = LinkPtr::Static(lib.clone());
 	guid_map.insert(link_ptr, vsproj.clone());
 	Ok(vsproj)
@@ -461,8 +508,15 @@ fn add_object_lib(
 		.cloned()
 		.chain(lib.link_public.iter().cloned())
 		.collect();
-	let target_data = TargetData { name: lib.name.clone(), includes, defines, links };
-	let vsproj = make_vcxproj(proj_opts, guid_map, "StaticLibrary", project_info, &target_data, &lib.sources)?;
+	let target_data = TargetData {
+		name: lib.name.clone(),
+		sources: lib.sources.clone(),
+		includes,
+		defines,
+		links,
+		generator_vars: lib.generator_vars.clone(),
+	};
+	let vsproj = make_vcxproj(proj_opts, guid_map, "StaticLibrary", project_info, &target_data)?;
 	guid_map.insert(LinkPtr::Object(lib.clone()), vsproj.clone());
 	Ok(vsproj)
 }
@@ -473,11 +527,12 @@ fn make_vcxproj(
 	configuration_type: &str,
 	project_info: &ProjectInfo,
 	target_data: &TargetData,
-	sources: &Sources,
 ) -> Result<VsProject, String> {
 	let target_name = &target_data.name;
+	let sources = &target_data.sources;
+
 	log::debug!("make_vcxproj: {target_name}");
-	if !sources.c.is_empty() && !sources.cpp.is_empty() {
+	if !target_data.sources.c.is_empty() && !target_data.sources.cpp.is_empty() {
 		return Err(format!("This generator does not support mixing C and C++ sources. Consider splitting them into separate libraries. Target: {target_name}"));
 	}
 	const PLATFORM_TOOLSET: &str = "v143";
@@ -532,22 +587,58 @@ fn make_vcxproj(
 "#;
 
 	let mut item_definition_groups = Vec::new();
+	let mut item_groups = Vec::new();
+	let mut has_nasm = !sources.nasm.is_empty();
 	for platform in &proj_opts.msvc_platforms {
+		let generator_vars = if let Some(gen_func) = &target_data.generator_vars {
+			let target_triple = map_platform_to_target_triple(platform)?;
+			let star_context = StarContext {
+				c_compiler: Some(StarContextCompiler { target_triple: target_triple.to_owned() }),
+				cpp_compiler: Some(StarContextCompiler { target_triple: target_triple.to_owned() }),
+			};
+			eval_vars(gen_func, star_context.clone(), "generator_vars")?
+		} else {
+			StarGeneratorVars::default()
+		};
+		let generator_sources = Sources::from_slice(&generator_vars.sources, &project_info.path)?;
+		has_nasm |= !generator_sources.nasm.is_empty();
+		let sources_gen = sources.extended_with(&generator_sources);
+		let includes_gen = target_data
+			.includes
+			.clone()
+			.into_iter()
+			.chain(
+				generator_vars
+					.include_dirs
+					.iter()
+					.map(|x| join_parent(&project_info.path, x).full.to_string_lossy().to_string()),
+			)
+			.collect::<Vec<_>>();
+		let defines_gen = target_data
+			.defines
+			.clone()
+			.into_iter()
+			.chain(generator_vars.defines.clone())
+			.collect::<Vec<_>>();
 		for (profile_name, profile) in &proj_opts.profiles {
 			item_definition_groups.push(item_definition_group(
 				platform,
 				profile_name,
 				profile,
-				sources,
-				&target_data.includes,
-				&target_data.defines,
+				&sources_gen,
+				&includes_gen,
+				&defines_gen,
 				&proj_opts.opts,
 			)?);
 		}
+		item_groups.push(item_group_conditional(&generator_sources, project_info, platform));
 	}
+	// Make these variables immutable
 	let item_definition_groups = item_definition_groups;
+	let item_groups = item_groups;
+	let has_nasm = has_nasm;
 
-	if !sources.nasm.is_empty() {
+	if has_nasm {
 		out_str += r#"    <Import Project="..\..\nasm.props" />
 "#;
 	}
@@ -569,6 +660,9 @@ fn make_vcxproj(
 	out_str += "  <PropertyGroup Label=\"UserMacros\" />\n";
 
 	for item in item_definition_groups {
+		out_str += &item;
+	}
+	for item in item_groups {
 		out_str += &item;
 	}
 	if !sources.c.is_empty() {
@@ -605,7 +699,7 @@ fn make_vcxproj(
 	out_str += r#"  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
 "#;
-	if !sources.nasm.is_empty() {
+	if has_nasm {
 		out_str += r#"    <Import Project="..\..\nasm.targets" />
 "#;
 	}
@@ -621,7 +715,7 @@ fn make_vcxproj(
 		guid: target_guid,
 		vcxproj_path,
 		dependencies,
-		has_nasm: !sources.nasm.is_empty(),
+		has_nasm,
 	};
 
 	if let Err(e) = fs::create_dir_all(vcxproj_pathbuf_abs.parent().unwrap()) {
@@ -705,6 +799,22 @@ const NASM_TARGETS_CONTENT: &str = include_str!("nasm.targets");
 fn nasm_props_content(nasm_cmd: &[String]) -> String {
 	let mapped_vec = nasm_cmd.iter().map(|x| format!("\"{}\"", x)).collect::<Vec<String>>();
 	format!(include_str!("nasm.props"), mapped_vec.join(" "))
+}
+
+fn map_platform_to_target_triple(platform: &str) -> Result<&'static str, String> {
+	let platform_target = [
+		("ARM", "aarch32-pc-windows-msvc"),
+		("ARM64", "aarch64-pc-windows-msvc"),
+		("Win32", "i686-pc-windows-msvc"),
+		("x64", "x86_64-pc-windows-msvc"),
+	];
+	match platform_target.iter().find(|x| platform == x.0) {
+		Some(x) => Ok(x.1),
+		None => Err(format!(
+			"Unknown platform: {platform}. Known platforms are {}",
+			platform_target.map(|x| format!("\"{}\"", x.0)).join(", ")
+		)),
+	}
 }
 
 fn map_platform_to_nasm_format(platform: &str) -> Result<&'static str, String> {

@@ -17,6 +17,10 @@ impl Compiler for Gcc {
 		self.version.clone()
 	}
 
+	fn target(&self) -> String {
+		self.target.clone()
+	}
+
 	fn cmd(&self) -> Vec<String> {
 		self.cmd.clone()
 	}

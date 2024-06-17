@@ -3,6 +3,8 @@ use std::{
 	sync::{Arc, Weak},
 };
 
+use starlark::values::OwnedFrozenValue;
+
 use crate::{
 	link_type::LinkPtr,
 	misc::{SourcePath, Sources},
@@ -22,6 +24,8 @@ pub struct ObjectLibrary {
 	pub defines_private: Vec<String>,
 	pub defines_public: Vec<String>,
 	pub link_flags_public: Vec<String>,
+
+	pub generator_vars: Option<OwnedFrozenValue>,
 
 	pub output_name: Option<String>,
 }

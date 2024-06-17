@@ -91,7 +91,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
       - run: cargo build
-      - run: ./target/debug/catapult --source-dir test_data/test_01 --build-dir build --generator MSVC --toolchain test_data/toolchain_msvc.toml  --package-option nasmproj:for_windows=true
+      - run: ./target/debug/catapult --source-dir test_data/test_01 --build-dir build --generator MSVC --toolchain test_data/toolchain_msvc.toml
       - run: tree /f build
 
       - shell: cmd
@@ -133,7 +133,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
       - run: cargo build
-      - run: ./target/debug/catapult --source-dir test_data/test_01 --build-dir build --generator Ninja --toolchain test_data/toolchain_clang_win.toml --profile Debug --package-option nasmproj:for_windows=true
+      - run: ./target/debug/catapult --source-dir test_data/test_01 --build-dir build --generator Ninja --toolchain test_data/toolchain_clang_win.toml --profile Debug
       - run: tree /f build
       - run: Get-Content build/build.ninja
       - run: ninja -C build -v myexe mytest

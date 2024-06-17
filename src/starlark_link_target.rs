@@ -1,10 +1,12 @@
 use core::{cmp, fmt, hash};
 use std::{
+	collections::HashMap, //
 	path::Path,
 	sync::{Arc, Weak},
 };
 
 use allocative::Allocative;
+use starlark::values::OwnedFrozenValue;
 
 use super::{
 	link_type::LinkPtr,
@@ -19,6 +21,7 @@ pub(super) trait StarLinkTarget: Send + Sync + fmt::Debug + Allocative {
 		parent_path: &Path,
 		ptr: PtrLinkTarget,
 		link_map: &mut StarLinkTargetCache,
+		gen_name_map: &HashMap<String, OwnedFrozenValue>,
 	) -> Result<LinkPtr, String>;
 
 	fn name(&self) -> String;
