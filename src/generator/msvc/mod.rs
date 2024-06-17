@@ -229,6 +229,20 @@ fn nasm_compile(
 	Ok(ret)
 }
 
+struct TargetData {
+	name: String,
+	includes: Vec<String>,
+	defines: Vec<String>,
+	links: Vec<LinkPtr>,
+}
+
+struct VcxprojOpts {
+	build_dir: PathBuf,
+	profiles: BTreeMap<String, ProfileFragment>,
+	msvc_platforms: Vec<String>,
+	opts: Options,
+}
+
 pub struct Msvc {}
 
 impl Msvc {
@@ -289,8 +303,13 @@ impl Msvc {
 					.to_owned(),
 			);
 		}
-		let opts = Options { c_standard, cpp_standard };
-		Self::generate_inner(&project, build_dir, &profiles, &toolchain.msvc_platforms, &mut guid_map, &opts)?;
+		let proj_opts = VcxprojOpts {
+			build_dir: build_dir.to_owned(),
+			profiles,
+			msvc_platforms: toolchain.msvc_platforms,
+			opts: Options { c_standard, cpp_standard },
+		};
+		Self::generate_inner(&project, &proj_opts, &mut guid_map)?;
 
 		let mut sln_content = r#"Microsoft Visual Studio Solution File, Format Version 12.00
 "#
@@ -305,7 +324,7 @@ impl Msvc {
 "#;
 		for profile in &toolchain.profile {
 			let profile_name = profile.0;
-			for platform in &toolchain.msvc_platforms {
+			for platform in &proj_opts.msvc_platforms {
 				sln_content += &format!("\t\t{profile_name}|{platform} = {profile_name}|{platform}\n");
 			}
 		}
@@ -316,7 +335,7 @@ impl Msvc {
 			let guid = &proj.guid.to_string().to_ascii_uppercase();
 			for profile in &toolchain.profile {
 				let prof_name = profile.0;
-				for platform in &toolchain.msvc_platforms {
+				for platform in &proj_opts.msvc_platforms {
 					sln_content += &format!("		{{{guid}}}.{prof_name}|{platform}.ActiveCfg = {prof_name}|{platform}\n");
 					sln_content += &format!("		{{{guid}}}.{prof_name}|{platform}.Build.0 = {prof_name}|{platform}\n");
 				}
@@ -354,53 +373,37 @@ impl Msvc {
 		Ok(())
 	}
 
-	fn generate_inner(
-		project: &Arc<Project>,
-		build_dir: &Path,
-		profiles: &BTreeMap<String, ProfileFragment>,
-		msvc_platforms: &[String],
-		guid_map: &mut IndexMap,
-		opts: &Options,
-	) -> Result<(), String> {
+	fn generate_inner(project: &Arc<Project>, proj_opts: &VcxprojOpts, guid_map: &mut IndexMap) -> Result<(), String> {
 		for subproject in &project.dependencies {
-			Self::generate_inner(subproject, build_dir, profiles, msvc_platforms, guid_map, opts)?;
+			Self::generate_inner(subproject, proj_opts, guid_map)?;
 		}
 
 		for lib in &project.static_libraries {
 			if !guid_map.contains_key(&LinkPtr::Static(lib.clone())) {
-				add_static_lib(lib, build_dir, profiles, msvc_platforms, opts, guid_map)?;
+				add_static_lib(lib, proj_opts, guid_map)?;
 			}
 		}
 		for lib in &project.object_libraries {
 			if !guid_map.contains_key(&LinkPtr::Object(lib.clone())) {
-				add_object_lib(lib, build_dir, profiles, msvc_platforms, opts, guid_map)?;
+				add_object_lib(lib, proj_opts, guid_map)?;
 			}
 		}
 		for exe in &project.executables {
-			let target_name = &exe.name;
 			let configuration_type = "Application";
 			let project_info = &exe.project().info;
-			let includes = exe.public_includes_recursive();
-			let defines = exe.public_defines_recursive();
-			// Visual Studio doesn't seem to support extended-length name syntax
-			let includes = includes
-				.into_iter()
-				.map(|x| x.to_string_lossy().trim_start_matches(r"\\?\").to_owned())
-				.collect::<Vec<String>>();
-			let vsproj = make_vcxproj(
-				build_dir,
-				profiles,
-				msvc_platforms,
-				guid_map,
-				target_name,
-				configuration_type,
-				project_info,
-				opts,
-				&includes,
-				&defines,
-				&exe.sources,
-				&exe.links,
-			)?;
+			let target_flags = TargetData {
+				name: exe.name.clone(),
+				// Visual Studio doesn't seem to support extended-length name syntax
+				includes: exe
+					.public_includes_recursive()
+					.into_iter()
+					.map(|x| x.to_string_lossy().trim_start_matches(r"\\?\").to_owned())
+					.collect::<Vec<String>>(),
+				defines: exe.public_defines_recursive(),
+				links: exe.links.clone(),
+			};
+			let vsproj =
+				make_vcxproj(proj_opts, guid_map, configuration_type, project_info, &target_flags, &exe.sources)?;
 			guid_map.insert_exe(vsproj);
 		}
 		Ok(())
@@ -409,10 +412,7 @@ impl Msvc {
 
 fn add_static_lib(
 	lib: &Arc<StaticLibrary>,
-	build_dir: &Path,
-	profiles: &BTreeMap<String, ProfileFragment>,
-	msvc_platforms: &[String],
-	opts: &Options,
+	proj_opts: &VcxprojOpts,
 	guid_map: &mut IndexMap,
 ) -> Result<VsProject, String> {
 	log::debug!("add_static_lib: {}", lib.name);
@@ -426,27 +426,14 @@ fn add_static_lib(
 		.collect::<Vec<String>>();
 	let mut defines = lib.public_defines_recursive();
 	defines.extend_from_slice(lib.private_defines());
-	let project_links = lib
+	let links = lib
 		.link_private
 		.iter()
 		.cloned()
 		.chain(lib.link_public.iter().cloned())
 		.collect();
-	let vsproj = make_vcxproj(
-		build_dir,
-		profiles,
-		msvc_platforms,
-		guid_map,
-		&lib.name,
-		"StaticLibrary",
-		// ".lib",
-		project_info,
-		opts,
-		&includes,
-		&defines,
-		&lib.sources,
-		&project_links,
-	)?;
+	let target_flags = TargetData { name: lib.name.clone(), includes, defines, links };
+	let vsproj = make_vcxproj(proj_opts, guid_map, "StaticLibrary", project_info, &target_flags, &lib.sources)?;
 	let link_ptr = LinkPtr::Static(lib.clone());
 	guid_map.insert(link_ptr, vsproj.clone());
 	Ok(vsproj)
@@ -454,10 +441,7 @@ fn add_static_lib(
 
 fn add_object_lib(
 	lib: &Arc<ObjectLibrary>,
-	build_dir: &Path,
-	profiles: &BTreeMap<String, ProfileFragment>,
-	msvc_platforms: &[String],
-	opts: &Options,
+	proj_opts: &VcxprojOpts,
 	guid_map: &mut IndexMap,
 ) -> Result<VsProject, String> {
 	log::debug!("add_object_lib: {}", lib.name);
@@ -471,46 +455,28 @@ fn add_object_lib(
 		.collect::<Vec<String>>();
 	let mut defines = lib.public_defines_recursive();
 	defines.extend_from_slice(lib.private_defines());
-	let project_links = lib
+	let links = lib
 		.link_private
 		.iter()
 		.cloned()
 		.chain(lib.link_public.iter().cloned())
 		.collect();
-	let vsproj = make_vcxproj(
-		build_dir,
-		profiles,
-		msvc_platforms,
-		guid_map,
-		&lib.name,
-		"StaticLibrary",
-		// ".lib",
-		project_info,
-		opts,
-		&includes,
-		&defines,
-		&lib.sources,
-		&project_links,
-	)?;
+	let target_data = TargetData { name: lib.name.clone(), includes, defines, links };
+	let vsproj = make_vcxproj(proj_opts, guid_map, "StaticLibrary", project_info, &target_data, &lib.sources)?;
 	guid_map.insert(LinkPtr::Object(lib.clone()), vsproj.clone());
 	Ok(vsproj)
 }
 
 fn make_vcxproj(
-	build_dir: &Path,
-	profiles: &BTreeMap<String, ProfileFragment>,
-	msvc_platforms: &[String],
+	proj_opts: &VcxprojOpts,
 	guid_map: &mut IndexMap,
-	target_name: &str,
 	configuration_type: &str,
 	project_info: &ProjectInfo,
-	opts: &Options,
-	includes: &Vec<String>,
-	defines: &Vec<String>,
+	target_data: &TargetData,
 	sources: &Sources,
-	project_links: &Vec<LinkPtr>,
 ) -> Result<VsProject, String> {
-	log::debug!("make_vcxproj: {}", target_name);
+	let target_name = &target_data.name;
+	log::debug!("make_vcxproj: {target_name}");
 	if !sources.c.is_empty() && !sources.cpp.is_empty() {
 		return Err(format!("This generator does not support mixing C and C++ sources. Consider splitting them into separate libraries. Target: {target_name}"));
 	}
@@ -521,8 +487,8 @@ fn make_vcxproj(
   <ItemGroup Label="ProjectConfigurations">
 "#
 	.to_owned();
-	for platform in msvc_platforms {
-		for profile_name in profiles.keys() {
+	for platform in &proj_opts.msvc_platforms {
+		for profile_name in proj_opts.profiles.keys() {
 			out_str += &format!(
 				r#"    <ProjectConfiguration Include="{profile_name}|{platform}">
       <Configuration>{profile_name}</Configuration>
@@ -544,8 +510,8 @@ fn make_vcxproj(
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.default.props" />
 "#
 	);
-	for platform in msvc_platforms {
-		for (profile_name, profile_cfg) in profiles {
+	for platform in &proj_opts.msvc_platforms {
+		for (profile_name, profile_cfg) in &proj_opts.profiles {
 			out_str += &format!(
 				r#"  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='{profile_name}|{platform}'" Label="Configuration">
     <ConfigurationType>{configuration_type}</ConfigurationType>
@@ -566,16 +532,16 @@ fn make_vcxproj(
 "#;
 
 	let mut item_definition_groups = Vec::new();
-	for platform in msvc_platforms {
-		for (profile_name, profile) in profiles {
+	for platform in &proj_opts.msvc_platforms {
+		for (profile_name, profile) in &proj_opts.profiles {
 			item_definition_groups.push(item_definition_group(
 				platform,
 				profile_name,
 				profile,
 				sources,
-				includes,
-				defines,
-				opts,
+				&target_data.includes,
+				&target_data.defines,
+				&proj_opts.opts,
 			)?);
 		}
 	}
@@ -589,8 +555,8 @@ fn make_vcxproj(
   <ImportGroup Label="Shared">
   </ImportGroup>
 "#;
-	for platform in msvc_platforms {
-		for profile_name in profiles.keys() {
+	for platform in &proj_opts.msvc_platforms {
+		for profile_name in proj_opts.profiles.keys() {
 			out_str += &format!(
 				r#"  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='{profile_name}|{platform}'">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
@@ -631,17 +597,9 @@ fn make_vcxproj(
 	}
 
 	let mut dependencies = Vec::new();
-	if !project_links.is_empty() {
+	if !target_data.links.is_empty() {
 		out_str += "  <ItemGroup>\n";
-		out_str += &add_project_references(
-			project_links,
-			profiles,
-			msvc_platforms,
-			opts,
-			guid_map,
-			&mut dependencies,
-			build_dir,
-		)?;
+		out_str += &add_project_references(&target_data.links, proj_opts, guid_map, &mut dependencies)?;
 		out_str += "  </ItemGroup>\n";
 	}
 	out_str += r#"  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
@@ -656,7 +614,7 @@ fn make_vcxproj(
 	let vcxproj_pathbuf = PathBuf::from(&project_info.name)
 		.join(target_name)
 		.join(target_name.to_owned() + ".vcxproj");
-	let vcxproj_pathbuf_abs = build_dir.join(&vcxproj_pathbuf);
+	let vcxproj_pathbuf_abs = proj_opts.build_dir.join(&vcxproj_pathbuf);
 	let vcxproj_path = vcxproj_pathbuf.to_string_lossy().into_owned();
 	let vsproj = VsProject {
 		name: target_name.to_owned(),
@@ -675,12 +633,9 @@ fn make_vcxproj(
 
 fn add_project_references(
 	project_links: &Vec<LinkPtr>,
-	profiles: &BTreeMap<String, ProfileFragment>,
-	msvc_platforms: &[String],
-	opts: &Options,
+	proj_opts: &VcxprojOpts,
 	guid_map: &mut IndexMap,
 	dependencies: &mut Vec<VsProject>,
-	build_dir: &Path,
 ) -> Result<String, String> {
 	log::debug!("add_project_references() {}", project_links.len());
 	let mut out_str = String::new();
@@ -689,7 +644,7 @@ fn add_project_references(
 		let mut add_dependency = |proj_ref: &VsProject| {
 			log::debug!("   add_dependency() {}", proj_ref.name);
 			dependencies.push(proj_ref.clone());
-			let proj_ref_include = build_dir.join(&proj_ref.vcxproj_path);
+			let proj_ref_include = proj_opts.build_dir.join(&proj_ref.vcxproj_path);
 			out_str += &format!(
 				r#"    <ProjectReference Include="{}">
       <Project>{{{}}}</Project>
@@ -709,7 +664,7 @@ fn add_project_references(
 				let proj_ref = match guid_map.get(link) {
 					Some(x) => x,
 					None => {
-						add_static_lib(static_lib, build_dir, profiles, msvc_platforms, opts, guid_map)?;
+						add_static_lib(static_lib, proj_opts, guid_map)?;
 						guid_map.get(link).unwrap()
 					}
 				};
@@ -719,22 +674,14 @@ fn add_project_references(
 				let proj_ref = match guid_map.get(link) {
 					Some(x) => x,
 					None => {
-						add_object_lib(obj_lib, build_dir, profiles, msvc_platforms, opts, guid_map)?;
+						add_object_lib(obj_lib, proj_opts, guid_map)?;
 						guid_map.get(link).unwrap()
 					}
 				};
 				add_dependency(proj_ref);
 			}
 			LinkPtr::Interface(_) => {
-				out_str += &add_project_references(
-					&link.public_links(),
-					profiles,
-					msvc_platforms,
-					opts,
-					guid_map,
-					dependencies,
-					build_dir,
-				)?;
+				out_str += &add_project_references(&link.public_links(), proj_opts, guid_map, dependencies)?;
 			}
 		}
 	}
