@@ -1,6 +1,6 @@
 nasm_assembler = ["C:/Program Files/NASM/nasm"]
 
-msvc_platforms = ["x64", "Win32"]  # TODO(Travrs): Bring back "ARM64"
+msvc_platforms = ["x64", "Win32", "ARM64"]
 
 [profile.Debug]
 

@@ -12,8 +12,12 @@ use super::{TargetPlatform, Toolchain};
 use crate::{
 	executable::Executable,
 	link_type::LinkPtr,
+	misc::{join_parent, Sources},
 	object_library::ObjectLibrary,
 	project::Project,
+	starlark_context::{StarContext, StarContextCompiler},
+	starlark_generator::eval_vars,
+	starlark_object_library::StarGeneratorVars,
 	static_library::StaticLibrary,
 	target::{LinkTarget, Target},
 	toolchain::{
@@ -246,6 +250,7 @@ struct GeneratorOpts {
 	profile: Profile,
 	global_opts: GlobalOptions,
 	target_platform: TargetPlatform,
+	star_context: StarContext,
 }
 
 impl Ninja {
@@ -259,12 +264,23 @@ impl Ninja {
 	) -> Result<(), String> {
 		let mut rules = NinjaRules::default();
 		let mut build_lines = Vec::new();
+		let star_context = StarContext {
+			c_compiler: toolchain
+				.c_compiler
+				.as_ref()
+				.map(|compiler| StarContextCompiler { target_triple: compiler.target() }),
+			cpp_compiler: toolchain
+				.cpp_compiler
+				.as_ref()
+				.map(|compiler| StarContextCompiler { target_triple: compiler.target() }),
+		};
 		let generator_opts = GeneratorOpts {
 			build_dir: build_dir.to_owned(),
 			toolchain,
 			profile,
 			global_opts,
 			target_platform,
+			star_context,
 		};
 		let mut link_targets = HashMap::new();
 		Ninja::generate_inner(&project, &generator_opts, &mut rules, &mut build_lines, &mut link_targets)?;
@@ -344,14 +360,35 @@ fn add_static_lib_target(
 	build_lines: &mut Vec<NinjaBuild>,
 	link_targets: &mut HashMap<LinkPtr, Vec<String>>,
 ) -> Result<Vec<String>, String> {
-	let GeneratorOpts { toolchain, build_dir, profile, global_opts, target_platform } = generator_opts;
+	let GeneratorOpts {
+		toolchain,
+		build_dir,
+		profile,
+		global_opts,
+		target_platform,
+		star_context,
+	} = generator_opts;
 	let mut inputs = Vec::<String>::new();
 
-	let sources = &lib.sources;
+	let generator_vars = if let Some(gen_func) = &lib.generator_vars {
+		eval_vars(gen_func, star_context.clone(), "generator_vars")?
+	} else {
+		StarGeneratorVars::default()
+	};
 	let mut includes = lib.public_includes_recursive();
 	includes.extend_from_slice(&lib.private_includes());
+	includes.extend(
+		generator_vars
+			.include_dirs
+			.iter()
+			.map(|x| join_parent(&lib.project().info.path, x).full),
+	);
+	let sources = lib
+		.sources
+		.extended_with(Sources::from_slice(&generator_vars.sources, &lib.project().info.path)?);
 	let mut defines = lib.public_defines_recursive();
 	defines.extend_from_slice(lib.private_defines());
+	defines.extend_from_slice(&generator_vars.defines);
 
 	if !sources.c.is_empty() {
 		let c_compiler = get_c_compiler(toolchain, lib.name())?;
@@ -476,14 +513,35 @@ fn add_object_lib_target(
 	build_lines: &mut Vec<NinjaBuild>,
 	link_targets: &mut HashMap<LinkPtr, Vec<String>>,
 ) -> Result<Vec<String>, String> {
-	let GeneratorOpts { toolchain, build_dir, profile, global_opts, target_platform } = generator_opts;
+	let GeneratorOpts {
+		toolchain,
+		build_dir,
+		profile,
+		global_opts,
+		target_platform,
+		star_context,
+	} = generator_opts;
 	let mut inputs = Vec::<String>::new();
 
-	let sources = &lib.sources;
+	let generator_vars = if let Some(gen_func) = &lib.generator_vars {
+		eval_vars(gen_func, star_context.clone(), "generator_vars")?
+	} else {
+		StarGeneratorVars::default()
+	};
 	let mut includes = lib.public_includes_recursive();
 	includes.extend_from_slice(&lib.private_includes());
+	includes.extend(
+		generator_vars
+			.include_dirs
+			.iter()
+			.map(|x| join_parent(&lib.project().info.path, x).full),
+	);
+	let sources = lib
+		.sources
+		.extended_with(Sources::from_slice(&generator_vars.sources, &lib.project().info.path)?);
 	let mut defines = lib.public_defines_recursive();
 	defines.extend_from_slice(lib.private_defines());
+	defines.extend_from_slice(&generator_vars.defines);
 
 	if !sources.c.is_empty() {
 		let c_compiler = get_c_compiler(toolchain, lib.name())?;
@@ -612,15 +670,35 @@ fn add_executable_target(
 	build_lines: &mut Vec<NinjaBuild>,
 	link_targets: &mut HashMap<LinkPtr, Vec<String>>,
 ) -> Result<(), String> {
+	let GeneratorOpts {
+		toolchain,
+		build_dir,
+		profile,
+		global_opts,
+		target_platform,
+		star_context,
+	} = generator_opts;
+
 	log::debug!("   exe target: {}", exe.name);
-
-	let GeneratorOpts { toolchain, build_dir, profile, global_opts, target_platform } = generator_opts;
-
 	let mut inputs = Vec::<String>::new();
 
-	let sources = &exe.sources;
-	let includes = exe.public_includes_recursive();
-	let defines = exe.public_defines_recursive();
+	let generator_vars = if let Some(gen_func) = &exe.generator_vars {
+		eval_vars(gen_func, star_context.clone(), "generator_vars")?
+	} else {
+		StarGeneratorVars::default()
+	};
+	let mut includes = exe.public_includes_recursive();
+	includes.extend(
+		generator_vars
+			.include_dirs
+			.iter()
+			.map(|x| join_parent(&exe.project().info.path, x).full),
+	);
+	let sources = exe
+		.sources
+		.extended_with(Sources::from_slice(&generator_vars.sources, &exe.project().info.path)?);
+	let mut defines = exe.public_defines_recursive();
+	defines.extend_from_slice(&generator_vars.defines);
 
 	if !sources.c.is_empty() {
 		let c_compiler = get_c_compiler(toolchain, exe.name())?;
@@ -834,6 +912,9 @@ fn test_position_independent_code() {
 		fn version(&self) -> String {
 			"17.0.0".to_owned()
 		}
+		fn target(&self) -> String {
+			"x86_64-unknown-linux-gnu".to_owned()
+		}
 		fn cmd(&self) -> Vec<String> {
 			vec!["clang".to_owned()]
 		}
@@ -891,6 +972,7 @@ fn test_position_independent_code() {
 					defines_private: Vec::new(),
 					defines_public: Vec::new(),
 					link_flags_public: Vec::new(),
+					generator_vars: None,
 					output_name: None,
 				}));
 				add_lib.as_ref().unwrap().clone()
@@ -911,6 +993,7 @@ fn test_position_independent_code() {
 			include_dirs: Vec::new(),
 			defines: Vec::new(),
 			link_flags: Vec::new(),
+			generator_vars: None,
 			output_name: None,
 		})],
 		static_libraries: vec![create_lib(weak_parent)],
@@ -945,6 +1028,7 @@ fn test_position_independent_code() {
 		global_opts,
 		target_platform,
 		toolchain,
+		star_context: StarContext { c_compiler: None, cpp_compiler: None },
 	};
 	let mut link_targets = HashMap::new();
 	let result = Ninja::generate_inner(&project, &generator_opts, &mut rules, &mut build_lines, &mut link_targets);

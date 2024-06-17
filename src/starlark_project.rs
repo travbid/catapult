@@ -18,6 +18,7 @@ use starlark::{
 	values::{
 		Heap, //
 		NoSerialize,
+		OwnedFrozenValue,
 		ProvidesStaticType,
 		StarlarkValue,
 		Value,
@@ -46,6 +47,8 @@ pub(super) struct StarProject {
 	pub static_libraries: Vec<Arc<StarStaticLibrary>>,
 	pub object_libraries: Vec<Arc<StarObjectLibrary>>,
 	pub interface_libraries: Vec<Arc<StarIfaceLibrary>>,
+
+	pub generator_names: HashMap<String, OwnedFrozenValue>,
 }
 
 impl fmt::Display for StarProject {
@@ -194,6 +197,8 @@ impl StarProject {
 			static_libraries: Vec::new(),
 			object_libraries: Vec::new(),
 			interface_libraries: Vec::new(),
+
+			generator_names: HashMap::new(),
 		}
 	}
 
@@ -211,7 +216,7 @@ impl StarProject {
 				.executables
 				.iter()
 				.map(|x| -> Result<Arc<_>,String> {
-					let data = x.as_executable(Weak::new(), &self.path, link_map)?;
+					let data = x.as_executable(Weak::new(), &self.path, link_map, &self.generator_names)?;
 					Ok(Arc::new(
 						data
 					))
@@ -226,7 +231,7 @@ impl StarProject {
 					if let Some(lib) = link_map.get_static(&ptr) {
 						Ok(lib.clone())
 					} else {
-						let data = x.as_library(Weak::new(), &self.path, link_map)?;
+						let data = x.as_library(Weak::new(), &self.path, link_map, &self.generator_names)?;
 						let arc = Arc::new(data);
 						link_map.insert_static(ptr, arc.clone());
 						Ok(arc)
@@ -241,7 +246,7 @@ impl StarProject {
 					if let Some(lib) = link_map.get_object(&ptr) {
 						Ok(lib.clone())
 					} else {
-						let data = x.as_library(Weak::new(), &self.path, link_map)?;
+						let data = x.as_library(Weak::new(), &self.path, link_map, &self.generator_names)?;
 						let arc = Arc::new(data);
 						link_map.insert_object(ptr, arc.clone());
 						Ok(arc)
@@ -256,7 +261,7 @@ impl StarProject {
 					if let Some(lib) = link_map.get_interface(&ptr) {
 						Ok(lib.clone())
 					} else {
-						let data = x.as_library(Weak::new(), &self.path, link_map)?;
+						let data = x.as_library(Weak::new(), &self.path, link_map, &self.generator_names)?;
 						let arc = Arc::new(data);
 						link_map.insert_interface(ptr, arc.clone());
 						Ok(arc)

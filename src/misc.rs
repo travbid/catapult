@@ -1,6 +1,9 @@
-use std::path::{Path, PathBuf};
+use std::{
+	borrow::Borrow,
+	path::{Path, PathBuf},
+};
 
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub struct SourcePath {
 	pub full: PathBuf,
 	pub name: String,
@@ -41,7 +44,7 @@ pub(crate) fn is_nasm_source(src_filename: &str) -> bool {
 	src_filename.ends_with(".asm")
 }
 
-#[derive(Debug, Default)]
+#[derive(Clone, Debug, Default)]
 pub struct Sources {
 	pub c: Vec<SourcePath>,
 	pub cpp: Vec<SourcePath>,
@@ -51,6 +54,14 @@ pub struct Sources {
 impl Sources {
 	pub fn iter(&self) -> impl Iterator<Item = &SourcePath> {
 		self.c.iter().chain(self.cpp.iter()).chain(self.nasm.iter())
+	}
+
+	pub fn extended_with<T: Borrow<Self>>(&self, other: T) -> Self {
+		Sources {
+			c: self.c.iter().chain(&other.borrow().c).cloned().collect(),
+			cpp: self.cpp.iter().chain(&other.borrow().cpp).cloned().collect(),
+			nasm: self.nasm.iter().chain(&other.borrow().nasm).cloned().collect(),
+		}
 	}
 
 	pub(crate) fn from_slice(sources: &[String], parent_path: &Path) -> Result<Self, String> {

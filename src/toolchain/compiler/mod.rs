@@ -20,6 +20,7 @@ pub trait Assembler {
 pub trait Compiler {
 	fn id(&self) -> String;
 	fn version(&self) -> String;
+	fn target(&self) -> String;
 
 	fn cmd(&self) -> Vec<String>;
 	fn out_flag(&self) -> String;

@@ -1,5 +1,6 @@
 use core::fmt;
 use std::{
+	collections::HashMap,
 	path::Path,
 	sync::{Arc, Mutex, Weak},
 };
@@ -16,6 +17,7 @@ use starlark::{
 	values::{
 		Heap, //
 		NoSerialize,
+		OwnedFrozenValue,
 		ProvidesStaticType,
 		StarlarkValue,
 		StringValue,
@@ -44,6 +46,8 @@ pub(super) struct StarExecutable {
 	pub defines: Vec<String>,
 	pub link_flags: Vec<String>,
 
+	pub generator_vars: Option<String>,
+
 	pub output_name: Option<String>,
 }
 
@@ -58,13 +62,19 @@ impl fmt::Display for StarExecutable {
   include_dirs: [{}],
   defines: [{}],
   link_flags: [{}],
+  generator_vars: {},
 }}"#,
 			self.name,
 			format_strings(&self.sources),
 			format_link_targets(&self.links),
 			format_strings(&self.include_dirs),
 			format_strings(&self.defines),
-			format_strings(&self.link_flags)
+			format_strings(&self.link_flags),
+			if self.generator_vars.is_some() {
+				"(generated)"
+			} else {
+				"None"
+			},
 		)
 	}
 }
@@ -75,6 +85,7 @@ impl StarExecutable {
 		parent_project: Weak<Project>,
 		parent_path: &Path,
 		link_map: &mut StarLinkTargetCache,
+		gen_name_map: &HashMap<String, OwnedFrozenValue>,
 	) -> Result<Executable, String> {
 		let sources = Sources::from_slice(&self.sources, parent_path)?;
 		let mut links = Vec::<LinkPtr>::new();
@@ -82,7 +93,7 @@ impl StarExecutable {
 			let ptr = PtrLinkTarget(link.clone());
 			let link_target = match link_map.get(&ptr) {
 				Some(x) => x,
-				None => link.as_link_target(parent_project.clone(), parent_path, ptr, link_map)?,
+				None => link.as_link_target(parent_project.clone(), parent_path, ptr, link_map, gen_name_map)?,
 			};
 			links.push(link_target);
 		}
@@ -94,6 +105,13 @@ impl StarExecutable {
 			include_dirs: self.include_dirs.iter().map(|x| join_parent(parent_path, x)).collect(),
 			defines: self.defines.clone(),
 			link_flags: self.link_flags.clone(),
+			generator_vars: match &self.generator_vars {
+				None => None,
+				Some(id) => match gen_name_map.get(id) {
+					Some(x) => Some(x.clone()),
+					None => return Err(format!("Could not find generator id in map: {}", id)),
+				},
+			},
 			output_name: self.output_name.clone(),
 		})
 	}
