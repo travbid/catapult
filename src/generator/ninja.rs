@@ -52,7 +52,7 @@ fn output_path(build_dir: &Path, project_name: &str, src: &str, ext: &str) -> St
 fn output_subfolder_path(build_dir: &Path, project_name: &str, subfolder: &str, src: &str, ext: &str) -> String {
 	build_dir
 		.join(project_name)
-		.join(subfolder)
+		.join(subfolder.to_owned() + ".dir")
 		.join(src.to_owned() + ext)
 		.to_str()
 		.unwrap()
@@ -253,6 +253,11 @@ struct GeneratorOpts {
 	star_context: StarContext,
 }
 
+struct SourceData {
+	includes: Vec<PathBuf>,
+	defines: Vec<String>,
+}
+
 impl Ninja {
 	pub fn generate(
 		project: Arc<Project>,
@@ -360,14 +365,7 @@ fn add_static_lib_target(
 	build_lines: &mut Vec<NinjaBuild>,
 	link_targets: &mut HashMap<LinkPtr, Vec<String>>,
 ) -> Result<Vec<String>, String> {
-	let GeneratorOpts {
-		toolchain,
-		build_dir,
-		profile,
-		global_opts,
-		target_platform,
-		star_context,
-	} = generator_opts;
+	let GeneratorOpts { toolchain, build_dir, target_platform, star_context, .. } = generator_opts;
 	let mut inputs = Vec::<String>::new();
 
 	let generator_vars = if let Some(gen_func) = &lib.generator_vars {
@@ -390,92 +388,10 @@ fn add_static_lib_target(
 	defines.extend_from_slice(lib.private_defines());
 	defines.extend_from_slice(&generator_vars.defines);
 
-	if !sources.c.is_empty() {
-		let c_compiler = get_c_compiler(toolchain, lib.name())?;
-		let rule = if let Some(rule) = &rules.compile_c_object {
-			rule
-		} else {
-			rules.compile_c_object = Some(compile_c_object(c_compiler));
-			rules.compile_c_object.as_ref().unwrap()
-		};
-		let mut c_compile_opts = profile.c_compile_flags.clone();
-		if let Some(c_std) = &global_opts.c_standard {
-			c_compile_opts.push(c_compiler.c_std_flag(c_std)?);
-		}
-		if let Some(true) = global_opts.position_independent_code {
-			if let Some(fpic_flag) = c_compiler.position_independent_code_flag() {
-				c_compile_opts.push(fpic_flag);
-			}
-		}
-		for src in &sources.c {
-			build_lines.push(add_obj_source(
-				input_path(&src.full, &lib.project().info.path),
-				&includes,
-				&defines,
-				output_path(build_dir, &lib.project().info.name, &src.name, &target_platform.obj_ext),
-				rule.name.clone(),
-				c_compile_opts.clone(),
-				&mut inputs,
-			));
-		}
-	}
+	let source_data = SourceData { includes, defines };
 
-	if !sources.cpp.is_empty() {
-		let cpp_compiler = get_cpp_compiler(toolchain, lib.name())?;
-		let rule = if let Some(rule) = &rules.compile_cpp_object {
-			rule
-		} else {
-			rules.compile_cpp_object = Some(compile_cpp_object(cpp_compiler));
-			rules.compile_cpp_object.as_ref().unwrap()
-		};
-		let mut cpp_compile_opts = profile.cpp_compile_flags.clone();
-		if let Some(cpp_std) = &global_opts.cpp_standard {
-			cpp_compile_opts.push(cpp_compiler.cpp_std_flag(cpp_std)?);
-		}
-		if let Some(true) = global_opts.position_independent_code {
-			if let Some(fpic_flag) = cpp_compiler.position_independent_code_flag() {
-				cpp_compile_opts.push(fpic_flag);
-			}
-		}
-		for src in &sources.cpp {
-			build_lines.push(add_obj_source(
-				input_path(&src.full, &lib.project().info.path),
-				&includes,
-				&defines,
-				output_path(build_dir, &lib.project().info.name, &src.name, &target_platform.obj_ext),
-				rule.name.clone(),
-				cpp_compile_opts.clone(),
-				&mut inputs,
-			));
-		}
-	}
-	if !sources.nasm.is_empty() {
-		let nasm_assembler = get_nasm_assembler(toolchain, lib.name())?;
-		let rule = if let Some(rule) = &rules.assemble_nasm_object {
-			rule
-		} else {
-			rules.assemble_nasm_object = Some(assemble_nasm_object(nasm_assembler));
-			rules.assemble_nasm_object.as_ref().unwrap()
-		};
-		let nasm_assemble_opts = &profile.nasm_assemble_flags;
-		for src in &sources.nasm {
-			build_lines.push(add_obj_source(
-				input_path(&src.full, &lib.project().info.path),
-				&includes,
-				&defines,
-				output_subfolder_path(
-					build_dir,
-					&lib.project().info.name,
-					&lib.name,
-					&src.name,
-					&target_platform.obj_ext,
-				),
-				rule.name.clone(),
-				nasm_assemble_opts.clone(),
-				&mut inputs,
-			));
-		}
-	}
+	add_obj_sources(&sources, generator_opts, lib.as_ref(), &source_data, rules, build_lines, &mut inputs)?;
+
 	for link in &lib.public_links_recursive() {
 		match link {
 			LinkPtr::Static(static_lib) => {
@@ -540,14 +456,7 @@ fn add_object_lib_target(
 	build_lines: &mut Vec<NinjaBuild>,
 	link_targets: &mut HashMap<LinkPtr, Vec<String>>,
 ) -> Result<Vec<String>, String> {
-	let GeneratorOpts {
-		toolchain,
-		build_dir,
-		profile,
-		global_opts,
-		target_platform,
-		star_context,
-	} = generator_opts;
+	let GeneratorOpts { build_dir, target_platform, star_context, .. } = generator_opts;
 	let mut inputs = Vec::<String>::new();
 
 	let generator_vars = if let Some(gen_func) = &lib.generator_vars {
@@ -570,104 +479,10 @@ fn add_object_lib_target(
 	defines.extend_from_slice(lib.private_defines());
 	defines.extend_from_slice(&generator_vars.defines);
 
-	if !sources.c.is_empty() {
-		let c_compiler = get_c_compiler(toolchain, lib.name())?;
-		let rule = if let Some(rule) = &rules.compile_c_object {
-			rule
-		} else {
-			rules.compile_c_object = Some(compile_c_object(c_compiler));
-			rules.compile_c_object.as_ref().unwrap()
-		};
-		let mut c_compile_opts = profile.c_compile_flags.clone();
-		if let Some(c_std) = &global_opts.c_standard {
-			c_compile_opts.push(c_compiler.c_std_flag(c_std)?);
-		}
-		if let Some(true) = global_opts.position_independent_code {
-			if let Some(fpic_flag) = c_compiler.position_independent_code_flag() {
-				c_compile_opts.push(fpic_flag);
-			}
-		}
-		for src in &sources.c {
-			build_lines.push(add_obj_source(
-				input_path(&src.full, &lib.project().info.path),
-				&includes,
-				&defines,
-				output_subfolder_path(
-					build_dir,
-					&lib.project().info.name,
-					&lib.name,
-					&src.name,
-					&target_platform.obj_ext,
-				),
-				rule.name.clone(),
-				c_compile_opts.clone(),
-				&mut inputs,
-			));
-		}
-	}
+	let source_data = SourceData { includes, defines };
 
-	if !sources.cpp.is_empty() {
-		let cpp_compiler = get_cpp_compiler(toolchain, lib.name())?;
-		let rule = if let Some(rule) = &rules.compile_cpp_object {
-			rule
-		} else {
-			rules.compile_cpp_object = Some(compile_cpp_object(cpp_compiler));
-			rules.compile_cpp_object.as_ref().unwrap()
-		};
-		let mut cpp_compile_opts = profile.cpp_compile_flags.clone();
-		if let Some(cpp_std) = &global_opts.cpp_standard {
-			cpp_compile_opts.push(cpp_compiler.cpp_std_flag(cpp_std)?);
-		}
-		if let Some(true) = global_opts.position_independent_code {
-			if let Some(fpic_flag) = cpp_compiler.position_independent_code_flag() {
-				cpp_compile_opts.push(fpic_flag);
-			}
-		}
-		for src in &sources.cpp {
-			build_lines.push(add_obj_source(
-				input_path(&src.full, &lib.project().info.path),
-				&includes,
-				&defines,
-				output_subfolder_path(
-					build_dir,
-					&lib.project().info.name,
-					&lib.name,
-					&src.name,
-					&target_platform.obj_ext,
-				),
-				rule.name.clone(),
-				cpp_compile_opts.clone(),
-				&mut inputs,
-			));
-		}
-	}
-	if !sources.nasm.is_empty() {
-		let nasm_assembler = get_nasm_assembler(toolchain, lib.name())?;
-		let rule = if let Some(rule) = &rules.assemble_nasm_object {
-			rule
-		} else {
-			rules.assemble_nasm_object = Some(assemble_nasm_object(nasm_assembler));
-			rules.assemble_nasm_object.as_ref().unwrap()
-		};
-		let nasm_assemble_opts = &profile.nasm_assemble_flags;
-		for src in &sources.nasm {
-			build_lines.push(add_obj_source(
-				input_path(&src.full, &lib.project().info.path),
-				&includes,
-				&defines,
-				output_subfolder_path(
-					build_dir,
-					&lib.project().info.name,
-					&lib.name,
-					&src.name,
-					&target_platform.obj_ext,
-				),
-				rule.name.clone(),
-				nasm_assemble_opts.clone(),
-				&mut inputs,
-			));
-		}
-	}
+	add_obj_sources(&sources, generator_opts, lib.as_ref(), &source_data, rules, build_lines, &mut inputs)?;
+
 	for link in &lib.public_links_recursive() {
 		match link {
 			LinkPtr::Static(_) => {
@@ -704,6 +519,7 @@ fn add_executable_target(
 		global_opts,
 		target_platform,
 		star_context,
+		..
 	} = generator_opts;
 
 	log::debug!("   exe target: {}", exe.name);
@@ -727,6 +543,8 @@ fn add_executable_target(
 	let mut defines = exe.public_defines_recursive();
 	defines.extend_from_slice(&generator_vars.defines);
 
+	let source_data = SourceData { includes, defines };
+
 	if !sources.c.is_empty() {
 		let c_compiler = get_c_compiler(toolchain, exe.name())?;
 		let rule_compile_c = if let Some(rule) = &rules.compile_c_object {
@@ -747,9 +565,14 @@ fn add_executable_target(
 		for src in &sources.c {
 			build_lines.push(add_obj_source(
 				input_path(&src.full, &exe.project().info.path),
-				&includes,
-				&defines,
-				output_path(build_dir, &exe.project().info.name, &src.name, &target_platform.obj_ext),
+				&source_data,
+				output_subfolder_path(
+					build_dir,
+					&exe.project().info.name,
+					&exe.name,
+					&src.name,
+					&target_platform.obj_ext,
+				),
 				rule_compile_c.name.clone(),
 				c_compile_opts.clone(),
 				&mut inputs,
@@ -776,9 +599,14 @@ fn add_executable_target(
 		for src in &sources.cpp {
 			build_lines.push(add_obj_source(
 				input_path(&src.full, &exe.project().info.path),
-				&includes,
-				&defines,
-				output_path(build_dir, &exe.project().info.name, &src.name, &target_platform.obj_ext),
+				&source_data,
+				output_subfolder_path(
+					build_dir,
+					&exe.project().info.name,
+					&exe.name,
+					&src.name,
+					&target_platform.obj_ext,
+				),
 				rule_compile_cpp.name.clone(),
 				cpp_compile_opts.clone(),
 				&mut inputs,
@@ -797,8 +625,7 @@ fn add_executable_target(
 		for src in &sources.nasm {
 			build_lines.push(add_obj_source(
 				input_path(&src.full, &exe.project().info.path),
-				&includes,
-				&defines,
+				&source_data,
 				output_subfolder_path(
 					build_dir,
 					&exe.project().info.name,
@@ -877,10 +704,119 @@ fn add_executable_target(
 	Ok(())
 }
 
+fn add_obj_sources(
+	sources: &Sources,
+	generator_opts: &GeneratorOpts,
+	target: &dyn Target,
+	source_data: &SourceData,
+	rules: &mut NinjaRules,
+	build_lines: &mut Vec<NinjaBuild>,
+	inputs: &mut Vec<String>,
+) -> Result<(), String> {
+	let GeneratorOpts {
+		toolchain, build_dir, profile, global_opts, target_platform, ..
+	} = generator_opts;
+
+	if !sources.c.is_empty() {
+		let c_compiler = get_c_compiler(toolchain, target.name())?;
+		let rule_compile_c = if let Some(rule) = &rules.compile_c_object {
+			rule
+		} else {
+			rules.compile_c_object = Some(compile_c_object(c_compiler));
+			rules.compile_c_object.as_ref().unwrap()
+		};
+		let mut c_compile_opts = profile.c_compile_flags.clone();
+		if let Some(c_std) = &global_opts.c_standard {
+			c_compile_opts.push(c_compiler.c_std_flag(c_std)?);
+		}
+		if let Some(true) = global_opts.position_independent_code {
+			if let Some(fpic_flag) = c_compiler.position_independent_code_flag() {
+				c_compile_opts.push(fpic_flag);
+			}
+		}
+		for src in &sources.c {
+			build_lines.push(add_obj_source(
+				input_path(&src.full, &target.project().info.path),
+				source_data,
+				output_subfolder_path(
+					build_dir,
+					&target.project().info.name,
+					target.name(),
+					&src.name,
+					&target_platform.obj_ext,
+				),
+				rule_compile_c.name.clone(),
+				c_compile_opts.clone(),
+				inputs,
+			));
+		}
+	}
+	if !sources.cpp.is_empty() {
+		let cpp_compiler = get_cpp_compiler(toolchain, target.name())?;
+		let rule_compile_cpp = if let Some(rule) = &rules.compile_cpp_object {
+			rule
+		} else {
+			rules.compile_cpp_object = Some(compile_cpp_object(cpp_compiler));
+			rules.compile_cpp_object.as_ref().unwrap()
+		};
+		let mut cpp_compile_opts = profile.cpp_compile_flags.clone();
+		if let Some(cpp_std) = &global_opts.cpp_standard {
+			cpp_compile_opts.push(cpp_compiler.cpp_std_flag(cpp_std)?);
+		}
+		if let Some(true) = global_opts.position_independent_code {
+			if let Some(fpic_flag) = cpp_compiler.position_independent_code_flag() {
+				cpp_compile_opts.push(fpic_flag);
+			}
+		}
+		for src in &sources.cpp {
+			build_lines.push(add_obj_source(
+				input_path(&src.full, &target.project().info.path),
+				source_data,
+				output_subfolder_path(
+					build_dir,
+					&target.project().info.name,
+					target.name(),
+					&src.name,
+					&target_platform.obj_ext,
+				),
+				rule_compile_cpp.name.clone(),
+				cpp_compile_opts.clone(),
+				inputs,
+			));
+		}
+	}
+	if !sources.nasm.is_empty() {
+		let nasm_assembler = get_nasm_assembler(toolchain, target.name())?;
+		let rule = if let Some(rule) = &rules.assemble_nasm_object {
+			rule
+		} else {
+			rules.assemble_nasm_object = Some(assemble_nasm_object(nasm_assembler));
+			rules.assemble_nasm_object.as_ref().unwrap()
+		};
+		let nasm_assemble_opts = &profile.nasm_assemble_flags;
+		for src in &sources.nasm {
+			build_lines.push(add_obj_source(
+				input_path(&src.full, &target.project().info.path),
+				source_data,
+				output_subfolder_path(
+					build_dir,
+					&target.project().info.name,
+					target.name(),
+					&src.name,
+					&target_platform.obj_ext,
+				),
+				rule.name.clone(),
+				nasm_assemble_opts.clone(),
+				inputs,
+			));
+		}
+	}
+	Ok(())
+}
+
 fn add_obj_source(
 	input: String,
-	includes: &[PathBuf],
-	defines: &[String],
+	source_data: &SourceData,
 	out_tgt: String,
 	rule_name: String,
 	compile_options: Vec<String>,
@@ -893,11 +829,12 @@ fn add_obj_source(
 		output_targets: vec![out_tgt],
 		rule_name,
 		keyval_set: HashMap::from([
-			("DEFINES".to_string(), transform_defines(defines)),
+			("DEFINES".to_string(), transform_defines(&source_data.defines)),
 			("FLAGS".to_string(), compile_options),
 			(
 				"INCLUDES".to_owned(),
-				includes
+				source_data
+					.includes
 					.iter()
 					.map(|x| "-I".to_owned() + x.to_string_lossy().trim_start_matches(r"\\?\"))
 					.collect(),
@@ -1138,10 +1075,7 @@ fn test_position_independent_code() {
 		.to_string();
 	let main_exe_rules = build_lines
 		.iter()
-		.filter(|x| {
-			println!("out: {}", x.output_targets.first().unwrap());
-			x.output_targets.first().unwrap() == &main_out_path
-		})
+		.filter(|x| x.output_targets.first().unwrap() == &main_out_path)
 		.collect::<Vec<_>>();
 	assert_eq!(main_exe_rules.len(), 1);
 
