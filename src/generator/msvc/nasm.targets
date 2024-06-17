@@ -79,6 +79,7 @@
       IncludePaths="%(NASM.IncludePaths)"
       Define="%(NASM.Define)"
       Undefine="%(NASM.Undefine)"
+      AdditionalOptions="%(NASM.AdditionalOptions)"
       Inputs="%(NASM.Identity)" />
   </Target>
   <Target
