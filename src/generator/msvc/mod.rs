@@ -107,10 +107,15 @@ impl VsProject {
 	}
 }
 
+struct ProfileFragment {
+	vcxproj: VcxprojProfile,
+	nasm_assemble_flags: Vec<String>,
+}
+
 fn item_definition_group(
 	platform: &str,
 	profile_name: &str,
-	profile: &VcxprojProfile,
+	profile: &ProfileFragment,
 	sources: &Sources,
 	include_dirs: &[String],
 	defines: &[String],
@@ -122,14 +127,14 @@ fn item_definition_group(
 	);
 
 	if !sources.c.is_empty() || !sources.cpp.is_empty() {
-		ret += &cl_compile(profile, include_dirs, defines, opts, sources.cpp.is_empty());
+		ret += &cl_compile(&profile.vcxproj, include_dirs, defines, opts, sources.cpp.is_empty());
 	}
 	if !sources.nasm.is_empty() {
 		ret += &nasm_compile(profile, platform, include_dirs, defines)?;
 	}
-	if !profile.link.is_empty() {
+	if !profile.vcxproj.link.is_empty() {
 		ret += "    <Link>\n";
-		for (key, val) in &profile.link {
+		for (key, val) in &profile.vcxproj.link {
 			ret += &format!("      <{key}>{val}</{key}>\n")
 		}
 		ret += "    </Link>\n";
@@ -192,7 +197,7 @@ fn cl_compile(
 }
 
 fn nasm_compile(
-	profile: &VcxprojProfile,
+	profile: &ProfileFragment,
 	platform: &str,
 	include_dirs: &[String],
 	defines: &[String],
@@ -209,11 +214,16 @@ fn nasm_compile(
 
 	ret += "      <Define>";
 	ret += &profile
+		.vcxproj
 		.preprocessor_definitions
 		.iter()
 		.chain(defines)
 		.fold(String::new(), |acc, x| acc + x + ";");
 	ret += "%(PreprocessorDefinitions)</Define>\n"; // TODO(Travers): Check this
+
+	ret += "      <AdditionalOptions>";
+	ret += &profile.nasm_assemble_flags.join(" ");
+	ret += "</AdditionalOptions>\n";
 
 	ret += "    </NASM>\n";
 	Ok(ret)
@@ -258,19 +268,29 @@ impl Msvc {
 				}
 			},
 		};
-		let vcxproj_profiles = toolchain
+		let profiles = toolchain
 			.profile
 			.iter()
-			.filter_map(|x| x.1.vcxproj.as_ref().map(|prof| (x.0.clone(), prof.clone())))
-			.collect::<BTreeMap<String, VcxprojProfile>>();
-		if vcxproj_profiles.is_empty() {
+			.filter_map(|x| {
+				x.1.vcxproj.as_ref().map(|prof| {
+					(
+						x.0.clone(),
+						ProfileFragment {
+							vcxproj: prof.clone(),
+							nasm_assemble_flags: x.1.nasm_assemble_flags.clone(),
+						},
+					)
+				})
+			})
+			.collect::<BTreeMap<String, ProfileFragment>>();
+		if profiles.is_empty() {
 			return Err(
 				"Toolchain doesn't contain any profiles with a \"vcxproj\" section, required for MSVC generator"
 					.to_owned(),
 			);
 		}
 		let opts = Options { c_standard, cpp_standard };
-		Self::generate_inner(&project, build_dir, &vcxproj_profiles, &toolchain.msvc_platforms, &mut guid_map, &opts)?;
+		Self::generate_inner(&project, build_dir, &profiles, &toolchain.msvc_platforms, &mut guid_map, &opts)?;
 
 		let mut sln_content = r#"Microsoft Visual Studio Solution File, Format Version 12.00
 "#
@@ -337,7 +357,7 @@ impl Msvc {
 	fn generate_inner(
 		project: &Arc<Project>,
 		build_dir: &Path,
-		profiles: &BTreeMap<String, VcxprojProfile>,
+		profiles: &BTreeMap<String, ProfileFragment>,
 		msvc_platforms: &[String],
 		guid_map: &mut IndexMap,
 		opts: &Options,
@@ -390,7 +410,7 @@ impl Msvc {
 fn add_static_lib(
 	lib: &Arc<StaticLibrary>,
 	build_dir: &Path,
-	profiles: &BTreeMap<String, VcxprojProfile>,
+	profiles: &BTreeMap<String, ProfileFragment>,
 	msvc_platforms: &[String],
 	opts: &Options,
 	guid_map: &mut IndexMap,
@@ -435,7 +455,7 @@ fn add_static_lib(
 fn add_object_lib(
 	lib: &Arc<ObjectLibrary>,
 	build_dir: &Path,
-	profiles: &BTreeMap<String, VcxprojProfile>,
+	profiles: &BTreeMap<String, ProfileFragment>,
 	msvc_platforms: &[String],
 	opts: &Options,
 	guid_map: &mut IndexMap,
@@ -478,7 +498,7 @@ fn add_object_lib(
 
 fn make_vcxproj(
 	build_dir: &Path,
-	profiles: &BTreeMap<String, VcxprojProfile>,
+	profiles: &BTreeMap<String, ProfileFragment>,
 	msvc_platforms: &[String],
 	guid_map: &mut IndexMap,
 	target_name: &str,
@@ -535,7 +555,7 @@ fn make_vcxproj(
 			// <UseDebugLibraries>true</UseDebugLibraries>
 			// <CharacterSet>MultiByte</CharacterSet>
 			// <WholeProgramOptimization>true</WholeProgramOptimization>
-			for (prop_name, prop_val) in &profile_cfg.property_group {
+			for (prop_name, prop_val) in &profile_cfg.vcxproj.property_group {
 				out_str += &format!("    <{prop_name}>{prop_val}</{prop_name}>\n");
 			}
 			out_str += "  </PropertyGroup>\n";
@@ -655,7 +675,7 @@ fn make_vcxproj(
 
 fn add_project_references(
 	project_links: &Vec<LinkPtr>,
-	profiles: &BTreeMap<String, VcxprojProfile>,
+	profiles: &BTreeMap<String, ProfileFragment>,
 	msvc_platforms: &[String],
 	opts: &Options,
 	guid_map: &mut IndexMap,
