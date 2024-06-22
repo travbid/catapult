@@ -4,7 +4,11 @@ use std::sync::{Arc, Mutex};
 use allocative::Allocative;
 use starlark::{
 	environment::GlobalsBuilder,
-	eval::{Arguments, ParametersSpec},
+	eval::{
+		Arguments, //
+		Evaluator,
+		ParametersSpec,
+	},
 	typing::Ty,
 	values::{
 		list::UnpackList, //
@@ -33,10 +37,6 @@ const GEN_PREFIX: &str = "__gen_";
 
 pub(super) fn err_msg<T>(msg: String) -> Result<T, anyhow::Error> {
 	Err(anyhow::Error::msg(msg))
-}
-
-fn to_vec_strs(paths: &[&str]) -> Vec<String> {
-	paths.iter().copied().map(String::from).collect()
 }
 
 #[derive(Debug, Clone, ProvidesStaticType, NoSerialize, Allocative)]
@@ -95,148 +95,176 @@ fn get_link_targets(links: Vec<Value>) -> Result<Vec<Arc<dyn StarLinkTarget>>, a
 }
 
 struct ImplAddStaticLibrary {
-	signature: starlark::eval::ParametersSpec<starlark::values::FrozenValue>,
+	signature: ParametersSpec<starlark::values::FrozenValue>,
 	project: Arc<Mutex<StarProject>>,
 }
-impl ImplAddStaticLibrary {
-	#[allow(clippy::too_many_arguments)]
-	fn add_static_library_impl(
+
+impl starlark::values::function::NativeFunc for ImplAddStaticLibrary {
+	fn invoke<'module>(
 		&self,
-		name: &str,
-		sources: Vec<&str>,
-		link_private: Vec<Value>,
-		link_public: Vec<Value>,
-		include_dirs_private: Vec<&str>,
-		include_dirs_public: Vec<&str>,
-		defines_private: Vec<&str>,
-		defines_public: Vec<&str>,
-		link_flags_public: Vec<&str>,
-		generator_vars: Option<String>,
-	) -> anyhow::Result<Arc<StarStaticLibrary>> {
+		eval: &mut starlark::eval::Evaluator<'module, '_>,
+		parameters: &Arguments<'module, '_>,
+	) -> Result<starlark::values::Value<'module>, starlark::Error> {
+		let args: [Cell<Option<Value<'module>>>; 10] = self.signature.collect_into(parameters, eval.heap())?;
+
+		let name: String = Arguments::check_required("name", args[0].get())?;
+		let sources: Vec<String> = required_list("sources", args[1].get())?;
+		let link_private = get_link_targets(optional_list("link_private", args[2].get())?)?;
+		let link_public = get_link_targets(optional_list("link_public", args[3].get())?)?;
+		let include_dirs_private: Vec<String> = optional_list("include_dirs_private", args[4].get())?;
+		let include_dirs_public: Vec<String> = optional_list("include_dirs_public", args[5].get())?;
+		let defines_private: Vec<String> = optional_list("defines_private", args[6].get())?;
+		let defines_public: Vec<String> = optional_list("defines_public", args[7].get())?;
+		let link_flags_public: Vec<String> = optional_list("link_flags_public", args[8].get())?;
+		let generator_vars = generator_func(args[9].get(), eval);
+
 		let mut project = match self.project.lock() {
 			Ok(x) => x,
-			Err(e) => return err_msg(e.to_string()),
+			Err(e) => return err_msg(e.to_string())?,
 		};
 		let lib = Arc::new(StarStaticLibrary {
 			parent_project: Arc::downgrade(&self.project),
-			name: String::from(name),
-			sources: to_vec_strs(&sources),
-			link_private: get_link_targets(link_private)?,
-			link_public: get_link_targets(link_public)?,
-			include_dirs_private: to_vec_strs(&include_dirs_private),
-			include_dirs_public: to_vec_strs(&include_dirs_public),
-			defines_private: defines_private.into_iter().map(String::from).collect(),
-			defines_public: defines_public.into_iter().map(String::from).collect(),
-			link_flags_public: link_flags_public.into_iter().map(String::from).collect(),
+			name,
+			sources,
+			link_private,
+			link_public,
+			include_dirs_private,
+			include_dirs_public,
+			defines_private,
+			defines_public,
+			link_flags_public,
 			generator_vars,
 			output_name: None, // TODO(Travers)
 		});
 		project.static_libraries.push(lib.clone());
-		Ok(lib)
-	}
-}
 
-impl starlark::values::function::NativeFunc for ImplAddStaticLibrary {
-	fn invoke<'v>(
-		&self,
-		eval: &mut starlark::eval::Evaluator<'v, '_>,
-		parameters: &Arguments<'v, '_>,
-	) -> Result<starlark::values::Value<'v>, starlark::Error> {
-		let args: [Cell<Option<Value<'v>>>; 10] = self.signature.collect_into(parameters, eval.heap())?;
-		let generator_vars = match args[9].get() {
-			None => None,
-			Some(x) => {
-				let id = String::from(GEN_PREFIX) + &uuid::Uuid::new_v4().to_string();
-				eval.module().set(&id, x);
-				Some(id)
-			}
-		};
-		let v = self.add_static_library_impl(
-			Arguments::check_required("name", args[0].get())?,
-			required_list("sources", args[1].get())?,
-			optional_list("link_private", args[2].get())?,
-			optional_list("link_public", args[3].get())?,
-			optional_list("include_dirs_private", args[4].get())?,
-			optional_list("include_dirs_public", args[5].get())?,
-			optional_list("defines_private", args[6].get())?,
-			optional_list("defines_public", args[7].get())?,
-			optional_list("link_flags_public", args[8].get())?,
-			generator_vars,
-		)?;
-		Ok(eval.heap().alloc(StarLibraryWrapper(v)))
+		Ok(eval.heap().alloc(StarLibraryWrapper(lib)))
 	}
 }
 
 struct ImplAddObjectLibrary {
-	signature: starlark::eval::ParametersSpec<starlark::values::FrozenValue>,
+	signature: ParametersSpec<FrozenValue>,
 	project: Arc<Mutex<StarProject>>,
 }
-impl ImplAddObjectLibrary {
-	#[allow(clippy::too_many_arguments)]
-	fn add_object_library_impl(
+
+impl starlark::values::function::NativeFunc for ImplAddObjectLibrary {
+	fn invoke<'module, 'loader, 'extra, 'args>(
 		&self,
-		name: &str,
-		sources: Vec<&str>,
-		link_private: Vec<Value>,
-		link_public: Vec<Value>,
-		include_dirs_private: Vec<&str>,
-		include_dirs_public: Vec<&str>,
-		defines_private: Vec<&str>,
-		defines_public: Vec<&str>,
-		link_flags_public: Vec<&str>,
-		generator_vars: Option<String>,
-	) -> anyhow::Result<Arc<StarObjectLibrary>> {
+		eval: &mut starlark::eval::Evaluator<'module, 'loader>,
+		parameters: &Arguments<'module, 'args>,
+	) -> Result<starlark::values::Value<'module>, starlark::Error> {
+		let args: [Cell<Option<Value<'module>>>; 10] = self.signature.collect_into(parameters, eval.heap())?;
+
+		let name: String = Arguments::check_required("name", args[0].get())?;
+		let sources: Vec<String> = required_list("sources", args[1].get())?;
+		let link_private = get_link_targets(optional_list("link_private", args[2].get())?)?;
+		let link_public = get_link_targets(optional_list("link_public", args[3].get())?)?;
+		let include_dirs_private: Vec<String> = optional_list("include_dirs_private", args[4].get())?;
+		let include_dirs_public: Vec<String> = optional_list("include_dirs_public", args[5].get())?;
+		let defines_private: Vec<String> = optional_list("defines_private", args[6].get())?;
+		let defines_public: Vec<String> = optional_list("defines_public", args[7].get())?;
+		let link_flags_public: Vec<String> = optional_list("link_flags_public", args[8].get())?;
+		let generator_vars = generator_func(args[9].get(), eval);
+
 		let mut project = match self.project.lock() {
 			Ok(x) => x,
-			Err(e) => return err_msg(e.to_string()),
+			Err(e) => return err_msg(e.to_string())?,
 		};
 		let lib = Arc::new(StarObjectLibrary {
 			parent_project: Arc::downgrade(&self.project),
-			name: String::from(name),
-			sources: to_vec_strs(&sources),
-			link_private: get_link_targets(link_private)?,
-			link_public: get_link_targets(link_public)?,
-			include_dirs_private: to_vec_strs(&include_dirs_private),
-			include_dirs_public: to_vec_strs(&include_dirs_public),
-			defines_private: defines_private.into_iter().map(String::from).collect(),
-			defines_public: defines_public.into_iter().map(String::from).collect(),
-			link_flags_public: link_flags_public.into_iter().map(String::from).collect(),
+			name,
+			sources,
+			link_private,
+			link_public,
+			include_dirs_private,
+			include_dirs_public,
+			defines_private,
+			defines_public,
+			link_flags_public,
 			generator_vars,
 			output_name: None, // TODO(Travers)
 		});
 		project.object_libraries.push(lib.clone());
-		Ok(lib)
+
+		Ok(eval.heap().alloc(StarObjLibWrapper(lib)))
 	}
 }
 
-impl starlark::values::function::NativeFunc for ImplAddObjectLibrary {
-	fn invoke<'v>(
+struct ImplAddInterfaceLibrary {
+	signature: ParametersSpec<FrozenValue>,
+	project: Arc<Mutex<StarProject>>,
+}
+
+impl starlark::values::function::NativeFunc for ImplAddInterfaceLibrary {
+	fn invoke<'module, 'loader, 'extra, 'args>(
 		&self,
-		eval: &mut starlark::eval::Evaluator<'v, '_>,
-		parameters: &Arguments<'v, '_>,
-	) -> Result<starlark::values::Value<'v>, starlark::Error> {
-		let args: [Cell<Option<Value<'v>>>; 10] = self.signature.collect_into(parameters, eval.heap())?;
-		let generator_vars = match args[9].get() {
-			None => None,
-			Some(x) => {
-				let id = String::from(GEN_PREFIX) + &uuid::Uuid::new_v4().to_string();
-				eval.module().set(&id, x);
-				Some(id)
-			}
+		eval: &mut starlark::eval::Evaluator<'module, 'loader>,
+		parameters: &Arguments<'module, 'args>,
+	) -> Result<starlark::values::Value<'module>, starlark::Error> {
+		let args: [Cell<Option<Value<'module>>>; 5] = self.signature.collect_into(parameters, eval.heap())?;
+
+		let name: String = Arguments::check_required("name", args[0].get())?;
+		let links = get_link_targets(optional_list("link", args[1].get())?)?;
+		let include_dirs: Vec<String> = optional_list("include_dirs", args[2].get())?;
+		let defines: Vec<String> = optional_list("defines", args[3].get())?;
+		let link_flags: Vec<String> = optional_list("link_flags", args[4].get())?;
+
+		let mut project = match self.project.lock() {
+			Ok(x) => x,
+			Err(e) => return err_msg(e.to_string())?,
 		};
-		let v = self.add_object_library_impl(
-			Arguments::check_required("name", args[0].get())?,
-			required_list("sources", args[1].get())?,
-			optional_list("link_private", args[2].get())?,
-			optional_list("link_public", args[3].get())?,
-			optional_list("include_dirs_private", args[4].get())?,
-			optional_list("include_dirs_public", args[5].get())?,
-			optional_list("defines_private", args[6].get())?,
-			optional_list("defines_public", args[7].get())?,
-			optional_list("link_flags_public", args[8].get())?,
+		let lib = Arc::new(StarIfaceLibrary {
+			parent_project: Arc::downgrade(&self.project),
+			name,
+			links,
+			include_dirs,
+			defines,
+			link_flags,
+		});
+		project.interface_libraries.push(lib.clone());
+
+		Ok(eval.heap().alloc(StarIfaceLibraryWrapper(lib)))
+	}
+}
+
+struct ImplAddExecutable {
+	signature: ParametersSpec<FrozenValue>,
+	project: Arc<Mutex<StarProject>>,
+}
+
+impl starlark::values::function::NativeFunc for ImplAddExecutable {
+	fn invoke<'module, 'loader, 'extra, 'args>(
+		&self,
+		eval: &mut Evaluator<'module, '_>,
+		parameters: &Arguments<'module, '_>,
+	) -> Result<starlark::values::Value<'module>, starlark::Error> {
+		let args: [_; 7] = self.signature.collect_into(parameters, eval.heap())?;
+
+		let name: String = Arguments::check_required("name", args[0].get())?;
+		let sources: Vec<String> = required_list("sources", args[1].get())?;
+		let links = get_link_targets(optional_list("link", args[2].get())?)?;
+		let include_dirs: Vec<String> = optional_list("include_dirs", args[3].get())?;
+		let defines: Vec<String> = optional_list("defines", args[4].get())?;
+		let link_flags: Vec<String> = optional_list("link_flags", args[5].get())?;
+		let generator_vars = generator_func(args[6].get(), eval);
+
+		let mut project = match self.project.lock() {
+			Ok(x) => x,
+			Err(e) => return err_msg(e.to_string())?,
+		};
+		let exe = Arc::new(StarExecutable {
+			parent_project: Arc::downgrade(&self.project),
+			name,
+			sources,
+			links,
+			include_dirs,
+			defines,
+			link_flags,
 			generator_vars,
-		)?;
-		Ok(eval.heap().alloc(StarObjLibWrapper(v)))
+			output_name: None, // TODO(Travers)
+		});
+		project.executables.push(exe.clone());
+		Ok(eval.heap().alloc(StarExecutableWrapper(exe)))
 	}
 }
 
@@ -261,123 +289,10 @@ impl starlark::values::function::NativeFunc for ImplGeneratorVar {
 	}
 }
 
-struct ImplAddInterfaceLibrary {
-	signature: starlark::eval::ParametersSpec<starlark::values::FrozenValue>,
-	project: Arc<Mutex<StarProject>>,
-}
-impl ImplAddInterfaceLibrary {
-	fn add_interface_library_impl(
-		&self,
-		name: &str,
-		links: Vec<Value>,
-		include_dirs: Vec<&str>,
-		defines: Vec<&str>,
-		link_flags: Vec<&str>,
-	) -> anyhow::Result<Arc<StarIfaceLibrary>> {
-		let links = get_link_targets(links)?;
-		let mut project = match self.project.lock() {
-			Ok(x) => x,
-			Err(e) => return err_msg(e.to_string()),
-		};
-		let lib = Arc::new(StarIfaceLibrary {
-			parent_project: Arc::downgrade(&self.project),
-			name: String::from(name),
-			links,
-			include_dirs: to_vec_strs(&include_dirs),
-			defines: defines.into_iter().map(String::from).collect(),
-			link_flags: link_flags.into_iter().map(String::from).collect(),
-		});
-		project.interface_libraries.push(lib.clone());
-		Ok(lib)
-	}
-}
-
-impl starlark::values::function::NativeFunc for ImplAddInterfaceLibrary {
-	fn invoke<'v>(
-		&self,
-		eval: &mut starlark::eval::Evaluator<'v, '_>,
-		parameters: &Arguments<'v, '_>,
-	) -> Result<starlark::values::Value<'v>, starlark::Error> {
-		let args: [Cell<Option<Value<'v>>>; 5] = self.signature.collect_into(parameters, eval.heap())?;
-		let v = self.add_interface_library_impl(
-			Arguments::check_required("name", args[0].get())?,
-			optional_list("link", args[1].get())?,
-			optional_list("include_dirs", args[2].get())?,
-			optional_list("defines", args[3].get())?,
-			optional_list("link_flags", args[4].get())?,
-			// listorlambda,
-		)?;
-		Ok(eval.heap().alloc(StarIfaceLibraryWrapper(v)))
-	}
-}
-
-struct ImplAddExecutable {
-	signature: starlark::eval::ParametersSpec<starlark::values::FrozenValue>,
-	project: Arc<Mutex<StarProject>>,
-}
-impl ImplAddExecutable {
-	fn add_executable_impl(
-		&self,
-		name: &str,
-		sources: Vec<&str>,
-		links: Vec<Value>,
-		include_dirs: Vec<String>,
-		defines: Vec<String>,
-		link_flags: Vec<String>,
-		generator_vars: Option<String>,
-	) -> anyhow::Result<StarExecutableWrapper> {
-		let exe_links = get_link_targets(links)?;
-		let mut project = match self.project.lock() {
-			Ok(x) => x,
-			Err(e) => return err_msg(e.to_string()),
-		};
-		let exe = Arc::new(StarExecutable {
-			parent_project: Arc::downgrade(&self.project),
-			name: String::from(name),
-			sources: to_vec_strs(&sources),
-			links: exe_links,
-			include_dirs,
-			defines,
-			link_flags,
-			generator_vars,
-			output_name: None, // TODO(Travers)
-		});
-		project.executables.push(exe.clone());
-		Ok(StarExecutableWrapper(exe))
-	}
-}
-impl starlark::values::function::NativeFunc for ImplAddExecutable {
-	fn invoke<'v>(
-		&self,
-		eval: &mut starlark::eval::Evaluator<'v, '_>,
-		parameters: &Arguments<'v, '_>,
-	) -> Result<starlark::values::Value<'v>, starlark::Error> {
-		let args: [_; 7] = self.signature.collect_into(parameters, eval.heap())?;
-		let generator_vars = match args[6].get() {
-			None => None,
-			Some(x) => {
-				let id = String::from(GEN_PREFIX) + &uuid::Uuid::new_v4().to_string();
-				eval.module().set(&id, x);
-				Some(id)
-			}
-		};
-		let v = self.add_executable_impl(
-			Arguments::check_required("name", args[0].get())?,
-			required_list("sources", args[1].get())?,
-			optional_list("links", args[2].get())?,
-			optional_list("include_dirs", args[3].get())?,
-			optional_list("defines", args[4].get())?,
-			optional_list("link_flags", args[5].get())?,
-			generator_vars,
-		)?;
-		Ok(eval.heap().alloc(v))
-	}
-}
-
 pub(crate) fn build_api(project: &Arc<Mutex<StarProject>>, builder: &mut GlobalsBuilder) {
 	{
 		let function_name = "add_static_library";
-		let mut sig_builder = starlark::eval::ParametersSpec::new(function_name.to_owned());
+		let mut sig_builder = ParametersSpec::new(function_name.to_owned());
 		sig_builder.no_more_positional_only_args();
 		sig_builder.required("name");
 		sig_builder.required("sources");
@@ -423,7 +338,7 @@ pub(crate) fn build_api(project: &Arc<Mutex<StarProject>>, builder: &mut Globals
 	}
 	{
 		let function_name = "add_object_library";
-		let mut sig_builder = starlark::eval::ParametersSpec::new(function_name.to_owned());
+		let mut sig_builder = ParametersSpec::new(function_name.to_owned());
 		sig_builder.no_more_positional_only_args();
 		sig_builder.required("name");
 		sig_builder.required("sources");
@@ -468,7 +383,7 @@ pub(crate) fn build_api(project: &Arc<Mutex<StarProject>>, builder: &mut Globals
 		);
 	}
 	{
-		let mut sig_builder = starlark::eval::ParametersSpec::new("add_interface_library".to_owned());
+		let mut sig_builder = ParametersSpec::new("add_interface_library".to_owned());
 		sig_builder.no_more_positional_only_args();
 		sig_builder.required("name");
 		sig_builder.optional("link");
@@ -503,7 +418,7 @@ pub(crate) fn build_api(project: &Arc<Mutex<StarProject>>, builder: &mut Globals
 		);
 	}
 	{
-		let mut sig_builder = starlark::eval::ParametersSpec::new("add_executable".to_owned());
+		let mut sig_builder = ParametersSpec::new("add_executable".to_owned());
 		sig_builder.no_more_positional_only_args();
 		sig_builder.required("name");
 		sig_builder.required("sources");
@@ -585,7 +500,7 @@ fn required_list<'a, T: UnpackValue<'a>>(name: &str, arg: Option<Value<'a>>) -> 
 	Ok(items)
 }
 
-fn optional_list<'a, T: UnpackValue<'a>>(name: &str, arg: Option<Value<'a>>) -> anyhow::Result<Vec<T>> {
+fn optional_list<'module, T: UnpackValue<'module>>(name: &str, arg: Option<Value<'module>>) -> anyhow::Result<Vec<T>> {
 	match arg {
 		None => Ok(Vec::new()),
 		Some(x) => Ok(UnpackList::unpack_value(x)
@@ -598,5 +513,16 @@ fn optional_list<'a, T: UnpackValue<'a>>(name: &str, arg: Option<Value<'a>>) -> 
 				.into()
 			})?
 			.items),
+	}
+}
+
+fn generator_func<'module>(arg: Option<Value<'module>>, eval: &mut Evaluator<'module, '_>) -> Option<String> {
+	match arg {
+		None => None,
+		Some(x) => {
+			let id = String::from(GEN_PREFIX) + &uuid::Uuid::new_v4().to_string();
+			eval.module().set(&id, x);
+			Some(id)
+		}
 	}
 }
