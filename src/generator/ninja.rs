@@ -392,23 +392,6 @@ fn add_static_lib_target(
 
 	add_obj_sources(&sources, generator_opts, lib.as_ref(), &source_data, rules, build_lines, &mut inputs)?;
 
-	for link in &lib.public_links_recursive() {
-		match link {
-			LinkPtr::Static(static_lib) => {
-				let link_path = output_path(
-					build_dir,
-					&link.project().info.name,
-					static_lib.output_name(),
-					&target_platform.static_lib_ext,
-				);
-				if !inputs.contains(&link_path) {
-					inputs.push(link_path);
-				}
-			}
-			LinkPtr::Object(_) => {}
-			LinkPtr::Interface(_) => {}
-		};
-	}
 	let out_name = output_path(build_dir, &lib.project().info.name, lib.output_name(), &target_platform.static_lib_ext);
 	let output_targets = vec![out_name.clone()];
 	let rule_name = match &rules.link_static_lib {
