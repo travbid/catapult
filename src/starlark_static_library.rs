@@ -57,7 +57,7 @@ impl fmt::Display for StarStaticLibrary {
 	fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
 		write!(
 			f,
-			r#"StaticLibrary{{
+			r#"StaticLibrary {{
   name: "{}",
   sources: [{}],
   link_private: [{}],

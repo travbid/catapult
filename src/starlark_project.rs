@@ -53,7 +53,7 @@ pub(super) struct StarProject {
 
 impl fmt::Display for StarProject {
 	fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-		write!(f, r#"Project{{}}"#)
+		write!(f, r#"Project {{}}"#)
 	}
 }
 
