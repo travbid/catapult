@@ -31,7 +31,7 @@ use crate::{
 	object_library::ObjectLibrary,
 	project::{Project, ProjectInfo},
 	starlark_executable::StarExecutable, //
-	starlark_interface_library::{StarIfaceLibrary, StarIfaceLibraryWrapper},
+	starlark_interface_library::{StarIfaceLibWrapper, StarIfaceLibrary},
 	starlark_link_target::PtrLinkTarget,
 	starlark_object_library::{StarObjLibWrapper, StarObjectLibrary},
 	starlark_static_library::{StarStaticLibWrapper, StarStaticLibrary},
@@ -83,7 +83,7 @@ impl<'v> StarlarkValue<'v> for StarProject {
 		}
 		for lib in &self.interface_libraries {
 			if lib.name == attribute {
-				return Some(heap.alloc(StarIfaceLibraryWrapper(lib.clone())));
+				return Some(heap.alloc(StarIfaceLibWrapper(lib.clone())));
 			}
 		}
 		None

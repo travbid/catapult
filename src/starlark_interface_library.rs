@@ -125,16 +125,16 @@ impl StarIfaceLibrary {
 }
 
 #[derive(Clone, Debug, ProvidesStaticType, NoSerialize, Allocative)]
-pub(super) struct StarIfaceLibraryWrapper(pub(super) Arc<StarIfaceLibrary>);
+pub(super) struct StarIfaceLibWrapper(pub(super) Arc<StarIfaceLibrary>);
 
-impl fmt::Display for StarIfaceLibraryWrapper {
+impl fmt::Display for StarIfaceLibWrapper {
 	fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
 		self.0.fmt(f)
 	}
 }
 
 #[starlark::values::starlark_value(type = "InterfaceLibrary")]
-impl<'v> StarlarkValue<'v> for StarIfaceLibraryWrapper {
+impl<'v> StarlarkValue<'v> for StarIfaceLibWrapper {
 	fn get_methods() -> Option<&'static Methods> {
 		library_methods()
 	}
@@ -154,11 +154,11 @@ impl<'v> StarlarkValue<'v> for StarIfaceLibraryWrapper {
 	}
 }
 
-starlark_simple_value!(StarIfaceLibraryWrapper);
+starlark_simple_value!(StarIfaceLibWrapper);
 
 #[starlark_module]
 fn library_methods_impl(builder: &mut MethodsBuilder) {
-	fn name<'v>(this: &'v StarIfaceLibraryWrapper, heap: &'v Heap) -> anyhow::Result<StringValue<'v>> {
+	fn name<'v>(this: &'v StarIfaceLibWrapper, heap: &'v Heap) -> anyhow::Result<StringValue<'v>> {
 		Ok(heap.alloc_str(&format!(":{}", this.0.name)))
 	}
 }
