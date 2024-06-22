@@ -55,7 +55,7 @@ impl fmt::Display for StarExecutable {
 	fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> fmt::Result {
 		write!(
 			f,
-			r#"Executable{{
+			r#"Executable {{
   name: "{}",
   sources: [{}],
   links: [{}],

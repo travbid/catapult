@@ -136,7 +136,7 @@ impl fmt::Display for StarGlobal {
 		let width_plus = width + INDENT_SIZE;
 		write!(
 			f,
-			r#"Global{{
+			r#"Global {{
 {PAD:width_plus$}global_options: {:width_plus$},
 {PAD:width_plus$}package_options: {:width_plus$},
 {PAD:width_plus$}toolchain: {:width_plus$},
@@ -190,7 +190,7 @@ impl fmt::Display for StarGlobalOptions {
 		let width_plus = width + INDENT_SIZE;
 		write!(
 			f,
-			r#"GlobalOptions{{
+			r#"GlobalOptions {{
 {PAD:width_plus$}c_standard: {},
 {PAD:width_plus$}cpp_standard: {},
 {PAD:width_plus$}position_independent_code: {},
@@ -241,11 +241,11 @@ struct StarPackageOptions(HashMap<String, PkgOpt>);
 impl fmt::Display for StarPackageOptions {
 	fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> fmt::Result {
 		if self.0.is_empty() {
-			return write!(f, "PackageOptions{{}}");
+			return write!(f, "PackageOptions {{}}");
 		}
 		let width = f.width().unwrap_or(0);
 		let width_plus = width + INDENT_SIZE;
-		writeln!(f, "PackageOptions{{")?;
+		writeln!(f, "PackageOptions {{")?;
 		for (key, val) in &self.0 {
 			writeln!(f, "{PAD:width_plus$}{}: {}", key, val)?;
 		}
@@ -289,16 +289,24 @@ impl fmt::Display for StarToolchain {
 	fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> fmt::Result {
 		let width = f.width().unwrap_or(0);
 		let width_plus = width + INDENT_SIZE;
-		writeln!(f, "Toolchain{{")?;
+		writeln!(f, "Toolchain {{")?;
+		writeln!(f, "{PAD:width_plus$}c_compiler: ")?;
 		if let Some(compiler) = &self.c_compiler {
-			writeln!(f, "{PAD:width_plus$}c_compiler: {:width_plus$}", compiler)?;
+			writeln!(f, "{:width_plus$}", compiler)?;
 		} else {
-			writeln!(f, "{PAD:width_plus$}c_compiler: None")?;
+			writeln!(f, "None")?;
 		}
+		writeln!(f, "{PAD:width_plus$}cpp_compiler: ")?;
 		if let Some(compiler) = &self.cpp_compiler {
-			writeln!(f, "{PAD:width_plus$}cpp_compiler: {:width_plus$}", compiler)?;
+			writeln!(f, "{:width_plus$}", compiler)?;
 		} else {
-			writeln!(f, "{PAD:width_plus$}cpp_compiler: None")?;
+			writeln!(f, "None")?;
+		}
+		writeln!(f, "{PAD:width_plus$}nasm_assembler: ")?;
+		if let Some(assembler) = &self.nasm_assembler {
+			writeln!(f, "{:width_plus$}", assembler)?;
+		} else {
+			writeln!(f, "None")?;
 		}
 		write!(f, "{PAD:width$}}}")
 	}
@@ -347,7 +355,7 @@ impl fmt::Display for StarCompiler {
 		let width_plus = width + INDENT_SIZE;
 		write!(
 			f,
-			r#"Compiler{{
+			r#"Compiler {{
 {PAD:width_plus$}id: "{}",
 {PAD:width_plus$}version: {:width_plus$},
 {PAD:width$}}}"#,
@@ -394,7 +402,7 @@ impl fmt::Display for StarAssembler {
 		let width_plus = width + INDENT_SIZE;
 		write!(
 			f,
-			r#"Compiler{{
+			r#"Assembler {{
 {PAD:width_plus$}id: "{}",
 {PAD:width_plus$}version: {:width_plus$},
 {PAD:width$}}}"#,
@@ -456,7 +464,7 @@ impl fmt::Display for StarVersion {
 		let width_plus = width + INDENT_SIZE;
 		write!(
 			f,
-			r#"Version{{
+			r#"Version {{
 {PAD:width_plus$}str: "{}",
 {PAD:width_plus$}major: {},
 {PAD:width_plus$}minor: {},

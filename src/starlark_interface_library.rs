@@ -49,7 +49,7 @@ impl fmt::Display for StarIfaceLibrary {
 	fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
 		write!(
 			f,
-			r#"InterfaceLibrary{{
+			r#"InterfaceLibrary {{
   name: "{}",
   links: [{}],
   include_dirs: [{}],

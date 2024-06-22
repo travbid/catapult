@@ -58,7 +58,7 @@ impl fmt::Display for StarObjectLibrary {
 	fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
 		write!(
 			f,
-			r#"ObjectLibrary{{
+			r#"ObjectLibrary {{
   name: "{}",
   sources: [{}],
   link_private: [{}],
@@ -232,7 +232,7 @@ impl fmt::Display for StarGeneratorVars {
 	fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
 		write!(
 			f,
-			r#"ObjectLibrary {{
+			r#"GeneratorVars {{
   sources: [{}],
   include_dirs: [{}],
   defines: [{}],
