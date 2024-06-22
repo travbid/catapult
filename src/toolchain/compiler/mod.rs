@@ -104,65 +104,15 @@ pub(super) fn identify_compiler(cmd: Vec<String>) -> Result<Box<dyn Compiler>, S
 		Some(x) => x,
 	};
 
-	if first_line.starts_with(CLANG_ID) || first_line.contains(&(String::from(" ") + CLANG_ID)) {
-		log::info!("compiler: clang");
-		let version = find_version(first_line, CLANG_ID);
-		log::info!("compiler version: {}", version);
-
-		let target = match lines.iter().find(|l| l.starts_with(TARGET_PREFIX)) {
-			None => return Err(format!("Could not find \"{}\" in compiler output", TARGET_PREFIX)),
-			Some(x) => x[TARGET_PREFIX.len()..].to_owned(),
-		};
-		log::info!("compiler target: {}", target);
-
-		let target_windows = target.contains("-windows-");
-		return Ok(Box::new(clang::Clang { cmd, version, target, target_windows }));
+	if let Some(clang) = identify_clang(first_line, &lines, &cmd)? {
+		Ok(clang)
+	} else if let Some(gcc) = identify_gcc(&lines, &cmd)? {
+		Ok(gcc)
+	} else if let Some(emcc) = identify_emscripten(first_line, &lines, &cmd)? {
+		Ok(emcc)
+	} else {
+		Err(format!("Could not identify compiler \"{}\"", exe))
 	}
-
-	if let Some(line) = lines.clone().iter().find(|l| l.starts_with(GCC_ID)) {
-		log::info!("compiler: gcc");
-
-		let version = find_version(line, GCC_ID);
-		log::info!("compiler version: {}", version);
-
-		let target = match lines.iter().find(|l| l.starts_with(TARGET_PREFIX)) {
-			None => return Err(format!("Could not find \"{}\" in compiler output", TARGET_PREFIX)),
-			Some(x) => x[TARGET_PREFIX.len()..].to_owned(),
-		};
-		log::info!("compiler target: {}", target);
-
-		return Ok(Box::new(gcc::Gcc { cmd, version, target }));
-	}
-
-	if first_line.starts_with(EMSCRIPTEN_ID) {
-		log::info!("compiler: emscripten");
-
-		let close_paren_idx = first_line
-			.chars()
-			.position(|x| x == ')')
-			.map_or(EMSCRIPTEN_ID.len(), |x| x + 1);
-		let bgn_idx = close_paren_idx
-			+ first_line[close_paren_idx..]
-				.chars()
-				.position(|x| !x.is_whitespace())
-				.unwrap_or(0);
-		let version = match first_line[bgn_idx..].find(' ') {
-			None => &first_line[bgn_idx..],
-			Some(offset) => &first_line[bgn_idx..bgn_idx + offset],
-		}
-		.to_owned();
-		log::info!("compiler version: {}", version);
-
-		let target = match lines.iter().find(|l| l.starts_with(TARGET_PREFIX)) {
-			None => return Err(format!("Could not find \"{}\" in compiler output", TARGET_PREFIX)),
-			Some(x) => x[TARGET_PREFIX.len()..].to_owned(),
-		};
-		log::info!("compiler target: {}", target);
-
-		return Ok(Box::new(emscripten::Emscripten { cmd, version, target }));
-	}
-
-	Err(format!("Could not identify compiler \"{}\"", exe))
 }
 
 pub(super) fn identify_linker(cmd: Vec<String>) -> Result<Box<dyn ExeLinker>, String> {
@@ -192,65 +142,87 @@ pub(super) fn identify_linker(cmd: Vec<String>) -> Result<Box<dyn ExeLinker>, St
 		Some(x) => x,
 	};
 
-	if first_line.starts_with(CLANG_ID) || first_line.contains(&(String::from(" ") + CLANG_ID)) {
-		log::info!("linker: clang");
-		let version = find_version(first_line, CLANG_ID);
-		log::info!("linker version: {}", version);
-
-		let target = match lines.iter().find(|l| l.starts_with(TARGET_PREFIX)) {
-			None => return Err(format!("Could not find \"{}\" in linker output", TARGET_PREFIX)),
-			Some(x) => x[TARGET_PREFIX.len()..].to_owned(),
-		};
-		log::info!("linker target: {}", target);
-
-		let target_windows = target.contains("-windows-");
-		return Ok(Box::new(clang::Clang { cmd, version, target, target_windows }));
+	if let Some(clang) = identify_clang(first_line, &lines, &cmd)? {
+		Ok(clang)
+	} else if let Some(gcc) = identify_gcc(&lines, &cmd)? {
+		Ok(gcc)
+	} else if let Some(emcc) = identify_emscripten(first_line, &lines, &cmd)? {
+		Ok(emcc)
+	} else {
+		Err(format!("Could not identify linker \"{}\"", exe))
 	}
+}
 
-	if let Some(line) = lines.clone().iter().find(|l| l.starts_with(GCC_ID)) {
-		log::info!("linker: gcc");
+fn identify_clang(first_line: &str, lines: &[&str], cmd: &[String]) -> Result<Option<Box<clang::Clang>>, String> {
+	if !first_line.starts_with(CLANG_ID) && !first_line.contains(&(String::from(" ") + CLANG_ID)) {
+		return Ok(None);
+	}
+	log::info!("compiler: clang");
+	let version = find_version(first_line, CLANG_ID);
+	log::info!("compiler version: {}", version);
+
+	let target = match lines.iter().find(|l| l.starts_with(TARGET_PREFIX)) {
+		None => return Err(format!("Could not find \"{}\" in compiler output", TARGET_PREFIX)),
+		Some(x) => x[TARGET_PREFIX.len()..].to_owned(),
+	};
+	log::info!("compiler target: {}", target);
+
+	let target_windows = target.contains("-windows-");
+	Ok(Some(Box::new(clang::Clang { cmd: cmd.to_vec(), version, target, target_windows })))
+}
+
+fn identify_gcc(lines: &[&str], cmd: &[String]) -> Result<Option<Box<gcc::Gcc>>, String> {
+	if let Some(line) = lines.iter().find(|l| l.starts_with(GCC_ID)) {
+		log::info!("compiler: gcc");
 
 		let version = find_version(line, GCC_ID);
-		log::info!("linker version: {}", version);
+		log::info!("compiler version: {}", version);
 
 		let target = match lines.iter().find(|l| l.starts_with(TARGET_PREFIX)) {
-			None => return Err(format!("Could not find \"{}\" in linker output", TARGET_PREFIX)),
+			None => return Err(format!("Could not find \"{}\" in compiler output", TARGET_PREFIX)),
 			Some(x) => x[TARGET_PREFIX.len()..].to_owned(),
 		};
-		log::info!("linker target: {}", target);
+		log::info!("compiler target: {}", target);
 
-		return Ok(Box::new(gcc::Gcc { cmd, version, target }));
+		Ok(Some(Box::new(gcc::Gcc { cmd: cmd.to_vec(), version, target })))
+	} else {
+		Ok(None)
 	}
+}
 
-	if first_line.starts_with(EMSCRIPTEN_ID) {
-		log::info!("linker: emscripten");
+fn identify_emscripten(
+	first_line: &str,
+	lines: &[&str],
+	cmd: &[String],
+) -> Result<Option<Box<emscripten::Emscripten>>, String> {
+	if !first_line.starts_with(EMSCRIPTEN_ID) {
+		return Ok(None);
+	}
+	log::info!("compiler: emscripten");
 
-		let close_paren_idx = first_line
+	let close_paren_idx = first_line
+		.chars()
+		.position(|x| x == ')')
+		.map_or(EMSCRIPTEN_ID.len(), |x| x + 1);
+	let bgn_idx = close_paren_idx
+		+ first_line[close_paren_idx..]
 			.chars()
-			.position(|x| x == ')')
-			.map_or(EMSCRIPTEN_ID.len(), |x| x + 1);
-		let bgn_idx = close_paren_idx
-			+ first_line[close_paren_idx..]
-				.chars()
-				.position(|x| !x.is_whitespace())
-				.unwrap_or(0);
-		let version = match first_line[bgn_idx..].find(' ') {
-			None => &first_line[bgn_idx..],
-			Some(offset) => &first_line[bgn_idx..bgn_idx + offset],
-		}
-		.to_owned();
-		log::info!("linker version: {}", version);
-
-		let target = match lines.iter().find(|l| l.starts_with(TARGET_PREFIX)) {
-			None => return Err(format!("Could not find \"{}\" in linker output", TARGET_PREFIX)),
-			Some(x) => x[TARGET_PREFIX.len()..].to_owned(),
-		};
-		log::info!("linker target: {}", target);
-
-		return Ok(Box::new(emscripten::Emscripten { cmd, version, target }));
+			.position(|x| !x.is_whitespace())
+			.unwrap_or(0);
+	let version = match first_line[bgn_idx..].find(' ') {
+		None => &first_line[bgn_idx..],
+		Some(offset) => &first_line[bgn_idx..bgn_idx + offset],
 	}
+	.to_owned();
+	log::info!("compiler version: {}", version);
 
-	Err(format!("Could not identify linker \"{}\"", exe))
+	let target = match lines.iter().find(|l| l.starts_with(TARGET_PREFIX)) {
+		None => return Err(format!("Could not find \"{}\" in compiler output", TARGET_PREFIX)),
+		Some(x) => x[TARGET_PREFIX.len()..].to_owned(),
+	};
+	log::info!("compiler target: {}", target);
+
+	Ok(Some(Box::new(emscripten::Emscripten { cmd: cmd.to_vec(), version, target })))
 }
 
 fn find_version(line: &str, ver_str: &str) -> String {
