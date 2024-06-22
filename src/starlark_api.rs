@@ -368,7 +368,7 @@ pub(crate) fn build_api(project: &Arc<Mutex<StarProject>>, builder: &mut Globals
 				rust_docstring: None,
 				signature: signature.clone(),
 				parameter_types,
-				return_type: <Value>::starlark_type_repr(),
+				return_type: <StarObjLibWrapper>::starlark_type_repr(),
 				as_type: None,
 			}
 		};
@@ -377,7 +377,7 @@ pub(crate) fn build_api(project: &Arc<Mutex<StarProject>>, builder: &mut Globals
 			false,
 			documentation,
 			None,
-			Some(StarLibraryWrapper::starlark_type_repr()),
+			Some(StarObjLibWrapper::starlark_type_repr()),
 			None,
 			ImplAddObjectLibrary { signature, project: project.clone() },
 		);
