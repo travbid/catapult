@@ -81,7 +81,7 @@ pub(super) fn identify_compiler(cmd: Vec<String>) -> Result<Box<dyn Compiler>, S
 		Some(x) => x,
 		None => return Err("Compiler command is empty".to_owned()),
 	};
-	// The `-v` flag outputs more information than `--version`
+	// The `-v` flag is a shorthand for '--verbose' or '--version --verbose'
 	// and outputs to stderr instead of stdout
 	let version_output = match process::Command::new(exe).arg("-v").output() {
 		Ok(x) => {
@@ -141,7 +141,7 @@ pub(super) fn identify_linker(cmd: Vec<String>) -> Result<Box<dyn ExeLinker>, St
 		Some(x) => x,
 		None => return Err("Linker command is empty".to_owned()),
 	};
-	// The `-v` flag outputs more information than `--version`
+	// The `-v` flag is a shorthand for '--verbose' or '--version --verbose'
 	// and outputs to stderr instead of stdout
 	let version_output = match process::Command::new(exe).arg("-v").output() {
 		Ok(x) => {
