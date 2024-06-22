@@ -2,9 +2,7 @@ use super::{Compiler, ExeLinker};
 
 pub(crate) struct Gcc {
 	pub(super) cmd: Vec<String>,
-	#[allow(dead_code)]
 	pub(super) version: String,
-	#[allow(dead_code)]
 	pub(super) target: String,
 }
 
