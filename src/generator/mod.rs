@@ -29,7 +29,14 @@ impl Generator {
 		match self {
 			Generator::Msvc => msvc::Msvc::generate(project, build_dir, toolchain, global_opts),
 			Generator::Ninja => {
-				let target_platform = if cfg!(windows) {
+				let target_triple = if let Some(compiler) = &toolchain.c_compiler {
+					compiler.target()
+				} else if let Some(compiler) = &toolchain.cpp_compiler {
+					compiler.target()
+				} else {
+					String::new()
+				};
+				let target_platform = if target_triple.contains("-windows-") || target_triple.ends_with("-windows") {
 					TargetPlatform {
 						obj_ext: ".obj".to_owned(),
 						static_lib_ext: ".lib".to_owned(),
