@@ -94,7 +94,7 @@ pub fn read_toolchain(toolchain_path: &Path) -> Result<Toolchain, String> {
 	let exe_linker = match toolchain_file.exe_linker {
 		Some(x) => match identify_linker(x) {
 			Ok(linker) => Some(linker),
-			Err(e) => return Err(format!("Error identifying C++ compiler: {}", e)),
+			Err(e) => return Err(format!("Error identifying linker: {}", e)),
 		},
 		None => None,
 	};
