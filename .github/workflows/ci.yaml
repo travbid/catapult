@@ -82,6 +82,37 @@ jobs:
       - run: ./build_release/test_one/myexe abc def
       - run: ./build_release/my_depend/mytest
 
+  ubuntu-ninja-emscripten:
+    name: Build and Run (Ubuntu / Ninja / Emscripten)
+    runs-on: ubuntu-latest
+    steps:
+      - run: >
+          sudo apt-get install -y
+          ninja-build
+      - name: Checkout
+        uses: actions/checkout@v4
+      # Ubuntu repos have an old version of emscripten with a bug (https://github.com/emscripten-core/emscripten/pull/16917)
+      # so install from source instead
+      - name: Install Emscripten
+        uses: ./.github/install-emscripten
+      - run: cargo build
+
+      - run: ./target/debug/catapult --source-dir test_data/test_01 --build-dir build_debug --generator Ninja --toolchain test_data/toolchain_emscripten.toml --profile Debug
+      - run: tree build_debug
+      - run: cat build_debug/build.ninja
+      - run: ninja -C build_debug -v myexe mytest
+      - run: tree build_debug
+      - run: node ./build_debug/test_one/myexe abc def
+      - run: node ./build_debug/my_depend/mytest
+
+      - run: ./target/debug/catapult --source-dir test_data/test_01 --build-dir build_release --generator Ninja --toolchain test_data/toolchain_emscripten.toml --profile Release
+      - run: tree build_release
+      - run: cat build_release/build.ninja
+      - run: ninja -C build_release -v myexe mytest
+      - run: tree build_release
+      - run: node ./build_release/test_one/myexe abc def
+      - run: node ./build_release/my_depend/mytest
+
   windows-msvc:
     name: Build and Run (Windows / MSVC)
     runs-on: windows-latest

@@ -1,0 +1,12 @@
+c_compiler = ["emcc"]
+cpp_compiler = ["em++"]
+static_linker = ["emar", "qc"]
+exe_linker = ["em++"]
+
+[profile.Debug]
+c_compile_flags = ["-g", "-O0", "-D_DEBUG"]
+cpp_compile_flags = ["-g", "-O0", "-D_DEBUG"]
+
+[profile.Release]
+c_compile_flags   = ["-O3", "-DNDEBUG"]
+cpp_compile_flags = ["-O3", "-DNDEBUG"]
