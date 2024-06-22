@@ -34,7 +34,7 @@ use crate::{
 	starlark_interface_library::{StarIfaceLibrary, StarIfaceLibraryWrapper},
 	starlark_link_target::PtrLinkTarget,
 	starlark_object_library::{StarObjLibWrapper, StarObjectLibrary},
-	starlark_static_library::{StarLibraryWrapper, StarStaticLibrary},
+	starlark_static_library::{StarStaticLibWrapper, StarStaticLibrary},
 	static_library::StaticLibrary,
 };
 
@@ -73,7 +73,7 @@ impl<'v> StarlarkValue<'v> for StarProject {
 	fn get_attr(&self, attribute: &str, heap: &'v Heap) -> Option<Value<'v>> {
 		for lib in &self.static_libraries {
 			if lib.name == attribute {
-				return Some(heap.alloc(StarLibraryWrapper(lib.clone())));
+				return Some(heap.alloc(StarStaticLibWrapper(lib.clone())));
 			}
 		}
 		for lib in &self.object_libraries {

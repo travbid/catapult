@@ -30,7 +30,7 @@ use crate::{
 	starlark_link_target::StarLinkTarget,
 	starlark_object_library::{StarGeneratorVars, StarObjLibWrapper, StarObjectLibrary},
 	starlark_project::StarProject,
-	starlark_static_library::{StarLibraryWrapper, StarStaticLibrary},
+	starlark_static_library::{StarStaticLibWrapper, StarStaticLibrary},
 };
 
 const GEN_PREFIX: &str = "__gen_";
@@ -80,7 +80,7 @@ fn get_link_targets(links: Vec<Value>) -> Result<Vec<Arc<dyn StarLinkTarget>>, a
 				Some(x) => link_targets.push(x.0.clone()),
 				None => return err_msg(format!("Could not unpack \"link\" {}", link.get_type())),
 			},
-			"StaticLibrary" => match StarLibraryWrapper::from_value(link) {
+			"StaticLibrary" => match StarStaticLibWrapper::from_value(link) {
 				Some(x) => link_targets.push(x.0.clone()),
 				None => return err_msg(format!("Could not unpack \"link\" {}", link.get_type())),
 			},
@@ -138,7 +138,7 @@ impl starlark::values::function::NativeFunc for ImplAddStaticLibrary {
 		});
 		project.static_libraries.push(lib.clone());
 
-		Ok(eval.heap().alloc(StarLibraryWrapper(lib)))
+		Ok(eval.heap().alloc(StarStaticLibWrapper(lib)))
 	}
 }
 
@@ -322,7 +322,7 @@ pub(crate) fn build_api(project: &Arc<Mutex<StarProject>>, builder: &mut Globals
 				rust_docstring: None,
 				signature: signature.clone(),
 				parameter_types,
-				return_type: <Value>::starlark_type_repr(),
+				return_type: <StarStaticLibWrapper>::starlark_type_repr(),
 				as_type: None,
 			}
 		};
@@ -331,7 +331,7 @@ pub(crate) fn build_api(project: &Arc<Mutex<StarProject>>, builder: &mut Globals
 			false,
 			documentation,
 			None,
-			Some(StarLibraryWrapper::starlark_type_repr()),
+			Some(StarStaticLibWrapper::starlark_type_repr()),
 			None,
 			ImplAddStaticLibrary { signature, project: project.clone() },
 		);
