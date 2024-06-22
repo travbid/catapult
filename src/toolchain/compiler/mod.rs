@@ -1,10 +1,12 @@
 mod clang;
+mod emscripten;
 mod gcc;
 mod nasm;
 
 use std::process;
 
 const CLANG_ID: &str = "clang version ";
+const EMSCRIPTEN_ID: &str = "emcc ";
 const GCC_ID: &str = "gcc version ";
 const NASM_ID: &str = "NASM version ";
 const TARGET_PREFIX: &str = "Target: ";
@@ -132,6 +134,34 @@ pub(super) fn identify_compiler(cmd: Vec<String>) -> Result<Box<dyn Compiler>, S
 		return Ok(Box::new(gcc::Gcc { cmd, version, target }));
 	}
 
+	if first_line.starts_with(EMSCRIPTEN_ID) {
+		log::info!("compiler: emscripten");
+
+		let close_paren_idx = first_line
+			.chars()
+			.position(|x| x == ')')
+			.map_or(EMSCRIPTEN_ID.len(), |x| x + 1);
+		let bgn_idx = close_paren_idx
+			+ first_line[close_paren_idx..]
+				.chars()
+				.position(|x| !x.is_whitespace())
+				.unwrap_or(0);
+		let version = match first_line[bgn_idx..].find(' ') {
+			None => &first_line[bgn_idx..],
+			Some(offset) => &first_line[bgn_idx..bgn_idx + offset],
+		}
+		.to_owned();
+		log::info!("compiler version: {}", version);
+
+		let target = match lines.iter().find(|l| l.starts_with(TARGET_PREFIX)) {
+			None => return Err(format!("Could not find \"{}\" in compiler output", TARGET_PREFIX)),
+			Some(x) => x[TARGET_PREFIX.len()..].to_owned(),
+		};
+		log::info!("compiler target: {}", target);
+
+		return Ok(Box::new(emscripten::Emscripten { cmd, version, target }));
+	}
+
 	Err(format!("Could not identify compiler \"{}\"", exe))
 }
 
@@ -190,6 +220,34 @@ pub(super) fn identify_linker(cmd: Vec<String>) -> Result<Box<dyn ExeLinker>, St
 		log::info!("linker target: {}", target);
 
 		return Ok(Box::new(gcc::Gcc { cmd, version, target }));
+	}
+
+	if first_line.starts_with(EMSCRIPTEN_ID) {
+		log::info!("linker: emscripten");
+
+		let close_paren_idx = first_line
+			.chars()
+			.position(|x| x == ')')
+			.map_or(EMSCRIPTEN_ID.len(), |x| x + 1);
+		let bgn_idx = close_paren_idx
+			+ first_line[close_paren_idx..]
+				.chars()
+				.position(|x| !x.is_whitespace())
+				.unwrap_or(0);
+		let version = match first_line[bgn_idx..].find(' ') {
+			None => &first_line[bgn_idx..],
+			Some(offset) => &first_line[bgn_idx..bgn_idx + offset],
+		}
+		.to_owned();
+		log::info!("linker version: {}", version);
+
+		let target = match lines.iter().find(|l| l.starts_with(TARGET_PREFIX)) {
+			None => return Err(format!("Could not find \"{}\" in linker output", TARGET_PREFIX)),
+			Some(x) => x[TARGET_PREFIX.len()..].to_owned(),
+		};
+		log::info!("linker target: {}", target);
+
+		return Ok(Box::new(emscripten::Emscripten { cmd, version, target }));
 	}
 
 	Err(format!("Could not identify linker \"{}\"", exe))
