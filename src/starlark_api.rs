@@ -26,7 +26,7 @@ use starlark::{
 
 use crate::{
 	starlark_executable::{StarExecutable, StarExecutableWrapper},
-	starlark_interface_library::{StarIfaceLibrary, StarIfaceLibraryWrapper},
+	starlark_interface_library::{StarIfaceLibWrapper, StarIfaceLibrary},
 	starlark_link_target::StarLinkTarget,
 	starlark_object_library::{StarGeneratorVars, StarObjLibWrapper, StarObjectLibrary},
 	starlark_project::StarProject,
@@ -76,7 +76,7 @@ fn get_link_targets(links: Vec<Value>) -> Result<Vec<Arc<dyn StarLinkTarget>>, a
 	let mut link_targets = Vec::<Arc<dyn StarLinkTarget>>::with_capacity(links.len());
 	for link in links {
 		match link.get_type() {
-			"InterfaceLibrary" => match StarIfaceLibraryWrapper::from_value(link) {
+			"InterfaceLibrary" => match StarIfaceLibWrapper::from_value(link) {
 				Some(x) => link_targets.push(x.0.clone()),
 				None => return err_msg(format!("Could not unpack \"link\" {}", link.get_type())),
 			},
@@ -223,7 +223,7 @@ impl starlark::values::function::NativeFunc for ImplAddInterfaceLibrary {
 		});
 		project.interface_libraries.push(lib.clone());
 
-		Ok(eval.heap().alloc(StarIfaceLibraryWrapper(lib)))
+		Ok(eval.heap().alloc(StarIfaceLibWrapper(lib)))
 	}
 }
 
@@ -412,7 +412,7 @@ pub(crate) fn build_api(project: &Arc<Mutex<StarProject>>, builder: &mut Globals
 			false,
 			documentation,
 			None,
-			Some(StarIfaceLibraryWrapper::starlark_type_repr()),
+			Some(StarIfaceLibWrapper::starlark_type_repr()),
 			None,
 			ImplAddInterfaceLibrary { signature, project: project.clone() },
 		);
