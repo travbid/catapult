@@ -1,6 +1,7 @@
 mod clang;
 mod emscripten;
 mod gcc;
+mod msvc;
 mod nasm;
 
 use std::process;
@@ -232,6 +233,10 @@ fn find_version(line: &str, ver_str: &str) -> String {
 		Some(offset) => &line[bgn_idx..bgn_idx + offset],
 	};
 	version.to_owned()
+}
+
+pub(super) fn msvc_compiler() -> Box<dyn Compiler> {
+	Box::new(msvc::Msvc {})
 }
 
 // # Expected outputs
