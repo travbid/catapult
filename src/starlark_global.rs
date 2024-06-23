@@ -290,19 +290,19 @@ impl fmt::Display for StarToolchain {
 		let width = f.width().unwrap_or(0);
 		let width_plus = width + INDENT_SIZE;
 		writeln!(f, "Toolchain {{")?;
-		writeln!(f, "{PAD:width_plus$}c_compiler: ")?;
+		write!(f, "{PAD:width_plus$}c_compiler: ")?;
 		if let Some(compiler) = &self.c_compiler {
 			writeln!(f, "{:width_plus$}", compiler)?;
 		} else {
 			writeln!(f, "None")?;
 		}
-		writeln!(f, "{PAD:width_plus$}cpp_compiler: ")?;
+		write!(f, "{PAD:width_plus$}cpp_compiler: ")?;
 		if let Some(compiler) = &self.cpp_compiler {
 			writeln!(f, "{:width_plus$}", compiler)?;
 		} else {
 			writeln!(f, "None")?;
 		}
-		writeln!(f, "{PAD:width_plus$}nasm_assembler: ")?;
+		write!(f, "{PAD:width_plus$}nasm_assembler: ")?;
 		if let Some(assembler) = &self.nasm_assembler {
 			writeln!(f, "{:width_plus$}", assembler)?;
 		} else {
