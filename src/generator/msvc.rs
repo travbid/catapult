@@ -793,12 +793,12 @@ fn write_file(filepath: &Path, content: &str) -> Result<(), String> {
 	Ok(())
 }
 
-const NASM_XML_CONTENT: &str = include_str!("nasm.xml");
-const NASM_TARGETS_CONTENT: &str = include_str!("nasm.targets");
+const NASM_XML_CONTENT: &str = include_str!("msvc/nasm.xml");
+const NASM_TARGETS_CONTENT: &str = include_str!("msvc/nasm.targets");
 
 fn nasm_props_content(nasm_cmd: &[String]) -> String {
 	let mapped_vec = nasm_cmd.iter().map(|x| format!("\"{}\"", x)).collect::<Vec<String>>();
-	format!(include_str!("nasm.props"), mapped_vec.join(" "))
+	format!(include_str!("msvc/nasm.props"), mapped_vec.join(" "))
 }
 
 fn map_platform_to_target_triple(platform: &str) -> Result<&'static str, String> {
