@@ -183,7 +183,7 @@ fn main() -> ExitCode {
 	} else {
 		original_dir.join(toolchain_path)
 	};
-	let toolchain = match toolchain::read_toolchain(&toolchain_path) {
+	let toolchain = match toolchain::get_toolchain(&toolchain_path, matches!(generator, Generator::Msvc)) {
 		Ok(x) => x,
 		Err(e) => {
 			println!("Toolchain error: {}", e);

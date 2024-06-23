@@ -55,7 +55,7 @@ pub struct VcxprojProfile {
 	pub link: BTreeMap<String, String>,
 }
 
-pub fn read_toolchain(toolchain_path: &Path) -> Result<Toolchain, String> {
+pub fn get_toolchain(toolchain_path: &Path, for_msvc: bool) -> Result<Toolchain, String> {
 	let toolchain_toml = match fs::read_to_string(toolchain_path) {
 		Ok(x) => x,
 		Err(e) => return Err(format!("Error opening toolchain file \"{}\": {}", toolchain_path.display(), e)),
@@ -75,19 +75,27 @@ pub fn read_toolchain(toolchain_path: &Path) -> Result<Toolchain, String> {
 		},
 		None => None,
 	};
-	let c_compiler = match toolchain_file.c_compiler {
-		Some(x) => match identify_compiler(x) {
-			Ok(y) => Some(y),
-			Err(e) => return Err(format!("Error identifying C compiler: {}", e)),
-		},
-		None => None,
+	let c_compiler: Option<Box<dyn Compiler>> = if for_msvc {
+		Some(compiler::msvc_compiler())
+	} else {
+		match toolchain_file.c_compiler {
+			Some(x) => match identify_compiler(x) {
+				Ok(y) => Some(y),
+				Err(e) => return Err(format!("Error identifying C compiler: {}", e)),
+			},
+			None => None,
+		}
 	};
-	let cpp_compiler = match toolchain_file.cpp_compiler {
-		Some(x) => match identify_compiler(x) {
-			Ok(y) => Some(y),
-			Err(e) => return Err(format!("Error identifying C++ compiler: {}", e)),
-		},
-		None => None,
+	let cpp_compiler: Option<Box<dyn Compiler>> = if for_msvc {
+		Some(compiler::msvc_compiler())
+	} else {
+		match toolchain_file.cpp_compiler {
+			Some(x) => match identify_compiler(x) {
+				Ok(y) => Some(y),
+				Err(e) => return Err(format!("Error identifying C++ compiler: {}", e)),
+			},
+			None => None,
+		}
 	};
 	let static_linker = toolchain_file.static_linker;
 
