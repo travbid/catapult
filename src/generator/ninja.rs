@@ -1,6 +1,7 @@
 use core::default::Default;
 use std::{
-	collections::HashMap,
+	collections::{HashMap, HashSet},
+	hash::Hash,
 	io::Write,
 	path::{Path, PathBuf}, //
 	sync::Arc,
@@ -662,6 +663,8 @@ fn add_executable_target(
 			inputs.extend_from_slice(link_outputs);
 		}
 	}
+	// Prevent the same lib from being added to the command more than once.
+	let inputs = deduplicate(inputs);
 	let rule_name = match &rules.link_exe {
 		Some(x) => x.name.clone(),
 		None => {
@@ -880,6 +883,12 @@ fn get_nasm_assembler<'a>(toolchain: &'a Toolchain, name: &str) -> Result<&'a dy
 			name
 		)),
 	}
+}
+
+fn deduplicate<T: Clone + Eq + Hash>(mut inputs: Vec<T>) -> Vec<T> {
+	let mut unique_inputs: HashSet<T> = HashSet::new();
+	inputs.retain(|x| unique_inputs.insert(x.clone()));
+	inputs
 }
 
 #[test]
