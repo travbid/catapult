@@ -29,6 +29,10 @@ impl Compiler for Msvc {
 		unimplemented!()
 	}
 
+	fn depfile_flags(&self, _out_file: &str, _dep_file: &str) -> Vec<String> {
+		unimplemented!()
+	}
+
 	fn c_std_flag(&self, _std: &str) -> Result<String, String> {
 		unimplemented!()
 	}

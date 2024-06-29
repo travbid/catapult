@@ -18,6 +18,7 @@ pub trait Assembler {
 
 	fn cmd(&self) -> Vec<String>;
 	fn out_flag(&self) -> String;
+	fn depfile_flags(&self, out_file: &str, dep_file: &str) -> Vec<String>;
 }
 
 pub trait Compiler {
@@ -27,6 +28,7 @@ pub trait Compiler {
 
 	fn cmd(&self) -> Vec<String>;
 	fn out_flag(&self) -> String;
+	fn depfile_flags(&self, out_file: &str, dep_file: &str) -> Vec<String>;
 	fn c_std_flag(&self, std: &str) -> Result<String, String>;
 	fn cpp_std_flag(&self, std: &str) -> Result<String, String>;
 	fn position_independent_code_flag(&self) -> Option<String>;
