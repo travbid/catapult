@@ -83,6 +83,22 @@ fn transform_defines(defines: &[String]) -> Vec<String> {
 }
 
 #[derive(Clone)]
+#[allow(dead_code)]
+enum NinjaDeps {
+	Gcc,
+	Msvc, // `deps = msvc` is unused until catapult supports using cl.exe with Ninja
+}
+
+impl NinjaDeps {
+	fn as_str(&self) -> &'static str {
+		match self {
+			Self::Gcc => "gcc",
+			Self::Msvc => "msvc",
+		}
+	}
+}
+
+#[derive(Clone)]
 struct NinjaRspFile {
 	rspfile: String,
 	rspfilecontent: String,
@@ -92,8 +108,8 @@ struct NinjaRspFile {
 struct NinjaRule {
 	name: String,
 	command: Vec<String>,
-	depfile: Vec<String>,
-	deps: Vec<String>,
+	depfile: Option<String>,
+	deps: Option<NinjaDeps>,
 	description: Option<String>,
 	dyndep: Option<String>,
 	generator: bool,
@@ -109,13 +125,13 @@ impl NinjaRule {
 			self.name,
 			self.command.join(" ")
 		);
-		if !self.depfile.is_empty() {
+		if let Some(depfile) = &self.depfile {
 			ret += "\n  depfile = ";
-			ret += &self.depfile.join(" ");
+			ret += depfile;
 		}
-		if !self.deps.is_empty() {
+		if let Some(dep) = &self.deps {
 			ret += "\n  deps = ";
-			ret += &self.deps.join(" ");
+			ret += dep.as_str();
 		}
 		if let Some(desc) = &self.description {
 			ret += "\n  description = ";
@@ -182,11 +198,14 @@ fn compile_c_object(compiler: &dyn Compiler) -> NinjaRule {
 	let mut command = compiler.cmd();
 	command.extend(vec!["$DEFINES".to_string(), "$INCLUDES".to_string(), "$FLAGS".to_string()]);
 	// command.extend(compiler.compiler_flags(msvc_runtime));
+	command.extend(compiler.depfile_flags("$out", "$DEP_FILE"));
 	command.extend(vec![compiler.out_flag(), "$out".to_owned()]);
 	command.extend(vec!["-c".to_string(), "$in".to_string()]);
 	NinjaRule {
 		name: String::from("compile_c_object"),
 		command,
+		depfile: Some("$DEP_FILE".to_owned()),
+		deps: Some(NinjaDeps::Gcc),
 		description: Some("Compiling C object $out".to_owned()),
 		..Default::default()
 	}
@@ -194,11 +213,14 @@ fn compile_c_object(compiler: &dyn Compiler) -> NinjaRule {
 fn compile_cpp_object(compiler: &dyn Compiler) -> NinjaRule {
 	let mut command = compiler.cmd();
 	command.extend(vec!["$DEFINES".to_string(), "$INCLUDES".to_string(), "$FLAGS".to_string()]);
+	command.extend(compiler.depfile_flags("$out", "$DEP_FILE"));
 	command.extend(vec![compiler.out_flag(), "$out".to_owned()]);
 	command.extend(vec!["-c".to_string(), "$in".to_string()]);
 	NinjaRule {
 		name: String::from("compile_cpp_object"),
 		command,
+		depfile: Some("$DEP_FILE".to_owned()),
+		deps: Some(NinjaDeps::Gcc),
 		description: Some("Compiling C++ object $out".to_owned()),
 		..Default::default()
 	}
@@ -206,11 +228,14 @@ fn compile_cpp_object(compiler: &dyn Compiler) -> NinjaRule {
 fn assemble_nasm_object(assembler: &dyn Assembler) -> NinjaRule {
 	let mut command = assembler.cmd();
 	command.extend(vec!["$DEFINES".to_string(), "$INCLUDES".to_string(), "$FLAGS".to_string()]);
+	command.extend(assembler.depfile_flags("$out", "$DEP_FILE"));
 	command.extend(vec![assembler.out_flag(), "$out".to_owned()]);
 	command.extend(vec!["$in".to_string()]);
 	NinjaRule {
 		name: String::from("assemble_nasm_object"),
 		command,
+		depfile: Some("$DEP_FILE".to_owned()),
+		deps: Some(NinjaDeps::Gcc),
 		description: Some("Assembling NASM object $out".to_owned()),
 		..Default::default()
 	}
@@ -809,7 +834,7 @@ fn add_obj_source(
 	inputs.push(out_tgt.clone());
 	NinjaBuild {
 		inputs: vec![input],
-		output_targets: vec![out_tgt],
+		output_targets: vec![out_tgt.clone()],
 		rule_name,
 		keyval_set: HashMap::from([
 			("DEFINES".to_string(), transform_defines(&source_data.defines)),
@@ -822,6 +847,7 @@ fn add_obj_source(
 					.map(|x| "-I".to_owned() + x.to_string_lossy().trim_start_matches(r"\\?\"))
 					.collect(),
 			),
+			("DEP_FILE".to_owned(), vec![out_tgt + ".d"]),
 		]),
 	}
 }
@@ -876,6 +902,14 @@ fn test_position_independent_code() {
 		fn out_flag(&self) -> String {
 			"-o".to_owned()
 		}
+		fn depfile_flags(&self, out_file: &str, dep_file: &str) -> Vec<String> {
+			vec![
+				"-MD".to_owned(),
+				dep_file.to_owned(),
+				"-MT".to_owned(),
+				out_file.to_owned(),
+			]
+		}
 	}
 
 	struct TestCompiler {}
@@ -894,6 +928,15 @@ fn test_position_independent_code() {
 		}
 		fn out_flag(&self) -> String {
 			"-o".to_owned()
+		}
+		fn depfile_flags(&self, out_file: &str, dep_file: &str) -> Vec<String> {
+			vec![
+				"-MD".to_owned(),
+				"-MT".to_owned(),
+				out_file.to_owned(),
+				"-MF".to_owned(),
+				dep_file.to_owned(),
+			]
 		}
 		fn c_std_flag(&self, std: &str) -> Result<String, String> {
 			match std {

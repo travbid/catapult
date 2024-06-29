@@ -28,6 +28,16 @@ impl Compiler for Clang {
 		"-o".to_owned()
 	}
 
+	fn depfile_flags(&self, out_file: &str, dep_file: &str) -> Vec<String> {
+		vec![
+			"-MD".to_owned(),
+			"-MT".to_owned(),
+			out_file.to_owned(),
+			"-MF".to_owned(),
+			dep_file.to_owned(),
+		]
+	}
+
 	fn c_std_flag(&self, std: &str) -> Result<String, String> {
 		match std {
 			"11" => Ok("-std=c11".to_owned()),
