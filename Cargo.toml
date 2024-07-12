@@ -1,6 +1,10 @@
 [package]
 name = "catapult"
 version = "0.0.1"
+description = "A package manager + build system for C and C++"
+homepage = "http://catapult-build.com"
+repository = "https://github.com/travbid/catapult"
+license-file = "LICENSE"
 edition = "2021"
 
 [dependencies]

@@ -181,26 +181,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "514de17de45fdb8dc022b1a7975556c53c86f9f0aa5f534b98977b171857c2c9"
 
 [[package]]
-name = "catapult"
-version = "0.0.1"
-dependencies = [
- "allocative",
- "anyhow",
- "base64",
- "dirs",
- "env_logger",
- "flate2",
- "getopts",
- "log",
- "reqwest",
- "serde",
- "starlark",
- "tar",
- "toml",
- "uuid",
-]
-
-[[package]]
 name = "cc"
 version = "1.0.99"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -274,6 +254,26 @@ checksum = "6d2301688392eb071b0bf1a37be05c469d3cc4dbbd95df672fe28ab021e6a096"
 dependencies = [
  "quote",
  "syn 1.0.109",
+]
+
+[[package]]
+name = "ctplt"
+version = "0.0.1"
+dependencies = [
+ "allocative",
+ "anyhow",
+ "base64",
+ "dirs",
+ "env_logger",
+ "flate2",
+ "getopts",
+ "log",
+ "reqwest",
+ "serde",
+ "starlark",
+ "tar",
+ "toml",
+ "uuid",
 ]
 
 [[package]]
