@@ -7,6 +7,13 @@ repository = "https://github.com/travbid/catapult"
 license-file = "LICENSE"
 edition = "2021"
 
+[[bin]]
+name = "catapult"
+path = "src/main.rs"
+
+[lib]
+name = "catapult"
+
 [dependencies]
 allocative = "0.3.1"
 anyhow = "1.0.65"
