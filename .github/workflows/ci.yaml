@@ -70,6 +70,8 @@ jobs:
       - run: tree build_debug
       - run: cat build_debug/build.ninja
       - run: ninja -C build_debug -v myexe mytest
+      - run: nm build_debug/nasmproj/nasmobjs.dir/nasmsrc.asm.o
+      - run: nm build_debug/test_one/myexe
       - run: tree build_debug
       - run: ./build_debug/test_one/myexe abc def
       - run: ./build_debug/my_depend/mytest
