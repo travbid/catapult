@@ -1,6 +1,20 @@
 /build/
-/build_*/
+# /build_*/**/*
 /target/
 
 .vs/
 .vscode/
+
+.DS_Store
+
+!/build_xcode/test_one.xcodeproj/
+!/build_xcode/test_one.xcodeproj/project.pbxproj
+!build_xcode1
+!/build_xcode1/test_one.xcodeproj/
+!/build_xcode1/test_one.xcodeproj/project.pbxproj
+!build_xcode2
+XCBuildData
+build_ninja
+*.build/
+CMakeFiles/
+CMakeScripts/

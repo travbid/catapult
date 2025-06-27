@@ -7,6 +7,7 @@ use std::{
 use crate::{
 	interface_library::InterfaceLibrary,
 	object_library::ObjectLibrary,
+	misc::thin_ptr::ThinPtr,
 	project::Project,
 	static_library::StaticLibrary,
 	target::{LinkTarget, Target},
@@ -136,5 +137,30 @@ impl LinkTarget for LinkPtr {
 			Self::Object(x) => x.public_links_recursive(),
 			Self::Interface(x) => x.public_links_recursive(),
 		}
+	}
+}
+
+impl LinkPtr {
+	pub fn as_ptr(&self) -> *const dyn LinkTarget {
+		match self {
+			Self::Static(x) => Arc::as_ptr(x) as *const dyn LinkTarget,
+			Self::Object(x) => Arc::as_ptr(x) as *const dyn LinkTarget,
+			Self::Interface(x) => Arc::as_ptr(x) as *const dyn LinkTarget,
+		}
+	}
+	pub fn as_target_ptr(&self) -> *const dyn Target {
+		match self {
+			Self::Static(x) => Arc::as_ptr(x) as *const dyn Target,
+			Self::Object(x) => Arc::as_ptr(x) as *const dyn Target,
+			Self::Interface(x) => Arc::as_ptr(x) as *const dyn Target,
+		}
+	}
+	pub fn as_thin_ptr(&self) -> ThinPtr<dyn Target> {
+		let fat_ptr = match self {
+			Self::Static(x) => Arc::as_ptr(x) as *const dyn Target,
+			Self::Object(x) => Arc::as_ptr(x) as *const dyn Target,
+			Self::Interface(x) => Arc::as_ptr(x) as *const dyn Target,
+		};
+		ThinPtr(fat_ptr)
 	}
 }

@@ -1,0 +1,10 @@
+[package]
+name = "myproject"
+
+[dependencies]
+
+
+[options]
+c_standard = "17"
+cpp_standard = "17"
+position_independent_code = true

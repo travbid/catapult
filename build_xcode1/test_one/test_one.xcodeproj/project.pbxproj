@@ -1,0 +1,704 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 56;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		000000000000000000000100 /* mylib.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0000000000000000000000FF /* mylib.cpp */; };
+		000000000000000000000109 /* main.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000108 /* main.cpp */; };
+		00000000000000000000010B /* libmylib.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 0000000000000000000000FD /* libmylib.a */; };
+		00000000000000000000010E /* libmy_depend_lib.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 00000000000000000000010C /* libmy_depend_lib.a */; };
+		000000000000000000000111 /* libblobject.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 00000000000000000000010F /* libblobject.a */; };
+		000000000000000000000114 /* libnasmobjs.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 000000000000000000000112 /* libnasmobjs.a */; };
+		000000000000000000000117 /* libcompress.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 000000000000000000000115 /* libcompress.a */; };
+		00000000000000000000011A /* libdecompress.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 000000000000000000000118 /* libdecompress.a */; };
+		00000000000000000000011D /* libdeprecated.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 00000000000000000000011B /* libdeprecated.a */; };
+		000000000000000000000120 /* libdebug.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 00000000000000000000011E /* libdebug.a */; };
+		000000000000000000000123 /* libentropy.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 000000000000000000000121 /* libentropy.a */; };
+		000000000000000000000126 /* liberrors.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 000000000000000000000124 /* liberrors.a */; };
+		000000000000000000000129 /* libpool.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 000000000000000000000127 /* libpool.a */; };
+		00000000000000000000012C /* libthreading.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 00000000000000000000012A /* libthreading.a */; };
+		00000000000000000000012F /* libxxhash.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 00000000000000000000012D /* libxxhash.a */; };
+		000000000000000000000132 /* libzstd_common.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 000000000000000000000130 /* libzstd_common.a */; };
+		000000000000000000000135 /* liblegacy.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 000000000000000000000133 /* liblegacy.a */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		00000000000000000000010D /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 000000000000000000000034 /* my_depend.xcodeproj */;
+			proxyType = 2;
+			remoteGlobalIDString = 00000000000000000000001B;
+			remoteInfo = my_depend_lib;
+		};
+		000000000000000000000110 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 000000000000000000000017 /* blobject.xcodeproj */;
+			proxyType = 2;
+			remoteGlobalIDString = 000000000000000000000007;
+			remoteInfo = blobject;
+		};
+		000000000000000000000113 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 000000000000000000000046 /* nasmproj.xcodeproj */;
+			proxyType = 2;
+			remoteGlobalIDString = 000000000000000000000038;
+			remoteInfo = nasmobjs;
+		};
+		000000000000000000000116 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 0000000000000000000000FC /* zstd.xcodeproj */;
+			proxyType = 2;
+			remoteGlobalIDString = 0000000000000000000000CF;
+			remoteInfo = compress;
+		};
+		000000000000000000000119 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 0000000000000000000000FC /* zstd.xcodeproj */;
+			proxyType = 2;
+			remoteGlobalIDString = 0000000000000000000000C2;
+			remoteInfo = decompress;
+		};
+		00000000000000000000011C /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 0000000000000000000000FC /* zstd.xcodeproj */;
+			proxyType = 2;
+			remoteGlobalIDString = 0000000000000000000000B5;
+			remoteInfo = deprecated;
+		};
+		00000000000000000000011F /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 0000000000000000000000FC /* zstd.xcodeproj */;
+			proxyType = 2;
+			remoteGlobalIDString = 00000000000000000000004A;
+			remoteInfo = debug;
+		};
+		000000000000000000000122 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 0000000000000000000000FC /* zstd.xcodeproj */;
+			proxyType = 2;
+			remoteGlobalIDString = 00000000000000000000006E;
+			remoteInfo = entropy;
+		};
+		000000000000000000000125 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 0000000000000000000000FC /* zstd.xcodeproj */;
+			proxyType = 2;
+			remoteGlobalIDString = 000000000000000000000065;
+			remoteInfo = errors;
+		};
+		000000000000000000000128 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 0000000000000000000000FC /* zstd.xcodeproj */;
+			proxyType = 2;
+			remoteGlobalIDString = 000000000000000000000088;
+			remoteInfo = pool;
+		};
+		00000000000000000000012B /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 0000000000000000000000FC /* zstd.xcodeproj */;
+			proxyType = 2;
+			remoteGlobalIDString = 00000000000000000000005C;
+			remoteInfo = threading;
+		};
+		00000000000000000000012E /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 0000000000000000000000FC /* zstd.xcodeproj */;
+			proxyType = 2;
+			remoteGlobalIDString = 000000000000000000000053;
+			remoteInfo = xxhash;
+		};
+		000000000000000000000131 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 0000000000000000000000FC /* zstd.xcodeproj */;
+			proxyType = 2;
+			remoteGlobalIDString = 00000000000000000000007F;
+			remoteInfo = zstd_common;
+		};
+		000000000000000000000134 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 0000000000000000000000FC /* zstd.xcodeproj */;
+			proxyType = 2;
+			remoteGlobalIDString = 0000000000000000000000A0;
+			remoteInfo = legacy;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXFileReference section */
+		000000000000000000000017 /* blobject.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; name = blobject.xcodeproj; path = ../blobject/blobject.xcodeproj; sourceTree = "<group>"; };
+		000000000000000000000034 /* my_depend.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; name = my_depend.xcodeproj; path = ../my_depend/my_depend.xcodeproj; sourceTree = "<group>"; };
+		000000000000000000000046 /* nasmproj.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; name = nasmproj.xcodeproj; path = ../nasmproj/nasmproj.xcodeproj; sourceTree = "<group>"; };
+		0000000000000000000000FC /* zstd.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; name = zstd.xcodeproj; path = ../zstd/zstd.xcodeproj; sourceTree = "<group>"; };
+		0000000000000000000000FD /* libmylib.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libmylib.a; sourceTree = BUILT_PRODUCTS_DIR; };
+		0000000000000000000000FF /* mylib.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = mylib.cpp; path = /Users/travers/Projects/catapult/test_data/test_01/mylib.cpp; sourceTree = "<group>"; };
+		000000000000000000000106 /* myexe */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = myexe; sourceTree = BUILT_PRODUCTS_DIR; };
+		000000000000000000000108 /* main.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = main.cpp; path = /Users/travers/Projects/catapult/test_data/test_01/main.cpp; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		000000000000000000000101 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		00000000000000000000010A /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				00000000000000000000010B /* libmylib.a in Frameworks */,
+				00000000000000000000010E /* libmy_depend_lib.a in Frameworks */,
+				000000000000000000000111 /* libblobject.a in Frameworks */,
+				000000000000000000000114 /* libnasmobjs.a in Frameworks */,
+				000000000000000000000117 /* libcompress.a in Frameworks */,
+				00000000000000000000011A /* libdecompress.a in Frameworks */,
+				00000000000000000000011D /* libdeprecated.a in Frameworks */,
+				000000000000000000000120 /* libdebug.a in Frameworks */,
+				000000000000000000000123 /* libentropy.a in Frameworks */,
+				000000000000000000000126 /* liberrors.a in Frameworks */,
+				000000000000000000000129 /* libpool.a in Frameworks */,
+				00000000000000000000012C /* libthreading.a in Frameworks */,
+				00000000000000000000012F /* libxxhash.a in Frameworks */,
+				000000000000000000000132 /* libzstd_common.a in Frameworks */,
+				000000000000000000000135 /* liblegacy.a in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		00000000000000000000013A /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				0000000000000000000000FD /* libmylib.a */,
+				000000000000000000000106 /* myexe */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		00000000000000000000013B /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				000000000000000000000034 /* my_depend.xcodeproj */,
+				000000000000000000000017 /* blobject.xcodeproj */,
+				000000000000000000000046 /* nasmproj.xcodeproj */,
+				0000000000000000000000FC /* zstd.xcodeproj */,
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
+		00000000000000000000013C /* myexe */ = {
+			isa = PBXGroup;
+			children = (
+				000000000000000000000108 /* main.cpp */,
+			);
+			path = myexe;
+			sourceTree = "<group>";
+		};
+		00000000000000000000013D /* mylib */ = {
+			isa = PBXGroup;
+			children = (
+				0000000000000000000000FF /* mylib.cpp */,
+			);
+			path = mylib;
+			sourceTree = "<group>";
+		};
+		00000000000000000000013E = {
+			isa = PBXGroup;
+			children = (
+				00000000000000000000013C /* myexe */,
+				00000000000000000000013D /* mylib */,
+				00000000000000000000013A /* Products */,
+				00000000000000000000013B /* Frameworks */,
+			);
+			sourceTree = "<group>";
+		};
+		000000000000000000000140 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				00000000000000000000010C /* libmy_depend_lib.a */,
+			);
+			name = Products;
+			sourceTree = "<group";
+		};
+		000000000000000000000141 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				00000000000000000000010F /* libblobject.a */,
+			);
+			name = Products;
+			sourceTree = "<group";
+		};
+		000000000000000000000142 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				000000000000000000000112 /* libnasmobjs.a */,
+			);
+			name = Products;
+			sourceTree = "<group";
+		};
+		000000000000000000000143 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				000000000000000000000115 /* libcompress.a */,
+				000000000000000000000118 /* libdecompress.a */,
+				00000000000000000000011B /* libdeprecated.a */,
+				00000000000000000000011E /* libdebug.a */,
+				000000000000000000000121 /* libentropy.a */,
+				000000000000000000000124 /* liberrors.a */,
+				000000000000000000000127 /* libpool.a */,
+				00000000000000000000012A /* libthreading.a */,
+				00000000000000000000012D /* libxxhash.a */,
+				000000000000000000000130 /* libzstd_common.a */,
+				000000000000000000000133 /* liblegacy.a */,
+			);
+			name = Products;
+			sourceTree = "<group";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		000000000000000000000105 /* mylib */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 000000000000000000000102 /* Build configuration list for PBXNativeTarget "mylib" */;
+			buildPhases = (
+				0000000000000000000000FE /* Sources */,
+				000000000000000000000101 /* Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = mylib;
+			productName = mylib;
+			productReference = 0000000000000000000000FD /* libmylib.a */;
+			productType = "com.apple.product-type.library.static";
+		};
+		000000000000000000000139 /* myexe */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 000000000000000000000136 /* Build configuration list for PBXNativeTarget "myexe" */;
+			buildPhases = (
+				000000000000000000000107 /* Sources */,
+				00000000000000000000010A /* Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = myexe;
+			productName = myexe;
+			productReference = 000000000000000000000106 /* myexe */;
+			productType = "com.apple.product-type.tool";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		00000000000000000000013F /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = 1;
+				LastUpgradeCheck = 1540;
+				TargetAttributes = {
+					000000000000000000000105 = {
+						CreatedOnToolsVersion = 15.4;
+					};
+					000000000000000000000139 = {
+						CreatedOnToolsVersion = 15.4;
+					};
+				};
+			};
+			buildConfigurationList = 000000000000000000000001 /* Build configuration list for PBXProject "test_one" */;
+			compatibilityVersion = "Xcode 14.0";
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				Base,
+			);
+			mainGroup = 00000000000000000000013E;
+			productRefGroup = 00000000000000000000013A /* Products */;
+			projectDirPath = "";
+			projectReferences = (
+				{
+					ProductGroup = 000000000000000000000141 /* Products */;
+					ProjectRef = 000000000000000000000017 /* blobject.xcodeproj */;
+				},
+				{
+					ProductGroup = 000000000000000000000140 /* Products */;
+					ProjectRef = 000000000000000000000034 /* my_depend.xcodeproj */;
+				},
+				{
+					ProductGroup = 000000000000000000000142 /* Products */;
+					ProjectRef = 000000000000000000000046 /* nasmproj.xcodeproj */;
+				},
+				{
+					ProductGroup = 000000000000000000000143 /* Products */;
+					ProjectRef = 0000000000000000000000FC /* zstd.xcodeproj */;
+				},
+			);
+			projectRoot = "";
+			targets = (
+				000000000000000000000105 /* mylib */,
+				000000000000000000000139 /* myexe */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXReferenceProxy section */
+		00000000000000000000010C /* libmy_depend_lib.a */ = {
+			isa = PBXReferenceProxy;
+			fileType = archive.ar;
+			path = libmy_depend_lib.a;
+			remoteRef = 00000000000000000000010D /* PBXContainerItemProxy */;
+			sourceTree = BUILT_PRODUCTS_DIR;
+		};
+		00000000000000000000010F /* libblobject.a */ = {
+			isa = PBXReferenceProxy;
+			fileType = archive.ar;
+			path = libblobject.a;
+			remoteRef = 000000000000000000000110 /* PBXContainerItemProxy */;
+			sourceTree = BUILT_PRODUCTS_DIR;
+		};
+		000000000000000000000112 /* libnasmobjs.a */ = {
+			isa = PBXReferenceProxy;
+			fileType = archive.ar;
+			path = libnasmobjs.a;
+			remoteRef = 000000000000000000000113 /* PBXContainerItemProxy */;
+			sourceTree = BUILT_PRODUCTS_DIR;
+		};
+		000000000000000000000115 /* libcompress.a */ = {
+			isa = PBXReferenceProxy;
+			fileType = archive.ar;
+			path = libcompress.a;
+			remoteRef = 000000000000000000000116 /* PBXContainerItemProxy */;
+			sourceTree = BUILT_PRODUCTS_DIR;
+		};
+		000000000000000000000118 /* libdecompress.a */ = {
+			isa = PBXReferenceProxy;
+			fileType = archive.ar;
+			path = libdecompress.a;
+			remoteRef = 000000000000000000000119 /* PBXContainerItemProxy */;
+			sourceTree = BUILT_PRODUCTS_DIR;
+		};
+		00000000000000000000011B /* libdeprecated.a */ = {
+			isa = PBXReferenceProxy;
+			fileType = archive.ar;
+			path = libdeprecated.a;
+			remoteRef = 00000000000000000000011C /* PBXContainerItemProxy */;
+			sourceTree = BUILT_PRODUCTS_DIR;
+		};
+		00000000000000000000011E /* libdebug.a */ = {
+			isa = PBXReferenceProxy;
+			fileType = archive.ar;
+			path = libdebug.a;
+			remoteRef = 00000000000000000000011F /* PBXContainerItemProxy */;
+			sourceTree = BUILT_PRODUCTS_DIR;
+		};
+		000000000000000000000121 /* libentropy.a */ = {
+			isa = PBXReferenceProxy;
+			fileType = archive.ar;
+			path = libentropy.a;
+			remoteRef = 000000000000000000000122 /* PBXContainerItemProxy */;
+			sourceTree = BUILT_PRODUCTS_DIR;
+		};
+		000000000000000000000124 /* liberrors.a */ = {
+			isa = PBXReferenceProxy;
+			fileType = archive.ar;
+			path = liberrors.a;
+			remoteRef = 000000000000000000000125 /* PBXContainerItemProxy */;
+			sourceTree = BUILT_PRODUCTS_DIR;
+		};
+		000000000000000000000127 /* libpool.a */ = {
+			isa = PBXReferenceProxy;
+			fileType = archive.ar;
+			path = libpool.a;
+			remoteRef = 000000000000000000000128 /* PBXContainerItemProxy */;
+			sourceTree = BUILT_PRODUCTS_DIR;
+		};
+		00000000000000000000012A /* libthreading.a */ = {
+			isa = PBXReferenceProxy;
+			fileType = archive.ar;
+			path = libthreading.a;
+			remoteRef = 00000000000000000000012B /* PBXContainerItemProxy */;
+			sourceTree = BUILT_PRODUCTS_DIR;
+		};
+		00000000000000000000012D /* libxxhash.a */ = {
+			isa = PBXReferenceProxy;
+			fileType = archive.ar;
+			path = libxxhash.a;
+			remoteRef = 00000000000000000000012E /* PBXContainerItemProxy */;
+			sourceTree = BUILT_PRODUCTS_DIR;
+		};
+		000000000000000000000130 /* libzstd_common.a */ = {
+			isa = PBXReferenceProxy;
+			fileType = archive.ar;
+			path = libzstd_common.a;
+			remoteRef = 000000000000000000000131 /* PBXContainerItemProxy */;
+			sourceTree = BUILT_PRODUCTS_DIR;
+		};
+		000000000000000000000133 /* liblegacy.a */ = {
+			isa = PBXReferenceProxy;
+			fileType = archive.ar;
+			path = liblegacy.a;
+			remoteRef = 000000000000000000000134 /* PBXContainerItemProxy */;
+			sourceTree = BUILT_PRODUCTS_DIR;
+		};
+/* End PBXReferenceProxy section */
+
+/* Begin PBXSourcesBuildPhase section */
+		0000000000000000000000FE /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				000000000000000000000100 /* mylib.cpp in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		000000000000000000000107 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				000000000000000000000109 /* main.cpp in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin XCBuildConfiguration section */
+		000000000000000000000002 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "\"c++17\"";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = c17;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MACOSX_DEPLOYMENT_TARGET = 14.5;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = macosx;
+			};
+			name = Debug;
+		};
+		000000000000000000000003 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "\"c++17\"";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = c17;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MACOSX_DEPLOYMENT_TARGET = 14.5;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				SDKROOT = macosx;
+			};
+			name = Release;
+		};
+		000000000000000000000103 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ARCHS = (
+					x86_64,
+					arm64,
+				);
+				CODE_SIGN_STYLE = Automatic;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				HEADER_SEARCH_PATHS = (
+					/Users/travers/Projects/catapult/test_data/test_01/submodules/my_depend,
+					/Users/travers/Projects/catapult/test_data/test_01,
+				);
+				OTHER_CFLAGS = "-fgnu-keywords";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				STRINGS_FILE_OUTPUT_ENCODING = "UTF-8";
+			};
+			name = Debug;
+		};
+		000000000000000000000104 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ARCHS = "$(ARCHS_STANDARD)";
+				CODE_SIGN_STYLE = Automatic;
+				GCC_OPTIMIZATION_LEVEL = 2;
+				HEADER_SEARCH_PATHS = (
+					/Users/travers/Projects/catapult/test_data/test_01/submodules/my_depend,
+					/Users/travers/Projects/catapult/test_data/test_01,
+				);
+				OTHER_CFLAGS = "-fgnu-keywords";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				STRINGS_FILE_OUTPUT_ENCODING = "UTF-8";
+			};
+			name = Release;
+		};
+		000000000000000000000137 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ARCHS = (
+					x86_64,
+					arm64,
+				);
+				CODE_SIGN_STYLE = Automatic;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				HEADER_SEARCH_PATHS = (
+					/Users/travers/Projects/catapult/test_data/test_01/submodules/my_depend,
+					/Users/travers/Projects/catapult/test_data/test_01,
+					/Users/travers/Projects/catapult/test_data/test_01/submodules/blobject,
+					/Users/travers/Projects/catapult/test_data/test_01/submodules/nasmproj,
+					"/Users/travers/Library/Caches/catapult/cache/zstd/travbid/main/zstd-1.5.5/lib/common",
+					"/Users/travers/Library/Caches/catapult/cache/zstd/travbid/main/zstd-1.5.5/lib",
+					"/Users/travers/Library/Caches/catapult/cache/zstd/travbid/main/zstd-1.5.5/lib/compress",
+					"/Users/travers/Library/Caches/catapult/cache/zstd/travbid/main/zstd-1.5.5/lib/legacy",
+					"/Users/travers/Library/Caches/catapult/cache/zstd/travbid/main/zstd-1.5.5/lib/deprecated",
+				);
+				OTHER_CFLAGS = "-fgnu-keywords";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				STRINGS_FILE_OUTPUT_ENCODING = "UTF-8";
+			};
+			name = Debug;
+		};
+		000000000000000000000138 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ARCHS = "$(ARCHS_STANDARD)";
+				CODE_SIGN_STYLE = Automatic;
+				GCC_OPTIMIZATION_LEVEL = 2;
+				HEADER_SEARCH_PATHS = (
+					/Users/travers/Projects/catapult/test_data/test_01/submodules/my_depend,
+					/Users/travers/Projects/catapult/test_data/test_01,
+					/Users/travers/Projects/catapult/test_data/test_01/submodules/blobject,
+					/Users/travers/Projects/catapult/test_data/test_01/submodules/nasmproj,
+					"/Users/travers/Library/Caches/catapult/cache/zstd/travbid/main/zstd-1.5.5/lib/common",
+					"/Users/travers/Library/Caches/catapult/cache/zstd/travbid/main/zstd-1.5.5/lib",
+					"/Users/travers/Library/Caches/catapult/cache/zstd/travbid/main/zstd-1.5.5/lib/compress",
+					"/Users/travers/Library/Caches/catapult/cache/zstd/travbid/main/zstd-1.5.5/lib/legacy",
+					"/Users/travers/Library/Caches/catapult/cache/zstd/travbid/main/zstd-1.5.5/lib/deprecated",
+				);
+				OTHER_CFLAGS = "-fgnu-keywords";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				STRINGS_FILE_OUTPUT_ENCODING = "UTF-8";
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		000000000000000000000001 /* Build configuration list for PBXProject "test_one" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				000000000000000000000002 /* Debug */,
+				000000000000000000000003 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		000000000000000000000102 /* Build configuration list for PBXNativeTarget "mylib" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				000000000000000000000103 /* Debug */,
+				000000000000000000000104 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		000000000000000000000136 /* Build configuration list for PBXNativeTarget "myexe" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				000000000000000000000137 /* Debug */,
+				000000000000000000000138 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = 00000000000000000000013F /* Project object */;
+}

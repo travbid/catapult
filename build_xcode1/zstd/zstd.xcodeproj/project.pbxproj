@@ -1,0 +1,1410 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 56;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		00000000000000000000004D /* zstd-1.5.5/lib/common/debug.c in Sources */ = {isa = PBXBuildFile; fileRef = 00000000000000000000004C /* zstd-1.5.5/lib/common/debug.c */; };
+		000000000000000000000056 /* zstd-1.5.5/lib/common/xxhash.c in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000055 /* zstd-1.5.5/lib/common/xxhash.c */; };
+		00000000000000000000005F /* zstd-1.5.5/lib/common/threading.c in Sources */ = {isa = PBXBuildFile; fileRef = 00000000000000000000005E /* zstd-1.5.5/lib/common/threading.c */; };
+		000000000000000000000068 /* zstd-1.5.5/lib/common/error_private.c in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000067 /* zstd-1.5.5/lib/common/error_private.c */; };
+		000000000000000000000071 /* zstd-1.5.5/lib/common/entropy_common.c in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000070 /* zstd-1.5.5/lib/common/entropy_common.c */; };
+		000000000000000000000073 /* zstd-1.5.5/lib/common/fse_decompress.c in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000072 /* zstd-1.5.5/lib/common/fse_decompress.c */; };
+		000000000000000000000075 /* zstd-1.5.5/lib/compress/fse_compress.c in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000074 /* zstd-1.5.5/lib/compress/fse_compress.c */; };
+		000000000000000000000077 /* zstd-1.5.5/lib/compress/huf_compress.c in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000076 /* zstd-1.5.5/lib/compress/huf_compress.c */; };
+		000000000000000000000079 /* zstd-1.5.5/lib/decompress/huf_decompress.c in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000078 /* zstd-1.5.5/lib/decompress/huf_decompress.c */; };
+		000000000000000000000082 /* zstd-1.5.5/lib/common/zstd_common.c in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000081 /* zstd-1.5.5/lib/common/zstd_common.c */; };
+		00000000000000000000008B /* zstd-1.5.5/lib/common/pool.c in Sources */ = {isa = PBXBuildFile; fileRef = 00000000000000000000008A /* zstd-1.5.5/lib/common/pool.c */; };
+		000000000000000000000094 /* zstd-1.5.5/lib/dictBuilder/cover.c in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000093 /* zstd-1.5.5/lib/dictBuilder/cover.c */; };
+		000000000000000000000096 /* zstd-1.5.5/lib/dictBuilder/divsufsort.c in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000095 /* zstd-1.5.5/lib/dictBuilder/divsufsort.c */; };
+		000000000000000000000098 /* zstd-1.5.5/lib/dictBuilder/fastcover.c in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000097 /* zstd-1.5.5/lib/dictBuilder/fastcover.c */; };
+		00000000000000000000009A /* zstd-1.5.5/lib/dictBuilder/zdict.c in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000099 /* zstd-1.5.5/lib/dictBuilder/zdict.c */; };
+		0000000000000000000000A3 /* zstd-1.5.5/lib/legacy/zstd_v01.c in Sources */ = {isa = PBXBuildFile; fileRef = 0000000000000000000000A2 /* zstd-1.5.5/lib/legacy/zstd_v01.c */; };
+		0000000000000000000000A5 /* zstd-1.5.5/lib/legacy/zstd_v02.c in Sources */ = {isa = PBXBuildFile; fileRef = 0000000000000000000000A4 /* zstd-1.5.5/lib/legacy/zstd_v02.c */; };
+		0000000000000000000000A7 /* zstd-1.5.5/lib/legacy/zstd_v03.c in Sources */ = {isa = PBXBuildFile; fileRef = 0000000000000000000000A6 /* zstd-1.5.5/lib/legacy/zstd_v03.c */; };
+		0000000000000000000000A9 /* zstd-1.5.5/lib/legacy/zstd_v04.c in Sources */ = {isa = PBXBuildFile; fileRef = 0000000000000000000000A8 /* zstd-1.5.5/lib/legacy/zstd_v04.c */; };
+		0000000000000000000000AB /* zstd-1.5.5/lib/legacy/zstd_v05.c in Sources */ = {isa = PBXBuildFile; fileRef = 0000000000000000000000AA /* zstd-1.5.5/lib/legacy/zstd_v05.c */; };
+		0000000000000000000000AD /* zstd-1.5.5/lib/legacy/zstd_v06.c in Sources */ = {isa = PBXBuildFile; fileRef = 0000000000000000000000AC /* zstd-1.5.5/lib/legacy/zstd_v06.c */; };
+		0000000000000000000000AF /* zstd-1.5.5/lib/legacy/zstd_v07.c in Sources */ = {isa = PBXBuildFile; fileRef = 0000000000000000000000AE /* zstd-1.5.5/lib/legacy/zstd_v07.c */; };
+		0000000000000000000000B8 /* zstd-1.5.5/lib/deprecated/zbuff_common.c in Sources */ = {isa = PBXBuildFile; fileRef = 0000000000000000000000B7 /* zstd-1.5.5/lib/deprecated/zbuff_common.c */; };
+		0000000000000000000000BA /* zstd-1.5.5/lib/deprecated/zbuff_compress.c in Sources */ = {isa = PBXBuildFile; fileRef = 0000000000000000000000B9 /* zstd-1.5.5/lib/deprecated/zbuff_compress.c */; };
+		0000000000000000000000BC /* zstd-1.5.5/lib/deprecated/zbuff_decompress.c in Sources */ = {isa = PBXBuildFile; fileRef = 0000000000000000000000BB /* zstd-1.5.5/lib/deprecated/zbuff_decompress.c */; };
+		0000000000000000000000C5 /* zstd-1.5.5/lib/decompress/zstd_ddict.c in Sources */ = {isa = PBXBuildFile; fileRef = 0000000000000000000000C4 /* zstd-1.5.5/lib/decompress/zstd_ddict.c */; };
+		0000000000000000000000C7 /* zstd-1.5.5/lib/decompress/zstd_decompress_block.c in Sources */ = {isa = PBXBuildFile; fileRef = 0000000000000000000000C6 /* zstd-1.5.5/lib/decompress/zstd_decompress_block.c */; };
+		0000000000000000000000C9 /* zstd-1.5.5/lib/decompress/zstd_decompress.c in Sources */ = {isa = PBXBuildFile; fileRef = 0000000000000000000000C8 /* zstd-1.5.5/lib/decompress/zstd_decompress.c */; };
+		0000000000000000000000D2 /* zstd-1.5.5/lib/compress/hist.c in Sources */ = {isa = PBXBuildFile; fileRef = 0000000000000000000000D1 /* zstd-1.5.5/lib/compress/hist.c */; };
+		0000000000000000000000D4 /* zstd-1.5.5/lib/compress/zstd_compress.c in Sources */ = {isa = PBXBuildFile; fileRef = 0000000000000000000000D3 /* zstd-1.5.5/lib/compress/zstd_compress.c */; };
+		0000000000000000000000D6 /* zstd-1.5.5/lib/compress/zstd_compress_literals.c in Sources */ = {isa = PBXBuildFile; fileRef = 0000000000000000000000D5 /* zstd-1.5.5/lib/compress/zstd_compress_literals.c */; };
+		0000000000000000000000D8 /* zstd-1.5.5/lib/compress/zstd_compress_sequences.c in Sources */ = {isa = PBXBuildFile; fileRef = 0000000000000000000000D7 /* zstd-1.5.5/lib/compress/zstd_compress_sequences.c */; };
+		0000000000000000000000DA /* zstd-1.5.5/lib/compress/zstd_compress_superblock.c in Sources */ = {isa = PBXBuildFile; fileRef = 0000000000000000000000D9 /* zstd-1.5.5/lib/compress/zstd_compress_superblock.c */; };
+		0000000000000000000000DC /* zstd-1.5.5/lib/compress/zstd_double_fast.c in Sources */ = {isa = PBXBuildFile; fileRef = 0000000000000000000000DB /* zstd-1.5.5/lib/compress/zstd_double_fast.c */; };
+		0000000000000000000000DE /* zstd-1.5.5/lib/compress/zstd_fast.c in Sources */ = {isa = PBXBuildFile; fileRef = 0000000000000000000000DD /* zstd-1.5.5/lib/compress/zstd_fast.c */; };
+		0000000000000000000000E0 /* zstd-1.5.5/lib/compress/zstd_lazy.c in Sources */ = {isa = PBXBuildFile; fileRef = 0000000000000000000000DF /* zstd-1.5.5/lib/compress/zstd_lazy.c */; };
+		0000000000000000000000E2 /* zstd-1.5.5/lib/compress/zstd_ldm.c in Sources */ = {isa = PBXBuildFile; fileRef = 0000000000000000000000E1 /* zstd-1.5.5/lib/compress/zstd_ldm.c */; };
+		0000000000000000000000E4 /* zstd-1.5.5/lib/compress/zstdmt_compress.c in Sources */ = {isa = PBXBuildFile; fileRef = 0000000000000000000000E3 /* zstd-1.5.5/lib/compress/zstdmt_compress.c */; };
+		0000000000000000000000E6 /* zstd-1.5.5/lib/compress/zstd_opt.c in Sources */ = {isa = PBXBuildFile; fileRef = 0000000000000000000000E5 /* zstd-1.5.5/lib/compress/zstd_opt.c */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXFileReference section */
+		00000000000000000000004A /* libdebug.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libdebug.a; sourceTree = BUILT_PRODUCTS_DIR; };
+		00000000000000000000004C /* zstd-1.5.5/lib/common/debug.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; name = zstd-1.5.5/lib/common/debug.c; path = /Users/travers/Library/Caches/catapult/cache/zstd/travbid/main/zstd-1.5.5/lib/common/debug.c; sourceTree = "<group>"; };
+		000000000000000000000053 /* libxxhash.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libxxhash.a; sourceTree = BUILT_PRODUCTS_DIR; };
+		000000000000000000000055 /* zstd-1.5.5/lib/common/xxhash.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; name = zstd-1.5.5/lib/common/xxhash.c; path = /Users/travers/Library/Caches/catapult/cache/zstd/travbid/main/zstd-1.5.5/lib/common/xxhash.c; sourceTree = "<group>"; };
+		00000000000000000000005C /* libthreading.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libthreading.a; sourceTree = BUILT_PRODUCTS_DIR; };
+		00000000000000000000005E /* zstd-1.5.5/lib/common/threading.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; name = zstd-1.5.5/lib/common/threading.c; path = /Users/travers/Library/Caches/catapult/cache/zstd/travbid/main/zstd-1.5.5/lib/common/threading.c; sourceTree = "<group>"; };
+		000000000000000000000065 /* liberrors.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = liberrors.a; sourceTree = BUILT_PRODUCTS_DIR; };
+		000000000000000000000067 /* zstd-1.5.5/lib/common/error_private.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; name = zstd-1.5.5/lib/common/error_private.c; path = /Users/travers/Library/Caches/catapult/cache/zstd/travbid/main/zstd-1.5.5/lib/common/error_private.c; sourceTree = "<group>"; };
+		00000000000000000000006E /* libentropy.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libentropy.a; sourceTree = BUILT_PRODUCTS_DIR; };
+		000000000000000000000070 /* zstd-1.5.5/lib/common/entropy_common.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; name = zstd-1.5.5/lib/common/entropy_common.c; path = /Users/travers/Library/Caches/catapult/cache/zstd/travbid/main/zstd-1.5.5/lib/common/entropy_common.c; sourceTree = "<group>"; };
+		000000000000000000000072 /* zstd-1.5.5/lib/common/fse_decompress.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; name = zstd-1.5.5/lib/common/fse_decompress.c; path = /Users/travers/Library/Caches/catapult/cache/zstd/travbid/main/zstd-1.5.5/lib/common/fse_decompress.c; sourceTree = "<group>"; };
+		000000000000000000000074 /* zstd-1.5.5/lib/compress/fse_compress.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; name = zstd-1.5.5/lib/compress/fse_compress.c; path = /Users/travers/Library/Caches/catapult/cache/zstd/travbid/main/zstd-1.5.5/lib/compress/fse_compress.c; sourceTree = "<group>"; };
+		000000000000000000000076 /* zstd-1.5.5/lib/compress/huf_compress.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; name = zstd-1.5.5/lib/compress/huf_compress.c; path = /Users/travers/Library/Caches/catapult/cache/zstd/travbid/main/zstd-1.5.5/lib/compress/huf_compress.c; sourceTree = "<group>"; };
+		000000000000000000000078 /* zstd-1.5.5/lib/decompress/huf_decompress.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; name = zstd-1.5.5/lib/decompress/huf_decompress.c; path = /Users/travers/Library/Caches/catapult/cache/zstd/travbid/main/zstd-1.5.5/lib/decompress/huf_decompress.c; sourceTree = "<group>"; };
+		00000000000000000000007F /* libzstd_common.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libzstd_common.a; sourceTree = BUILT_PRODUCTS_DIR; };
+		000000000000000000000081 /* zstd-1.5.5/lib/common/zstd_common.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; name = zstd-1.5.5/lib/common/zstd_common.c; path = /Users/travers/Library/Caches/catapult/cache/zstd/travbid/main/zstd-1.5.5/lib/common/zstd_common.c; sourceTree = "<group>"; };
+		000000000000000000000088 /* libpool.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libpool.a; sourceTree = BUILT_PRODUCTS_DIR; };
+		00000000000000000000008A /* zstd-1.5.5/lib/common/pool.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; name = zstd-1.5.5/lib/common/pool.c; path = /Users/travers/Library/Caches/catapult/cache/zstd/travbid/main/zstd-1.5.5/lib/common/pool.c; sourceTree = "<group>"; };
+		000000000000000000000091 /* libzdict.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libzdict.a; sourceTree = BUILT_PRODUCTS_DIR; };
+		000000000000000000000093 /* zstd-1.5.5/lib/dictBuilder/cover.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; name = zstd-1.5.5/lib/dictBuilder/cover.c; path = /Users/travers/Library/Caches/catapult/cache/zstd/travbid/main/zstd-1.5.5/lib/dictBuilder/cover.c; sourceTree = "<group>"; };
+		000000000000000000000095 /* zstd-1.5.5/lib/dictBuilder/divsufsort.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; name = zstd-1.5.5/lib/dictBuilder/divsufsort.c; path = /Users/travers/Library/Caches/catapult/cache/zstd/travbid/main/zstd-1.5.5/lib/dictBuilder/divsufsort.c; sourceTree = "<group>"; };
+		000000000000000000000097 /* zstd-1.5.5/lib/dictBuilder/fastcover.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; name = zstd-1.5.5/lib/dictBuilder/fastcover.c; path = /Users/travers/Library/Caches/catapult/cache/zstd/travbid/main/zstd-1.5.5/lib/dictBuilder/fastcover.c; sourceTree = "<group>"; };
+		000000000000000000000099 /* zstd-1.5.5/lib/dictBuilder/zdict.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; name = zstd-1.5.5/lib/dictBuilder/zdict.c; path = /Users/travers/Library/Caches/catapult/cache/zstd/travbid/main/zstd-1.5.5/lib/dictBuilder/zdict.c; sourceTree = "<group>"; };
+		0000000000000000000000A0 /* liblegacy.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = liblegacy.a; sourceTree = BUILT_PRODUCTS_DIR; };
+		0000000000000000000000A2 /* zstd-1.5.5/lib/legacy/zstd_v01.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; name = zstd-1.5.5/lib/legacy/zstd_v01.c; path = /Users/travers/Library/Caches/catapult/cache/zstd/travbid/main/zstd-1.5.5/lib/legacy/zstd_v01.c; sourceTree = "<group>"; };
+		0000000000000000000000A4 /* zstd-1.5.5/lib/legacy/zstd_v02.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; name = zstd-1.5.5/lib/legacy/zstd_v02.c; path = /Users/travers/Library/Caches/catapult/cache/zstd/travbid/main/zstd-1.5.5/lib/legacy/zstd_v02.c; sourceTree = "<group>"; };
+		0000000000000000000000A6 /* zstd-1.5.5/lib/legacy/zstd_v03.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; name = zstd-1.5.5/lib/legacy/zstd_v03.c; path = /Users/travers/Library/Caches/catapult/cache/zstd/travbid/main/zstd-1.5.5/lib/legacy/zstd_v03.c; sourceTree = "<group>"; };
+		0000000000000000000000A8 /* zstd-1.5.5/lib/legacy/zstd_v04.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; name = zstd-1.5.5/lib/legacy/zstd_v04.c; path = /Users/travers/Library/Caches/catapult/cache/zstd/travbid/main/zstd-1.5.5/lib/legacy/zstd_v04.c; sourceTree = "<group>"; };
+		0000000000000000000000AA /* zstd-1.5.5/lib/legacy/zstd_v05.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; name = zstd-1.5.5/lib/legacy/zstd_v05.c; path = /Users/travers/Library/Caches/catapult/cache/zstd/travbid/main/zstd-1.5.5/lib/legacy/zstd_v05.c; sourceTree = "<group>"; };
+		0000000000000000000000AC /* zstd-1.5.5/lib/legacy/zstd_v06.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; name = zstd-1.5.5/lib/legacy/zstd_v06.c; path = /Users/travers/Library/Caches/catapult/cache/zstd/travbid/main/zstd-1.5.5/lib/legacy/zstd_v06.c; sourceTree = "<group>"; };
+		0000000000000000000000AE /* zstd-1.5.5/lib/legacy/zstd_v07.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; name = zstd-1.5.5/lib/legacy/zstd_v07.c; path = /Users/travers/Library/Caches/catapult/cache/zstd/travbid/main/zstd-1.5.5/lib/legacy/zstd_v07.c; sourceTree = "<group>"; };
+		0000000000000000000000B5 /* libdeprecated.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libdeprecated.a; sourceTree = BUILT_PRODUCTS_DIR; };
+		0000000000000000000000B7 /* zstd-1.5.5/lib/deprecated/zbuff_common.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; name = zstd-1.5.5/lib/deprecated/zbuff_common.c; path = /Users/travers/Library/Caches/catapult/cache/zstd/travbid/main/zstd-1.5.5/lib/deprecated/zbuff_common.c; sourceTree = "<group>"; };
+		0000000000000000000000B9 /* zstd-1.5.5/lib/deprecated/zbuff_compress.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; name = zstd-1.5.5/lib/deprecated/zbuff_compress.c; path = /Users/travers/Library/Caches/catapult/cache/zstd/travbid/main/zstd-1.5.5/lib/deprecated/zbuff_compress.c; sourceTree = "<group>"; };
+		0000000000000000000000BB /* zstd-1.5.5/lib/deprecated/zbuff_decompress.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; name = zstd-1.5.5/lib/deprecated/zbuff_decompress.c; path = /Users/travers/Library/Caches/catapult/cache/zstd/travbid/main/zstd-1.5.5/lib/deprecated/zbuff_decompress.c; sourceTree = "<group>"; };
+		0000000000000000000000C2 /* libdecompress.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libdecompress.a; sourceTree = BUILT_PRODUCTS_DIR; };
+		0000000000000000000000C4 /* zstd-1.5.5/lib/decompress/zstd_ddict.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; name = zstd-1.5.5/lib/decompress/zstd_ddict.c; path = /Users/travers/Library/Caches/catapult/cache/zstd/travbid/main/zstd-1.5.5/lib/decompress/zstd_ddict.c; sourceTree = "<group>"; };
+		0000000000000000000000C6 /* zstd-1.5.5/lib/decompress/zstd_decompress_block.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; name = zstd-1.5.5/lib/decompress/zstd_decompress_block.c; path = /Users/travers/Library/Caches/catapult/cache/zstd/travbid/main/zstd-1.5.5/lib/decompress/zstd_decompress_block.c; sourceTree = "<group>"; };
+		0000000000000000000000C8 /* zstd-1.5.5/lib/decompress/zstd_decompress.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; name = zstd-1.5.5/lib/decompress/zstd_decompress.c; path = /Users/travers/Library/Caches/catapult/cache/zstd/travbid/main/zstd-1.5.5/lib/decompress/zstd_decompress.c; sourceTree = "<group>"; };
+		0000000000000000000000CF /* libcompress.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libcompress.a; sourceTree = BUILT_PRODUCTS_DIR; };
+		0000000000000000000000D1 /* zstd-1.5.5/lib/compress/hist.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; name = zstd-1.5.5/lib/compress/hist.c; path = /Users/travers/Library/Caches/catapult/cache/zstd/travbid/main/zstd-1.5.5/lib/compress/hist.c; sourceTree = "<group>"; };
+		0000000000000000000000D3 /* zstd-1.5.5/lib/compress/zstd_compress.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; name = zstd-1.5.5/lib/compress/zstd_compress.c; path = /Users/travers/Library/Caches/catapult/cache/zstd/travbid/main/zstd-1.5.5/lib/compress/zstd_compress.c; sourceTree = "<group>"; };
+		0000000000000000000000D5 /* zstd-1.5.5/lib/compress/zstd_compress_literals.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; name = zstd-1.5.5/lib/compress/zstd_compress_literals.c; path = /Users/travers/Library/Caches/catapult/cache/zstd/travbid/main/zstd-1.5.5/lib/compress/zstd_compress_literals.c; sourceTree = "<group>"; };
+		0000000000000000000000D7 /* zstd-1.5.5/lib/compress/zstd_compress_sequences.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; name = zstd-1.5.5/lib/compress/zstd_compress_sequences.c; path = /Users/travers/Library/Caches/catapult/cache/zstd/travbid/main/zstd-1.5.5/lib/compress/zstd_compress_sequences.c; sourceTree = "<group>"; };
+		0000000000000000000000D9 /* zstd-1.5.5/lib/compress/zstd_compress_superblock.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; name = zstd-1.5.5/lib/compress/zstd_compress_superblock.c; path = /Users/travers/Library/Caches/catapult/cache/zstd/travbid/main/zstd-1.5.5/lib/compress/zstd_compress_superblock.c; sourceTree = "<group>"; };
+		0000000000000000000000DB /* zstd-1.5.5/lib/compress/zstd_double_fast.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; name = zstd-1.5.5/lib/compress/zstd_double_fast.c; path = /Users/travers/Library/Caches/catapult/cache/zstd/travbid/main/zstd-1.5.5/lib/compress/zstd_double_fast.c; sourceTree = "<group>"; };
+		0000000000000000000000DD /* zstd-1.5.5/lib/compress/zstd_fast.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; name = zstd-1.5.5/lib/compress/zstd_fast.c; path = /Users/travers/Library/Caches/catapult/cache/zstd/travbid/main/zstd-1.5.5/lib/compress/zstd_fast.c; sourceTree = "<group>"; };
+		0000000000000000000000DF /* zstd-1.5.5/lib/compress/zstd_lazy.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; name = zstd-1.5.5/lib/compress/zstd_lazy.c; path = /Users/travers/Library/Caches/catapult/cache/zstd/travbid/main/zstd-1.5.5/lib/compress/zstd_lazy.c; sourceTree = "<group>"; };
+		0000000000000000000000E1 /* zstd-1.5.5/lib/compress/zstd_ldm.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; name = zstd-1.5.5/lib/compress/zstd_ldm.c; path = /Users/travers/Library/Caches/catapult/cache/zstd/travbid/main/zstd-1.5.5/lib/compress/zstd_ldm.c; sourceTree = "<group>"; };
+		0000000000000000000000E3 /* zstd-1.5.5/lib/compress/zstdmt_compress.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; name = zstd-1.5.5/lib/compress/zstdmt_compress.c; path = /Users/travers/Library/Caches/catapult/cache/zstd/travbid/main/zstd-1.5.5/lib/compress/zstdmt_compress.c; sourceTree = "<group>"; };
+		0000000000000000000000E5 /* zstd-1.5.5/lib/compress/zstd_opt.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; name = zstd-1.5.5/lib/compress/zstd_opt.c; path = /Users/travers/Library/Caches/catapult/cache/zstd/travbid/main/zstd-1.5.5/lib/compress/zstd_opt.c; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		00000000000000000000004E /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		000000000000000000000057 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		000000000000000000000060 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		000000000000000000000069 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		00000000000000000000007A /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		000000000000000000000083 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		00000000000000000000008C /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		00000000000000000000009B /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		0000000000000000000000B0 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		0000000000000000000000BD /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		0000000000000000000000CA /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		0000000000000000000000E7 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		0000000000000000000000EC /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				00000000000000000000004A /* libdebug.a */,
+				000000000000000000000053 /* libxxhash.a */,
+				00000000000000000000005C /* libthreading.a */,
+				000000000000000000000065 /* liberrors.a */,
+				00000000000000000000006E /* libentropy.a */,
+				00000000000000000000007F /* libzstd_common.a */,
+				000000000000000000000088 /* libpool.a */,
+				000000000000000000000091 /* libzdict.a */,
+				0000000000000000000000A0 /* liblegacy.a */,
+				0000000000000000000000B5 /* libdeprecated.a */,
+				0000000000000000000000C2 /* libdecompress.a */,
+				0000000000000000000000CF /* libcompress.a */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		0000000000000000000000ED /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
+		0000000000000000000000EE /* compress */ = {
+			isa = PBXGroup;
+			children = (
+				0000000000000000000000D1 /* zstd-1.5.5/lib/compress/hist.c */,
+				0000000000000000000000D3 /* zstd-1.5.5/lib/compress/zstd_compress.c */,
+				0000000000000000000000D5 /* zstd-1.5.5/lib/compress/zstd_compress_literals.c */,
+				0000000000000000000000D7 /* zstd-1.5.5/lib/compress/zstd_compress_sequences.c */,
+				0000000000000000000000D9 /* zstd-1.5.5/lib/compress/zstd_compress_superblock.c */,
+				0000000000000000000000DB /* zstd-1.5.5/lib/compress/zstd_double_fast.c */,
+				0000000000000000000000DD /* zstd-1.5.5/lib/compress/zstd_fast.c */,
+				0000000000000000000000DF /* zstd-1.5.5/lib/compress/zstd_lazy.c */,
+				0000000000000000000000E1 /* zstd-1.5.5/lib/compress/zstd_ldm.c */,
+				0000000000000000000000E3 /* zstd-1.5.5/lib/compress/zstdmt_compress.c */,
+				0000000000000000000000E5 /* zstd-1.5.5/lib/compress/zstd_opt.c */,
+			);
+			path = compress;
+			sourceTree = "<group>";
+		};
+		0000000000000000000000EF /* decompress */ = {
+			isa = PBXGroup;
+			children = (
+				0000000000000000000000C4 /* zstd-1.5.5/lib/decompress/zstd_ddict.c */,
+				0000000000000000000000C6 /* zstd-1.5.5/lib/decompress/zstd_decompress_block.c */,
+				0000000000000000000000C8 /* zstd-1.5.5/lib/decompress/zstd_decompress.c */,
+			);
+			path = decompress;
+			sourceTree = "<group>";
+		};
+		0000000000000000000000F0 /* deprecated */ = {
+			isa = PBXGroup;
+			children = (
+				0000000000000000000000B7 /* zstd-1.5.5/lib/deprecated/zbuff_common.c */,
+				0000000000000000000000B9 /* zstd-1.5.5/lib/deprecated/zbuff_compress.c */,
+				0000000000000000000000BB /* zstd-1.5.5/lib/deprecated/zbuff_decompress.c */,
+			);
+			path = deprecated;
+			sourceTree = "<group>";
+		};
+		0000000000000000000000F1 /* legacy */ = {
+			isa = PBXGroup;
+			children = (
+				0000000000000000000000A2 /* zstd-1.5.5/lib/legacy/zstd_v01.c */,
+				0000000000000000000000A4 /* zstd-1.5.5/lib/legacy/zstd_v02.c */,
+				0000000000000000000000A6 /* zstd-1.5.5/lib/legacy/zstd_v03.c */,
+				0000000000000000000000A8 /* zstd-1.5.5/lib/legacy/zstd_v04.c */,
+				0000000000000000000000AA /* zstd-1.5.5/lib/legacy/zstd_v05.c */,
+				0000000000000000000000AC /* zstd-1.5.5/lib/legacy/zstd_v06.c */,
+				0000000000000000000000AE /* zstd-1.5.5/lib/legacy/zstd_v07.c */,
+			);
+			path = legacy;
+			sourceTree = "<group>";
+		};
+		0000000000000000000000F2 /* zdict */ = {
+			isa = PBXGroup;
+			children = (
+				000000000000000000000093 /* zstd-1.5.5/lib/dictBuilder/cover.c */,
+				000000000000000000000095 /* zstd-1.5.5/lib/dictBuilder/divsufsort.c */,
+				000000000000000000000097 /* zstd-1.5.5/lib/dictBuilder/fastcover.c */,
+				000000000000000000000099 /* zstd-1.5.5/lib/dictBuilder/zdict.c */,
+			);
+			path = zdict;
+			sourceTree = "<group>";
+		};
+		0000000000000000000000F3 /* pool */ = {
+			isa = PBXGroup;
+			children = (
+				00000000000000000000008A /* zstd-1.5.5/lib/common/pool.c */,
+			);
+			path = pool;
+			sourceTree = "<group>";
+		};
+		0000000000000000000000F4 /* zstd_common */ = {
+			isa = PBXGroup;
+			children = (
+				000000000000000000000081 /* zstd-1.5.5/lib/common/zstd_common.c */,
+			);
+			path = zstd_common;
+			sourceTree = "<group>";
+		};
+		0000000000000000000000F5 /* entropy */ = {
+			isa = PBXGroup;
+			children = (
+				000000000000000000000070 /* zstd-1.5.5/lib/common/entropy_common.c */,
+				000000000000000000000072 /* zstd-1.5.5/lib/common/fse_decompress.c */,
+				000000000000000000000074 /* zstd-1.5.5/lib/compress/fse_compress.c */,
+				000000000000000000000076 /* zstd-1.5.5/lib/compress/huf_compress.c */,
+				000000000000000000000078 /* zstd-1.5.5/lib/decompress/huf_decompress.c */,
+			);
+			path = entropy;
+			sourceTree = "<group>";
+		};
+		0000000000000000000000F6 /* errors */ = {
+			isa = PBXGroup;
+			children = (
+				000000000000000000000067 /* zstd-1.5.5/lib/common/error_private.c */,
+			);
+			path = errors;
+			sourceTree = "<group>";
+		};
+		0000000000000000000000F7 /* threading */ = {
+			isa = PBXGroup;
+			children = (
+				00000000000000000000005E /* zstd-1.5.5/lib/common/threading.c */,
+			);
+			path = threading;
+			sourceTree = "<group>";
+		};
+		0000000000000000000000F8 /* xxhash */ = {
+			isa = PBXGroup;
+			children = (
+				000000000000000000000055 /* zstd-1.5.5/lib/common/xxhash.c */,
+			);
+			path = xxhash;
+			sourceTree = "<group>";
+		};
+		0000000000000000000000F9 /* debug */ = {
+			isa = PBXGroup;
+			children = (
+				00000000000000000000004C /* zstd-1.5.5/lib/common/debug.c */,
+			);
+			path = debug;
+			sourceTree = "<group>";
+		};
+		0000000000000000000000FA = {
+			isa = PBXGroup;
+			children = (
+				0000000000000000000000EE /* compress */,
+				0000000000000000000000EF /* decompress */,
+				0000000000000000000000F0 /* deprecated */,
+				0000000000000000000000F1 /* legacy */,
+				0000000000000000000000F2 /* zdict */,
+				0000000000000000000000F3 /* pool */,
+				0000000000000000000000F4 /* zstd_common */,
+				0000000000000000000000F5 /* entropy */,
+				0000000000000000000000F6 /* errors */,
+				0000000000000000000000F7 /* threading */,
+				0000000000000000000000F8 /* xxhash */,
+				0000000000000000000000F9 /* debug */,
+				0000000000000000000000EC /* Products */,
+				0000000000000000000000ED /* Frameworks */,
+			);
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		000000000000000000000052 /* debug */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 00000000000000000000004F /* Build configuration list for PBXNativeTarget "debug" */;
+			buildPhases = (
+				00000000000000000000004B /* Sources */,
+				00000000000000000000004E /* Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = debug;
+			productName = debug;
+			productReference = 00000000000000000000004A /* libdebug.a */;
+			productType = "com.apple.product-type.library.static";
+		};
+		00000000000000000000005B /* xxhash */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 000000000000000000000058 /* Build configuration list for PBXNativeTarget "xxhash" */;
+			buildPhases = (
+				000000000000000000000054 /* Sources */,
+				000000000000000000000057 /* Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = xxhash;
+			productName = xxhash;
+			productReference = 000000000000000000000053 /* libxxhash.a */;
+			productType = "com.apple.product-type.library.static";
+		};
+		000000000000000000000064 /* threading */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 000000000000000000000061 /* Build configuration list for PBXNativeTarget "threading" */;
+			buildPhases = (
+				00000000000000000000005D /* Sources */,
+				000000000000000000000060 /* Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = threading;
+			productName = threading;
+			productReference = 00000000000000000000005C /* libthreading.a */;
+			productType = "com.apple.product-type.library.static";
+		};
+		00000000000000000000006D /* errors */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 00000000000000000000006A /* Build configuration list for PBXNativeTarget "errors" */;
+			buildPhases = (
+				000000000000000000000066 /* Sources */,
+				000000000000000000000069 /* Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = errors;
+			productName = errors;
+			productReference = 000000000000000000000065 /* liberrors.a */;
+			productType = "com.apple.product-type.library.static";
+		};
+		00000000000000000000007E /* entropy */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 00000000000000000000007B /* Build configuration list for PBXNativeTarget "entropy" */;
+			buildPhases = (
+				00000000000000000000006F /* Sources */,
+				00000000000000000000007A /* Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = entropy;
+			productName = entropy;
+			productReference = 00000000000000000000006E /* libentropy.a */;
+			productType = "com.apple.product-type.library.static";
+		};
+		000000000000000000000087 /* zstd_common */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 000000000000000000000084 /* Build configuration list for PBXNativeTarget "zstd_common" */;
+			buildPhases = (
+				000000000000000000000080 /* Sources */,
+				000000000000000000000083 /* Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = zstd_common;
+			productName = zstd_common;
+			productReference = 00000000000000000000007F /* libzstd_common.a */;
+			productType = "com.apple.product-type.library.static";
+		};
+		000000000000000000000090 /* pool */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 00000000000000000000008D /* Build configuration list for PBXNativeTarget "pool" */;
+			buildPhases = (
+				000000000000000000000089 /* Sources */,
+				00000000000000000000008C /* Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = pool;
+			productName = pool;
+			productReference = 000000000000000000000088 /* libpool.a */;
+			productType = "com.apple.product-type.library.static";
+		};
+		00000000000000000000009F /* zdict */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 00000000000000000000009C /* Build configuration list for PBXNativeTarget "zdict" */;
+			buildPhases = (
+				000000000000000000000092 /* Sources */,
+				00000000000000000000009B /* Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = zdict;
+			productName = zdict;
+			productReference = 000000000000000000000091 /* libzdict.a */;
+			productType = "com.apple.product-type.library.static";
+		};
+		0000000000000000000000B4 /* legacy */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 0000000000000000000000B1 /* Build configuration list for PBXNativeTarget "legacy" */;
+			buildPhases = (
+				0000000000000000000000A1 /* Sources */,
+				0000000000000000000000B0 /* Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = legacy;
+			productName = legacy;
+			productReference = 0000000000000000000000A0 /* liblegacy.a */;
+			productType = "com.apple.product-type.library.static";
+		};
+		0000000000000000000000C1 /* deprecated */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 0000000000000000000000BE /* Build configuration list for PBXNativeTarget "deprecated" */;
+			buildPhases = (
+				0000000000000000000000B6 /* Sources */,
+				0000000000000000000000BD /* Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = deprecated;
+			productName = deprecated;
+			productReference = 0000000000000000000000B5 /* libdeprecated.a */;
+			productType = "com.apple.product-type.library.static";
+		};
+		0000000000000000000000CE /* decompress */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 0000000000000000000000CB /* Build configuration list for PBXNativeTarget "decompress" */;
+			buildPhases = (
+				0000000000000000000000C3 /* Sources */,
+				0000000000000000000000CA /* Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = decompress;
+			productName = decompress;
+			productReference = 0000000000000000000000C2 /* libdecompress.a */;
+			productType = "com.apple.product-type.library.static";
+		};
+		0000000000000000000000EB /* compress */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 0000000000000000000000E8 /* Build configuration list for PBXNativeTarget "compress" */;
+			buildPhases = (
+				0000000000000000000000D0 /* Sources */,
+				0000000000000000000000E7 /* Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = compress;
+			productName = compress;
+			productReference = 0000000000000000000000CF /* libcompress.a */;
+			productType = "com.apple.product-type.library.static";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		0000000000000000000000FB /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = 1;
+				LastUpgradeCheck = 1540;
+				TargetAttributes = {
+					000000000000000000000052 = {
+						CreatedOnToolsVersion = 15.4;
+					};
+					00000000000000000000005B = {
+						CreatedOnToolsVersion = 15.4;
+					};
+					000000000000000000000064 = {
+						CreatedOnToolsVersion = 15.4;
+					};
+					00000000000000000000006D = {
+						CreatedOnToolsVersion = 15.4;
+					};
+					00000000000000000000007E = {
+						CreatedOnToolsVersion = 15.4;
+					};
+					000000000000000000000087 = {
+						CreatedOnToolsVersion = 15.4;
+					};
+					000000000000000000000090 = {
+						CreatedOnToolsVersion = 15.4;
+					};
+					00000000000000000000009F = {
+						CreatedOnToolsVersion = 15.4;
+					};
+					0000000000000000000000B4 = {
+						CreatedOnToolsVersion = 15.4;
+					};
+					0000000000000000000000C1 = {
+						CreatedOnToolsVersion = 15.4;
+					};
+					0000000000000000000000CE = {
+						CreatedOnToolsVersion = 15.4;
+					};
+					0000000000000000000000EB = {
+						CreatedOnToolsVersion = 15.4;
+					};
+				};
+			};
+			buildConfigurationList = 000000000000000000000047 /* Build configuration list for PBXProject "zstd" */;
+			compatibilityVersion = "Xcode 14.0";
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				Base,
+			);
+			mainGroup = 0000000000000000000000FA;
+			productRefGroup = 0000000000000000000000EC /* Products */;
+			projectDirPath = "";
+			projectReferences = (
+			);
+			projectRoot = "";
+			targets = (
+				000000000000000000000052 /* debug */,
+				00000000000000000000005B /* xxhash */,
+				000000000000000000000064 /* threading */,
+				00000000000000000000006D /* errors */,
+				00000000000000000000007E /* entropy */,
+				000000000000000000000087 /* zstd_common */,
+				000000000000000000000090 /* pool */,
+				00000000000000000000009F /* zdict */,
+				0000000000000000000000B4 /* legacy */,
+				0000000000000000000000C1 /* deprecated */,
+				0000000000000000000000CE /* decompress */,
+				0000000000000000000000EB /* compress */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXSourcesBuildPhase section */
+		00000000000000000000004B /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				00000000000000000000004D /* zstd-1.5.5/lib/common/debug.c in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		000000000000000000000054 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				000000000000000000000056 /* zstd-1.5.5/lib/common/xxhash.c in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		00000000000000000000005D /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				00000000000000000000005F /* zstd-1.5.5/lib/common/threading.c in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		000000000000000000000066 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				000000000000000000000068 /* zstd-1.5.5/lib/common/error_private.c in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		00000000000000000000006F /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				000000000000000000000071 /* zstd-1.5.5/lib/common/entropy_common.c in Sources */,
+				000000000000000000000073 /* zstd-1.5.5/lib/common/fse_decompress.c in Sources */,
+				000000000000000000000075 /* zstd-1.5.5/lib/compress/fse_compress.c in Sources */,
+				000000000000000000000077 /* zstd-1.5.5/lib/compress/huf_compress.c in Sources */,
+				000000000000000000000079 /* zstd-1.5.5/lib/decompress/huf_decompress.c in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		000000000000000000000080 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				000000000000000000000082 /* zstd-1.5.5/lib/common/zstd_common.c in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		000000000000000000000089 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				00000000000000000000008B /* zstd-1.5.5/lib/common/pool.c in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		000000000000000000000092 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				000000000000000000000094 /* zstd-1.5.5/lib/dictBuilder/cover.c in Sources */,
+				000000000000000000000096 /* zstd-1.5.5/lib/dictBuilder/divsufsort.c in Sources */,
+				000000000000000000000098 /* zstd-1.5.5/lib/dictBuilder/fastcover.c in Sources */,
+				00000000000000000000009A /* zstd-1.5.5/lib/dictBuilder/zdict.c in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		0000000000000000000000A1 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				0000000000000000000000A3 /* zstd-1.5.5/lib/legacy/zstd_v01.c in Sources */,
+				0000000000000000000000A5 /* zstd-1.5.5/lib/legacy/zstd_v02.c in Sources */,
+				0000000000000000000000A7 /* zstd-1.5.5/lib/legacy/zstd_v03.c in Sources */,
+				0000000000000000000000A9 /* zstd-1.5.5/lib/legacy/zstd_v04.c in Sources */,
+				0000000000000000000000AB /* zstd-1.5.5/lib/legacy/zstd_v05.c in Sources */,
+				0000000000000000000000AD /* zstd-1.5.5/lib/legacy/zstd_v06.c in Sources */,
+				0000000000000000000000AF /* zstd-1.5.5/lib/legacy/zstd_v07.c in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		0000000000000000000000B6 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				0000000000000000000000B8 /* zstd-1.5.5/lib/deprecated/zbuff_common.c in Sources */,
+				0000000000000000000000BA /* zstd-1.5.5/lib/deprecated/zbuff_compress.c in Sources */,
+				0000000000000000000000BC /* zstd-1.5.5/lib/deprecated/zbuff_decompress.c in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		0000000000000000000000C3 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				0000000000000000000000C5 /* zstd-1.5.5/lib/decompress/zstd_ddict.c in Sources */,
+				0000000000000000000000C7 /* zstd-1.5.5/lib/decompress/zstd_decompress_block.c in Sources */,
+				0000000000000000000000C9 /* zstd-1.5.5/lib/decompress/zstd_decompress.c in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		0000000000000000000000D0 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				0000000000000000000000D2 /* zstd-1.5.5/lib/compress/hist.c in Sources */,
+				0000000000000000000000D4 /* zstd-1.5.5/lib/compress/zstd_compress.c in Sources */,
+				0000000000000000000000D6 /* zstd-1.5.5/lib/compress/zstd_compress_literals.c in Sources */,
+				0000000000000000000000D8 /* zstd-1.5.5/lib/compress/zstd_compress_sequences.c in Sources */,
+				0000000000000000000000DA /* zstd-1.5.5/lib/compress/zstd_compress_superblock.c in Sources */,
+				0000000000000000000000DC /* zstd-1.5.5/lib/compress/zstd_double_fast.c in Sources */,
+				0000000000000000000000DE /* zstd-1.5.5/lib/compress/zstd_fast.c in Sources */,
+				0000000000000000000000E0 /* zstd-1.5.5/lib/compress/zstd_lazy.c in Sources */,
+				0000000000000000000000E2 /* zstd-1.5.5/lib/compress/zstd_ldm.c in Sources */,
+				0000000000000000000000E4 /* zstd-1.5.5/lib/compress/zstdmt_compress.c in Sources */,
+				0000000000000000000000E6 /* zstd-1.5.5/lib/compress/zstd_opt.c in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin XCBuildConfiguration section */
+		000000000000000000000048 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "\"c++17\"";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = c17;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MACOSX_DEPLOYMENT_TARGET = 14.5;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = macosx;
+			};
+			name = Debug;
+		};
+		000000000000000000000049 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "\"c++17\"";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = c17;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MACOSX_DEPLOYMENT_TARGET = 14.5;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				SDKROOT = macosx;
+			};
+			name = Release;
+		};
+		000000000000000000000050 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ARCHS = (
+					x86_64,
+					arm64,
+				);
+				CODE_SIGN_STYLE = Automatic;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				HEADER_SEARCH_PATHS = "/Users/travers/Library/Caches/catapult/cache/zstd/travbid/main/zstd-1.5.5/lib/common";
+				OTHER_CFLAGS = "-fgnu-keywords";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				STRINGS_FILE_OUTPUT_ENCODING = "UTF-8";
+			};
+			name = Debug;
+		};
+		000000000000000000000051 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ARCHS = "$(ARCHS_STANDARD)";
+				CODE_SIGN_STYLE = Automatic;
+				GCC_OPTIMIZATION_LEVEL = 2;
+				HEADER_SEARCH_PATHS = "/Users/travers/Library/Caches/catapult/cache/zstd/travbid/main/zstd-1.5.5/lib/common";
+				OTHER_CFLAGS = "-fgnu-keywords";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				STRINGS_FILE_OUTPUT_ENCODING = "UTF-8";
+			};
+			name = Release;
+		};
+		000000000000000000000059 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ARCHS = (
+					x86_64,
+					arm64,
+				);
+				CODE_SIGN_STYLE = Automatic;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				HEADER_SEARCH_PATHS = "/Users/travers/Library/Caches/catapult/cache/zstd/travbid/main/zstd-1.5.5/lib/common";
+				OTHER_CFLAGS = "-fgnu-keywords";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				STRINGS_FILE_OUTPUT_ENCODING = "UTF-8";
+			};
+			name = Debug;
+		};
+		00000000000000000000005A /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ARCHS = "$(ARCHS_STANDARD)";
+				CODE_SIGN_STYLE = Automatic;
+				GCC_OPTIMIZATION_LEVEL = 2;
+				HEADER_SEARCH_PATHS = "/Users/travers/Library/Caches/catapult/cache/zstd/travbid/main/zstd-1.5.5/lib/common";
+				OTHER_CFLAGS = "-fgnu-keywords";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				STRINGS_FILE_OUTPUT_ENCODING = "UTF-8";
+			};
+			name = Release;
+		};
+		000000000000000000000062 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ARCHS = (
+					x86_64,
+					arm64,
+				);
+				CODE_SIGN_STYLE = Automatic;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				HEADER_SEARCH_PATHS = "/Users/travers/Library/Caches/catapult/cache/zstd/travbid/main/zstd-1.5.5/lib/common";
+				OTHER_CFLAGS = "-fgnu-keywords";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				STRINGS_FILE_OUTPUT_ENCODING = "UTF-8";
+			};
+			name = Debug;
+		};
+		000000000000000000000063 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ARCHS = "$(ARCHS_STANDARD)";
+				CODE_SIGN_STYLE = Automatic;
+				GCC_OPTIMIZATION_LEVEL = 2;
+				HEADER_SEARCH_PATHS = "/Users/travers/Library/Caches/catapult/cache/zstd/travbid/main/zstd-1.5.5/lib/common";
+				OTHER_CFLAGS = "-fgnu-keywords";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				STRINGS_FILE_OUTPUT_ENCODING = "UTF-8";
+			};
+			name = Release;
+		};
+		00000000000000000000006B /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ARCHS = (
+					x86_64,
+					arm64,
+				);
+				CODE_SIGN_STYLE = Automatic;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				HEADER_SEARCH_PATHS = (
+					"/Users/travers/Library/Caches/catapult/cache/zstd/travbid/main/zstd-1.5.5/lib",
+					"/Users/travers/Library/Caches/catapult/cache/zstd/travbid/main/zstd-1.5.5/lib/common",
+				);
+				OTHER_CFLAGS = "-fgnu-keywords";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				STRINGS_FILE_OUTPUT_ENCODING = "UTF-8";
+			};
+			name = Debug;
+		};
+		00000000000000000000006C /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ARCHS = "$(ARCHS_STANDARD)";
+				CODE_SIGN_STYLE = Automatic;
+				GCC_OPTIMIZATION_LEVEL = 2;
+				HEADER_SEARCH_PATHS = (
+					"/Users/travers/Library/Caches/catapult/cache/zstd/travbid/main/zstd-1.5.5/lib",
+					"/Users/travers/Library/Caches/catapult/cache/zstd/travbid/main/zstd-1.5.5/lib/common",
+				);
+				OTHER_CFLAGS = "-fgnu-keywords";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				STRINGS_FILE_OUTPUT_ENCODING = "UTF-8";
+			};
+			name = Release;
+		};
+		00000000000000000000007C /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ARCHS = (
+					x86_64,
+					arm64,
+				);
+				CODE_SIGN_STYLE = Automatic;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				HEADER_SEARCH_PATHS = (
+					"/Users/travers/Library/Caches/catapult/cache/zstd/travbid/main/zstd-1.5.5/lib/common",
+					"/Users/travers/Library/Caches/catapult/cache/zstd/travbid/main/zstd-1.5.5/lib",
+				);
+				OTHER_CFLAGS = "-fgnu-keywords";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				STRINGS_FILE_OUTPUT_ENCODING = "UTF-8";
+			};
+			name = Debug;
+		};
+		00000000000000000000007D /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ARCHS = "$(ARCHS_STANDARD)";
+				CODE_SIGN_STYLE = Automatic;
+				GCC_OPTIMIZATION_LEVEL = 2;
+				HEADER_SEARCH_PATHS = (
+					"/Users/travers/Library/Caches/catapult/cache/zstd/travbid/main/zstd-1.5.5/lib/common",
+					"/Users/travers/Library/Caches/catapult/cache/zstd/travbid/main/zstd-1.5.5/lib",
+				);
+				OTHER_CFLAGS = "-fgnu-keywords";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				STRINGS_FILE_OUTPUT_ENCODING = "UTF-8";
+			};
+			name = Release;
+		};
+		000000000000000000000085 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ARCHS = (
+					x86_64,
+					arm64,
+				);
+				CODE_SIGN_STYLE = Automatic;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				HEADER_SEARCH_PATHS = (
+					"/Users/travers/Library/Caches/catapult/cache/zstd/travbid/main/zstd-1.5.5/lib/common",
+					"/Users/travers/Library/Caches/catapult/cache/zstd/travbid/main/zstd-1.5.5/lib",
+				);
+				OTHER_CFLAGS = "-fgnu-keywords";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				STRINGS_FILE_OUTPUT_ENCODING = "UTF-8";
+			};
+			name = Debug;
+		};
+		000000000000000000000086 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ARCHS = "$(ARCHS_STANDARD)";
+				CODE_SIGN_STYLE = Automatic;
+				GCC_OPTIMIZATION_LEVEL = 2;
+				HEADER_SEARCH_PATHS = (
+					"/Users/travers/Library/Caches/catapult/cache/zstd/travbid/main/zstd-1.5.5/lib/common",
+					"/Users/travers/Library/Caches/catapult/cache/zstd/travbid/main/zstd-1.5.5/lib",
+				);
+				OTHER_CFLAGS = "-fgnu-keywords";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				STRINGS_FILE_OUTPUT_ENCODING = "UTF-8";
+			};
+			name = Release;
+		};
+		00000000000000000000008E /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ARCHS = (
+					x86_64,
+					arm64,
+				);
+				CODE_SIGN_STYLE = Automatic;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				HEADER_SEARCH_PATHS = (
+					"/Users/travers/Library/Caches/catapult/cache/zstd/travbid/main/zstd-1.5.5/lib/common",
+					"/Users/travers/Library/Caches/catapult/cache/zstd/travbid/main/zstd-1.5.5/lib",
+				);
+				OTHER_CFLAGS = "-fgnu-keywords";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				STRINGS_FILE_OUTPUT_ENCODING = "UTF-8";
+			};
+			name = Debug;
+		};
+		00000000000000000000008F /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ARCHS = "$(ARCHS_STANDARD)";
+				CODE_SIGN_STYLE = Automatic;
+				GCC_OPTIMIZATION_LEVEL = 2;
+				HEADER_SEARCH_PATHS = (
+					"/Users/travers/Library/Caches/catapult/cache/zstd/travbid/main/zstd-1.5.5/lib/common",
+					"/Users/travers/Library/Caches/catapult/cache/zstd/travbid/main/zstd-1.5.5/lib",
+				);
+				OTHER_CFLAGS = "-fgnu-keywords";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				STRINGS_FILE_OUTPUT_ENCODING = "UTF-8";
+			};
+			name = Release;
+		};
+		00000000000000000000009D /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ARCHS = (
+					x86_64,
+					arm64,
+				);
+				CODE_SIGN_STYLE = Automatic;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				HEADER_SEARCH_PATHS = (
+					"/Users/travers/Library/Caches/catapult/cache/zstd/travbid/main/zstd-1.5.5/lib/common",
+					"/Users/travers/Library/Caches/catapult/cache/zstd/travbid/main/zstd-1.5.5/lib",
+				);
+				OTHER_CFLAGS = "-fgnu-keywords";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				STRINGS_FILE_OUTPUT_ENCODING = "UTF-8";
+			};
+			name = Debug;
+		};
+		00000000000000000000009E /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ARCHS = "$(ARCHS_STANDARD)";
+				CODE_SIGN_STYLE = Automatic;
+				GCC_OPTIMIZATION_LEVEL = 2;
+				HEADER_SEARCH_PATHS = (
+					"/Users/travers/Library/Caches/catapult/cache/zstd/travbid/main/zstd-1.5.5/lib/common",
+					"/Users/travers/Library/Caches/catapult/cache/zstd/travbid/main/zstd-1.5.5/lib",
+				);
+				OTHER_CFLAGS = "-fgnu-keywords";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				STRINGS_FILE_OUTPUT_ENCODING = "UTF-8";
+			};
+			name = Release;
+		};
+		0000000000000000000000B2 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ARCHS = (
+					x86_64,
+					arm64,
+				);
+				CODE_SIGN_STYLE = Automatic;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				HEADER_SEARCH_PATHS = (
+					"/Users/travers/Library/Caches/catapult/cache/zstd/travbid/main/zstd-1.5.5/lib/common",
+					"/Users/travers/Library/Caches/catapult/cache/zstd/travbid/main/zstd-1.5.5/lib",
+					"/Users/travers/Library/Caches/catapult/cache/zstd/travbid/main/zstd-1.5.5/lib/legacy",
+				);
+				OTHER_CFLAGS = "-fgnu-keywords";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				STRINGS_FILE_OUTPUT_ENCODING = "UTF-8";
+			};
+			name = Debug;
+		};
+		0000000000000000000000B3 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ARCHS = "$(ARCHS_STANDARD)";
+				CODE_SIGN_STYLE = Automatic;
+				GCC_OPTIMIZATION_LEVEL = 2;
+				HEADER_SEARCH_PATHS = (
+					"/Users/travers/Library/Caches/catapult/cache/zstd/travbid/main/zstd-1.5.5/lib/common",
+					"/Users/travers/Library/Caches/catapult/cache/zstd/travbid/main/zstd-1.5.5/lib",
+					"/Users/travers/Library/Caches/catapult/cache/zstd/travbid/main/zstd-1.5.5/lib/legacy",
+				);
+				OTHER_CFLAGS = "-fgnu-keywords";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				STRINGS_FILE_OUTPUT_ENCODING = "UTF-8";
+			};
+			name = Release;
+		};
+		0000000000000000000000BF /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ARCHS = (
+					x86_64,
+					arm64,
+				);
+				CODE_SIGN_STYLE = Automatic;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				HEADER_SEARCH_PATHS = (
+					"/Users/travers/Library/Caches/catapult/cache/zstd/travbid/main/zstd-1.5.5/lib/common",
+					"/Users/travers/Library/Caches/catapult/cache/zstd/travbid/main/zstd-1.5.5/lib",
+					"/Users/travers/Library/Caches/catapult/cache/zstd/travbid/main/zstd-1.5.5/lib/deprecated",
+				);
+				OTHER_CFLAGS = "-fgnu-keywords";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				STRINGS_FILE_OUTPUT_ENCODING = "UTF-8";
+			};
+			name = Debug;
+		};
+		0000000000000000000000C0 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ARCHS = "$(ARCHS_STANDARD)";
+				CODE_SIGN_STYLE = Automatic;
+				GCC_OPTIMIZATION_LEVEL = 2;
+				HEADER_SEARCH_PATHS = (
+					"/Users/travers/Library/Caches/catapult/cache/zstd/travbid/main/zstd-1.5.5/lib/common",
+					"/Users/travers/Library/Caches/catapult/cache/zstd/travbid/main/zstd-1.5.5/lib",
+					"/Users/travers/Library/Caches/catapult/cache/zstd/travbid/main/zstd-1.5.5/lib/deprecated",
+				);
+				OTHER_CFLAGS = "-fgnu-keywords";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				STRINGS_FILE_OUTPUT_ENCODING = "UTF-8";
+			};
+			name = Release;
+		};
+		0000000000000000000000CC /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ARCHS = (
+					x86_64,
+					arm64,
+				);
+				CODE_SIGN_STYLE = Automatic;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				HEADER_SEARCH_PATHS = (
+					"/Users/travers/Library/Caches/catapult/cache/zstd/travbid/main/zstd-1.5.5/lib/common",
+					"/Users/travers/Library/Caches/catapult/cache/zstd/travbid/main/zstd-1.5.5/lib",
+					"/Users/travers/Library/Caches/catapult/cache/zstd/travbid/main/zstd-1.5.5/lib/legacy",
+				);
+				OTHER_CFLAGS = "-fgnu-keywords";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				STRINGS_FILE_OUTPUT_ENCODING = "UTF-8";
+			};
+			name = Debug;
+		};
+		0000000000000000000000CD /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ARCHS = "$(ARCHS_STANDARD)";
+				CODE_SIGN_STYLE = Automatic;
+				GCC_OPTIMIZATION_LEVEL = 2;
+				HEADER_SEARCH_PATHS = (
+					"/Users/travers/Library/Caches/catapult/cache/zstd/travbid/main/zstd-1.5.5/lib/common",
+					"/Users/travers/Library/Caches/catapult/cache/zstd/travbid/main/zstd-1.5.5/lib",
+					"/Users/travers/Library/Caches/catapult/cache/zstd/travbid/main/zstd-1.5.5/lib/legacy",
+				);
+				OTHER_CFLAGS = "-fgnu-keywords";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				STRINGS_FILE_OUTPUT_ENCODING = "UTF-8";
+			};
+			name = Release;
+		};
+		0000000000000000000000E9 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ARCHS = (
+					x86_64,
+					arm64,
+				);
+				CODE_SIGN_STYLE = Automatic;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				HEADER_SEARCH_PATHS = (
+					"/Users/travers/Library/Caches/catapult/cache/zstd/travbid/main/zstd-1.5.5/lib/common",
+					"/Users/travers/Library/Caches/catapult/cache/zstd/travbid/main/zstd-1.5.5/lib",
+					"/Users/travers/Library/Caches/catapult/cache/zstd/travbid/main/zstd-1.5.5/lib/compress",
+				);
+				OTHER_CFLAGS = "-fgnu-keywords";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				STRINGS_FILE_OUTPUT_ENCODING = "UTF-8";
+			};
+			name = Debug;
+		};
+		0000000000000000000000EA /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ARCHS = "$(ARCHS_STANDARD)";
+				CODE_SIGN_STYLE = Automatic;
+				GCC_OPTIMIZATION_LEVEL = 2;
+				HEADER_SEARCH_PATHS = (
+					"/Users/travers/Library/Caches/catapult/cache/zstd/travbid/main/zstd-1.5.5/lib/common",
+					"/Users/travers/Library/Caches/catapult/cache/zstd/travbid/main/zstd-1.5.5/lib",
+					"/Users/travers/Library/Caches/catapult/cache/zstd/travbid/main/zstd-1.5.5/lib/compress",
+				);
+				OTHER_CFLAGS = "-fgnu-keywords";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				STRINGS_FILE_OUTPUT_ENCODING = "UTF-8";
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		000000000000000000000047 /* Build configuration list for PBXProject "zstd" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				000000000000000000000048 /* Debug */,
+				000000000000000000000049 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		00000000000000000000004F /* Build configuration list for PBXNativeTarget "debug" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				000000000000000000000050 /* Debug */,
+				000000000000000000000051 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		000000000000000000000058 /* Build configuration list for PBXNativeTarget "xxhash" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				000000000000000000000059 /* Debug */,
+				00000000000000000000005A /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		000000000000000000000061 /* Build configuration list for PBXNativeTarget "threading" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				000000000000000000000062 /* Debug */,
+				000000000000000000000063 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		00000000000000000000006A /* Build configuration list for PBXNativeTarget "errors" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				00000000000000000000006B /* Debug */,
+				00000000000000000000006C /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		00000000000000000000007B /* Build configuration list for PBXNativeTarget "entropy" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				00000000000000000000007C /* Debug */,
+				00000000000000000000007D /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		000000000000000000000084 /* Build configuration list for PBXNativeTarget "zstd_common" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				000000000000000000000085 /* Debug */,
+				000000000000000000000086 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		00000000000000000000008D /* Build configuration list for PBXNativeTarget "pool" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				00000000000000000000008E /* Debug */,
+				00000000000000000000008F /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		00000000000000000000009C /* Build configuration list for PBXNativeTarget "zdict" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				00000000000000000000009D /* Debug */,
+				00000000000000000000009E /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		0000000000000000000000B1 /* Build configuration list for PBXNativeTarget "legacy" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				0000000000000000000000B2 /* Debug */,
+				0000000000000000000000B3 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		0000000000000000000000BE /* Build configuration list for PBXNativeTarget "deprecated" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				0000000000000000000000BF /* Debug */,
+				0000000000000000000000C0 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		0000000000000000000000CB /* Build configuration list for PBXNativeTarget "decompress" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				0000000000000000000000CC /* Debug */,
+				0000000000000000000000CD /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		0000000000000000000000E8 /* Build configuration list for PBXNativeTarget "compress" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				0000000000000000000000E9 /* Debug */,
+				0000000000000000000000EA /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = 0000000000000000000000FB /* Project object */;
+}

@@ -8,7 +8,7 @@ use starlark::values::OwnedFrozenValue;
 
 use crate::{
 	link_type::LinkPtr,
-	misc::{SourcePath, Sources},
+	misc::{index_set::IndexSet, SourcePath, Sources},
 	project::Project,
 	target::{LinkTarget, Target},
 };
@@ -107,6 +107,22 @@ impl Executable {
 			}
 		}
 		defines
+	}
+	pub(crate) fn links_recursive(&self) -> Vec<LinkPtr> {
+		let mut ret = IndexSet::new();
+		for link in &self.links {
+			if !ret.contains_key(link) {
+				ret.insert(link.clone());
+			}
+		}
+		for link in &self.links {
+			for rlink in link.public_links_recursive() {
+				if !ret.contains_key(&rlink) {
+					ret.insert(rlink);
+				}
+			}
+		}
+		ret.into_iter().collect()
 	}
 	pub(crate) fn link_flags_recursive(&self) -> Vec<String> {
 		let mut flags = Vec::new();

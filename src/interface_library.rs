@@ -102,7 +102,7 @@ impl LinkTarget for InterfaceLibrary {
 	}
 	fn public_links_recursive(&self) -> Vec<LinkPtr> {
 		let mut links = Vec::new();
-		// Bread-first addition
+		// Breadth-first addition
 		for link in &self.links {
 			links.push(link.clone());
 		}

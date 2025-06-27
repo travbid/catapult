@@ -1,0 +1,1862 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 63;
+	objects = {
+
+/* Begin PBXAggregateTarget section */
+		3FB4402842FC36DC2ED46F3E /* ALL_BUILD */ = {
+			isa = PBXAggregateTarget;
+			buildConfigurationList = 5E38EDB0C4F44634B26ED9B8 /* Build configuration list for PBXAggregateTarget "ALL_BUILD" */;
+			buildPhases = (
+				393EDAE87EF535356BD3990F /* Generate CMakeFiles/ALL_BUILD */,
+			);
+			dependencies = (
+				5C75A900A18C46FFB12628E5 /* PBXTargetDependency */,
+				DC88AC5DD96F4741AA91302E /* PBXTargetDependency */,
+				4DABCB1EE67049B19A0E8C1C /* PBXTargetDependency */,
+				A426E56B7682458880A1E91C /* PBXTargetDependency */,
+				80A2913AC2CF45BE8DDCAC79 /* PBXTargetDependency */,
+				7B18555B2CA34F0681DDDFE5 /* PBXTargetDependency */,
+			);
+			name = ALL_BUILD;
+			productName = ALL_BUILD;
+		};
+		9D3C3A41B562556B4B217EF2 /* ZERO_CHECK */ = {
+			isa = PBXAggregateTarget;
+			buildConfigurationList = 3D56687017EB4533AE796CFE /* Build configuration list for PBXAggregateTarget "ZERO_CHECK" */;
+			buildPhases = (
+				31FE727E1B62D46718C21498 /* Generate CMakeFiles/ZERO_CHECK */,
+			);
+			dependencies = (
+			);
+			name = ZERO_CHECK;
+			productName = ZERO_CHECK;
+		};
+/* End PBXAggregateTarget section */
+
+/* Begin PBXBuildFile section */
+		1083D1E12DD34BDF80072C95 /* main.cpp in Sources */ = {isa = PBXBuildFile; fileRef = BB1309593186435287802FAA /* main.cpp */; };
+		4A529B85AF7F409AA6B91849 /* mylib.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 719CB8D88293410EBF8F2311 /* mylib.cpp */; };
+		62F45E44A9E847AC8006FECA /* blobject2.cpp in Sources */ = {isa = PBXBuildFile; fileRef = AAF47A66C4D5457C9778F143 /* blobject2.cpp */; };
+		8BF3B6AA8B6C4BB5839B03C9 /* my_depend.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 5FEA84CD16CA4C9799DFEDF6 /* my_depend.cpp */; };
+		DC92DF72AC9A46BE9AD6BB41 /* nasmsrc.asm in Sources */ = {isa = PBXBuildFile; fileRef = 4AF05592DA8E4DBDBB1546E1 /* nasmsrc.asm */; };
+		E8EBA77B77D04BB6B1529A35 /* blobject1.cpp in Sources */ = {isa = PBXBuildFile; fileRef = F5D8C77D70E7437B964D7E17 /* blobject1.cpp */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXBuildRule section */
+		5D40BB272CD6C7B9005DA3F0 /* PBXBuildRule */ = {
+			isa = PBXBuildRule;
+			compilerSpec = com.apple.compilers.proxy.script;
+			fileType = sourcecode.nasm;
+			inputFiles = (
+				"$(SRCROOT)/submodules/nasmproj/nasmsrc.asm",
+			);
+			isEditable = 1;
+			outputFiles = (
+				"$(DERIVED_FILE_DIR)/$(INPUT_FILE_BASE).o",
+			);
+			script = "set -x\n#printenv\n#printenv | grep 86\n#printenv | grep 64\nls -l /Users/travers/Downloads/nasm-2.16.03/nasm\nwhoami\n#/Users/travers/Downloads/nasm-2.16.03/nasm \"-fmacho64\" \"-o\" $SCRIPT_OUTPUT_FILE_0 $SCRIPT_INPUT_FILE\npwd\n";
+		};
+		5D40BB272CD6C7B9005DA3F2 /* PBXBuildRule */ = {
+			isa = PBXBuildRule;
+			compilerSpec = com.apple.compilers.proxy.script;
+			fileType = sourcecode.nasm;
+			inputFiles = (
+				"$(SRCROOT)/submodules/nasmproj/nasmsrc2.asm",
+			);
+			isEditable = 1;
+			outputFiles = (
+				"$(DERIVED_FILE_DIR)/$(INPUT_FILE_BASE).o",
+				"$(DERIVED_FILE_DIR)/$(INPUT_FILE_BASE).o",
+			);
+			script = "set -x\nprintenv\nprintenv | grep 86\nprintenv | grep 64\nls -l /Users/travers/Downloads/nasm-2.16.03/nasm\nwhoami\n/Users/travers/Downloads/nasm-2.16.03/nasm \"-fmacho64\" \"-o\" $SCRIPT_OUTPUT_FILE_0 $SCRIPT_INPUT_FILE\npwd\n";
+		};
+/* End PBXBuildRule section */
+
+/* Begin PBXContainerItemProxy section */
+		0384BAAA986D48DFB7D9D46F /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 879958F820874477A910A1E2 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 8E9E5A8844F5EE35E66E45BA;
+			remoteInfo = my_depend_lib;
+		};
+		19C0EB3F2F234EC8B10FBB0D /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 879958F820874477A910A1E2 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 56F432763E6755C1B1C3F40E;
+			remoteInfo = mylib;
+		};
+		1B6E867A8EF94E60B4B6341E /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 879958F820874477A910A1E2 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 9D3C3A41B562556B4B217EF2;
+			remoteInfo = ZERO_CHECK;
+		};
+		3E3872204B7F44B2BB7B8E46 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 879958F820874477A910A1E2 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = A7970FD56128C1273414D03D;
+			remoteInfo = blobject;
+		};
+		59A45B79ACB74CC7A3AF088C /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 879958F820874477A910A1E2 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 8E9E5A8844F5EE35E66E45BA;
+			remoteInfo = my_depend_lib;
+		};
+		61579D0B58424EAEA107DE64 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 879958F820874477A910A1E2 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 56F432763E6755C1B1C3F40E;
+			remoteInfo = mylib;
+		};
+		628A51935E54476B8D0909E2 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 879958F820874477A910A1E2 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 9D3C3A41B562556B4B217EF2;
+			remoteInfo = ZERO_CHECK;
+		};
+		6FA880436D1243C6BE30EF23 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 879958F820874477A910A1E2 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 0F9B90181D6DBC741F215381;
+			remoteInfo = nasmobjs;
+		};
+		7417E26AFBB741D6BA97CEB7 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 879958F820874477A910A1E2 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 9D3C3A41B562556B4B217EF2;
+			remoteInfo = ZERO_CHECK;
+		};
+		769316052A9F4F35BC39BDF2 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 879958F820874477A910A1E2 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = A7970FD56128C1273414D03D;
+			remoteInfo = blobject;
+		};
+		7F7787F3A9A141B0A121CF67 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 879958F820874477A910A1E2 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 9D3C3A41B562556B4B217EF2;
+			remoteInfo = ZERO_CHECK;
+		};
+		99D34C973A5F4907BB30298B /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 879958F820874477A910A1E2 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 0F9B90181D6DBC741F215381;
+			remoteInfo = nasmobjs;
+		};
+		9A1192F5077741B5B811DFA0 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 879958F820874477A910A1E2 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 9D3C3A41B562556B4B217EF2;
+			remoteInfo = ZERO_CHECK;
+		};
+		A28EE89FF8C6491F9E648436 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 879958F820874477A910A1E2 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 90C355FBC3D6B7DAED72F522;
+			remoteInfo = myexe;
+		};
+		B1CA87AA57884BE3B232AA40 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 879958F820874477A910A1E2 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 9D3C3A41B562556B4B217EF2;
+			remoteInfo = ZERO_CHECK;
+		};
+		E528CD3BE6F245D49A318ACC /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 879958F820874477A910A1E2 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 8E9E5A8844F5EE35E66E45BA;
+			remoteInfo = my_depend_lib;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXFileReference section */
+		08F452927A6A4B5B96AF14E2 /* CMakeLists.txt */ = {isa = PBXFileReference; explicitFileType = sourcecode.text; fileEncoding = 4; lastKnownFileType = text; path = CMakeLists.txt; sourceTree = SOURCE_ROOT; };
+		1B2111EEDB894979A4A3E707 /* libmylib.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; path = libmylib.a; sourceTree = BUILT_PRODUCTS_DIR; };
+		260FB519186F4C508FD33761 /* libblobject.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; path = libblobject.a; sourceTree = BUILT_PRODUCTS_DIR; };
+		4AF05592DA8E4DBDBB1546E1 /* nasmsrc.asm */ = {isa = PBXFileReference; explicitFileType = sourcecode.nasm; fileEncoding = 4; name = nasmsrc.asm; path = submodules/nasmproj/nasmsrc.asm; sourceTree = SOURCE_ROOT; };
+		569316C6BADE4D8E9594B544 /* CMakeLists.txt */ = {isa = PBXFileReference; explicitFileType = sourcecode.text; fileEncoding = 4; lastKnownFileType = text; name = CMakeLists.txt; path = submodules/nasmproj/CMakeLists.txt; sourceTree = SOURCE_ROOT; };
+		5B4FA6A9A8574098B7D1B0DD /* my_depend.hpp */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.h; fileEncoding = 4; name = my_depend.hpp; path = submodules/my_depend/my_depend.hpp; sourceTree = SOURCE_ROOT; };
+		5FEA84CD16CA4C9799DFEDF6 /* my_depend.cpp */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.cpp; fileEncoding = 4; name = my_depend.cpp; path = submodules/my_depend/my_depend.cpp; sourceTree = SOURCE_ROOT; };
+		67F69C2D98574DAE830A7C1D /* CMakeLists.txt */ = {isa = PBXFileReference; explicitFileType = sourcecode.text; fileEncoding = 4; lastKnownFileType = text; name = CMakeLists.txt; path = submodules/my_depend/CMakeLists.txt; sourceTree = SOURCE_ROOT; };
+		719CB8D88293410EBF8F2311 /* mylib.cpp */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.cpp; fileEncoding = 4; path = mylib.cpp; sourceTree = SOURCE_ROOT; };
+		7BEDCD85D80B40FE90ECCF59 /* myexe */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; path = myexe; sourceTree = BUILT_PRODUCTS_DIR; };
+		90950B57AC8B401395AC06CB /* blobject.hpp */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.h; fileEncoding = 4; name = blobject.hpp; path = submodules/blobject/blobject.hpp; sourceTree = SOURCE_ROOT; };
+		9708182EFB4542C79F2F9704 /* libmy_depend_lib.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; path = libmy_depend_lib.a; sourceTree = BUILT_PRODUCTS_DIR; };
+		A52671ED73284C65894D16A8 /* CMakeLists.txt */ = {isa = PBXFileReference; explicitFileType = sourcecode.text; fileEncoding = 4; lastKnownFileType = text; path = CMakeLists.txt; sourceTree = SOURCE_ROOT; };
+		AAF47A66C4D5457C9778F143 /* blobject2.cpp */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.cpp; fileEncoding = 4; name = blobject2.cpp; path = submodules/blobject/blobject2.cpp; sourceTree = SOURCE_ROOT; };
+		BB1309593186435287802FAA /* main.cpp */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.cpp; fileEncoding = 4; path = main.cpp; sourceTree = SOURCE_ROOT; };
+		C59B171733054CA8AADF9588 /* CMakeLists.txt */ = {isa = PBXFileReference; explicitFileType = sourcecode.text; fileEncoding = 4; lastKnownFileType = text; path = CMakeLists.txt; sourceTree = SOURCE_ROOT; };
+		D805BF5D8DC243C78FDE463A /* libnasmobjs.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; path = libnasmobjs.a; sourceTree = BUILT_PRODUCTS_DIR; };
+		F5D8C77D70E7437B964D7E17 /* blobject1.cpp */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.cpp; fileEncoding = 4; name = blobject1.cpp; path = submodules/blobject/blobject1.cpp; sourceTree = SOURCE_ROOT; };
+		F6B37F54C68D49FCBBA578C0 /* CMakeLists.txt */ = {isa = PBXFileReference; explicitFileType = sourcecode.text; fileEncoding = 4; lastKnownFileType = text; name = CMakeLists.txt; path = submodules/blobject/CMakeLists.txt; sourceTree = SOURCE_ROOT; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		4C47B5C507E5440282862ED0 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		90AF335EF41E40C09619C1C3 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		B6B4BAF2E81B4F9B848BC02A /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		C3CCB4E455D54FAF8C359CC5 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		F8DC364E2CDE4D8AA5DCB579 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		16AE6D211E3440EAB9F85EAF /* Source Files */ = {
+			isa = PBXGroup;
+			children = (
+				719CB8D88293410EBF8F2311 /* mylib.cpp */,
+			);
+			name = "Source Files";
+			sourceTree = "<group>";
+		};
+		254E60895ECC4B0C859C665C /* Resources */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = Resources;
+			sourceTree = "<group>";
+		};
+		42EE7709B5A245E9B87D0836 /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
+		471F397ADDCD4D1181B7F916 /* Source Files */ = {
+			isa = PBXGroup;
+			children = (
+				5FEA84CD16CA4C9799DFEDF6 /* my_depend.cpp */,
+			);
+			name = "Source Files";
+			sourceTree = "<group>";
+		};
+		5B5C6F2ED359491FA9CA58E7 /* nasmobjs */ = {
+			isa = PBXGroup;
+			children = (
+				569316C6BADE4D8E9594B544 /* CMakeLists.txt */,
+				4AF05592DA8E4DBDBB1546E1 /* nasmsrc.asm */,
+			);
+			name = nasmobjs;
+			sourceTree = "<group>";
+		};
+		6D0A5DC94A75441C8EB5C0A6 /* mylib */ = {
+			isa = PBXGroup;
+			children = (
+				16AE6D211E3440EAB9F85EAF /* Source Files */,
+				08F452927A6A4B5B96AF14E2 /* CMakeLists.txt */,
+			);
+			name = mylib;
+			sourceTree = "<group>";
+		};
+		7EDF976A891E4372B8E6F6E4 /* Source Files */ = {
+			isa = PBXGroup;
+			children = (
+				BB1309593186435287802FAA /* main.cpp */,
+			);
+			name = "Source Files";
+			sourceTree = "<group>";
+		};
+		8147B627C8D24654BD486AB8 /* blobject */ = {
+			isa = PBXGroup;
+			children = (
+				D3D4218C57334A2692086D84 /* Source Files */,
+				F752980F44E74568A8FF4D24 /* Header Files */,
+				F6B37F54C68D49FCBBA578C0 /* CMakeLists.txt */,
+			);
+			name = blobject;
+			sourceTree = "<group>";
+		};
+		B7B03CFBFC0B47FE84432032 /* my_depend_lib */ = {
+			isa = PBXGroup;
+			children = (
+				471F397ADDCD4D1181B7F916 /* Source Files */,
+				C51D57784A5A4D899D2CA853 /* Header Files */,
+				67F69C2D98574DAE830A7C1D /* CMakeLists.txt */,
+			);
+			name = my_depend_lib;
+			sourceTree = "<group>";
+		};
+		C51D57784A5A4D899D2CA853 /* Header Files */ = {
+			isa = PBXGroup;
+			children = (
+				5B4FA6A9A8574098B7D1B0DD /* my_depend.hpp */,
+			);
+			name = "Header Files";
+			sourceTree = "<group>";
+		};
+		C8EC9C47AC2A4BC8A494CD58 /* myexe */ = {
+			isa = PBXGroup;
+			children = (
+				7EDF976A891E4372B8E6F6E4 /* Source Files */,
+				A52671ED73284C65894D16A8 /* CMakeLists.txt */,
+			);
+			name = myexe;
+			sourceTree = "<group>";
+		};
+		D0F69F2D103F434BBD8ECB72 /* CMake Rules */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = "CMake Rules";
+			sourceTree = "<group>";
+		};
+		D3BB360931FB40FEA4EAC90B /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				260FB519186F4C508FD33761 /* libblobject.a */,
+				9708182EFB4542C79F2F9704 /* libmy_depend_lib.a */,
+				7BEDCD85D80B40FE90ECCF59 /* myexe */,
+				1B2111EEDB894979A4A3E707 /* libmylib.a */,
+				D805BF5D8DC243C78FDE463A /* libnasmobjs.a */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		D3D4218C57334A2692086D84 /* Source Files */ = {
+			isa = PBXGroup;
+			children = (
+				F5D8C77D70E7437B964D7E17 /* blobject1.cpp */,
+				AAF47A66C4D5457C9778F143 /* blobject2.cpp */,
+			);
+			name = "Source Files";
+			sourceTree = "<group>";
+		};
+		DCDDD2240E574169B825658E = {
+			isa = PBXGroup;
+			children = (
+				6D0A5DC94A75441C8EB5C0A6 /* mylib */,
+				C8EC9C47AC2A4BC8A494CD58 /* myexe */,
+				EEE8811D069C415198AEF3E6 /* ALL_BUILD */,
+				8147B627C8D24654BD486AB8 /* blobject */,
+				B7B03CFBFC0B47FE84432032 /* my_depend_lib */,
+				5B5C6F2ED359491FA9CA58E7 /* nasmobjs */,
+				D3BB360931FB40FEA4EAC90B /* Products */,
+				42EE7709B5A245E9B87D0836 /* Frameworks */,
+				254E60895ECC4B0C859C665C /* Resources */,
+			);
+			sourceTree = "<group>";
+		};
+		EEE8811D069C415198AEF3E6 /* ALL_BUILD */ = {
+			isa = PBXGroup;
+			children = (
+				D0F69F2D103F434BBD8ECB72 /* CMake Rules */,
+				C59B171733054CA8AADF9588 /* CMakeLists.txt */,
+			);
+			name = ALL_BUILD;
+			sourceTree = "<group>";
+		};
+		F752980F44E74568A8FF4D24 /* Header Files */ = {
+			isa = PBXGroup;
+			children = (
+				90950B57AC8B401395AC06CB /* blobject.hpp */,
+			);
+			name = "Header Files";
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		0F9B90181D6DBC741F215381 /* nasmobjs */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = AA46E7B21BE84F77A5450375 /* Build configuration list for PBXNativeTarget "nasmobjs" */;
+			buildPhases = (
+				C4B0AEC418134886B289A068 /* Sources */,
+				4C47B5C507E5440282862ED0 /* Frameworks */,
+			);
+			buildRules = (
+				5D40BB272CD6C7B9005DA3F0 /* PBXBuildRule */,
+				5D40BB272CD6C7B9005DA3F2 /* PBXBuildRule */,
+			);
+			dependencies = (
+				B0ADA7F01998457D893F23B6 /* PBXTargetDependency */,
+			);
+			name = nasmobjs;
+			productName = nasmobjs;
+			productReference = D805BF5D8DC243C78FDE463A /* libnasmobjs.a */;
+			productType = "com.apple.product-type.library.static";
+		};
+		56F432763E6755C1B1C3F40E /* mylib */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 6FD2758E80F54BD5BA55A7CF /* Build configuration list for PBXNativeTarget "mylib" */;
+			buildPhases = (
+				43AD61C6FD5043AF9D414AD4 /* Sources */,
+				C3CCB4E455D54FAF8C359CC5 /* Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				200486465EEE434BBE29F51B /* PBXTargetDependency */,
+				E0238997FB9F4BD2AE229509 /* PBXTargetDependency */,
+			);
+			name = mylib;
+			productName = mylib;
+			productReference = 1B2111EEDB894979A4A3E707 /* libmylib.a */;
+			productType = "com.apple.product-type.library.static";
+		};
+		8E9E5A8844F5EE35E66E45BA /* my_depend_lib */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = FC2FC3A520014D9A8EAEDE77 /* Build configuration list for PBXNativeTarget "my_depend_lib" */;
+			buildPhases = (
+				7143B1B2863E4E6AB83967A7 /* Sources */,
+				B6B4BAF2E81B4F9B848BC02A /* Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				D2D6FEE988FB4DC8B3F2F24D /* PBXTargetDependency */,
+			);
+			name = my_depend_lib;
+			productName = my_depend_lib;
+			productReference = 9708182EFB4542C79F2F9704 /* libmy_depend_lib.a */;
+			productType = "com.apple.product-type.library.static";
+		};
+		90C355FBC3D6B7DAED72F522 /* myexe */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 3A634DF5A6F64A23BE2D114C /* Build configuration list for PBXNativeTarget "myexe" */;
+			buildPhases = (
+				5C91BB1923384F8B8B664060 /* Sources */,
+				F8DC364E2CDE4D8AA5DCB579 /* Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				E738CE565E2D42A9AF35617B /* PBXTargetDependency */,
+				C5D09163FE204A74B43B2281 /* PBXTargetDependency */,
+				42CB87009354464F8957E9E1 /* PBXTargetDependency */,
+				AE37C4655CC842A3B96899F6 /* PBXTargetDependency */,
+				C292AECC2DEA4619BFFE662B /* PBXTargetDependency */,
+			);
+			name = myexe;
+			productName = myexe;
+			productReference = 7BEDCD85D80B40FE90ECCF59 /* myexe */;
+			productType = "com.apple.product-type.tool";
+		};
+		A7970FD56128C1273414D03D /* blobject */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = D6B9DD55034E45C3BE1B601D /* Build configuration list for PBXNativeTarget "blobject" */;
+			buildPhases = (
+				471C30A3E19547C587F0B66C /* Sources */,
+				90AF335EF41E40C09619C1C3 /* Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				4DB6D79FCFE84A82BAC35C68 /* PBXTargetDependency */,
+			);
+			name = blobject;
+			productName = blobject;
+			productReference = 260FB519186F4C508FD33761 /* libblobject.a */;
+			productType = "com.apple.product-type.library.static";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		879958F820874477A910A1E2 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				LastUpgradeCheck = 1540;
+			};
+			buildConfigurationList = 0EDCBCD0F0C64464AFB5FF0E /* Build configuration list for PBXProject "test_one" */;
+			compatibilityVersion = "Xcode 15.3";
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				Base,
+			);
+			mainGroup = DCDDD2240E574169B825658E;
+			projectDirPath = /Users/travers/Projects/catapult/test_data/test_01;
+			projectRoot = "";
+			targets = (
+				3FB4402842FC36DC2ED46F3E /* ALL_BUILD */,
+				9D3C3A41B562556B4B217EF2 /* ZERO_CHECK */,
+				A7970FD56128C1273414D03D /* blobject */,
+				8E9E5A8844F5EE35E66E45BA /* my_depend_lib */,
+				90C355FBC3D6B7DAED72F522 /* myexe */,
+				56F432763E6755C1B1C3F40E /* mylib */,
+				0F9B90181D6DBC741F215381 /* nasmobjs */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXShellScriptBuildPhase section */
+		31FE727E1B62D46718C21498 /* Generate CMakeFiles/ZERO_CHECK */ = {
+			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputPaths = (
+			);
+			name = "Generate CMakeFiles/ZERO_CHECK";
+			outputPaths = (
+				/Users/travers/Projects/catapult/build_xcode/CMakeFiles/ZERO_CHECK,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "set -e\nif test \"$CONFIGURATION\" = \"Debug\"; then :\n  cd /Users/travers/Projects/catapult/build_xcode\n  make -f /Users/travers/Projects/catapult/build_xcode/CMakeScripts/ReRunCMake.make\nfi\nif test \"$CONFIGURATION\" = \"Release\"; then :\n  cd /Users/travers/Projects/catapult/build_xcode\n  make -f /Users/travers/Projects/catapult/build_xcode/CMakeScripts/ReRunCMake.make\nfi\nif test \"$CONFIGURATION\" = \"MinSizeRel\"; then :\n  cd /Users/travers/Projects/catapult/build_xcode\n  make -f /Users/travers/Projects/catapult/build_xcode/CMakeScripts/ReRunCMake.make\nfi\nif test \"$CONFIGURATION\" = \"RelWithDebInfo\"; then :\n  cd /Users/travers/Projects/catapult/build_xcode\n  make -f /Users/travers/Projects/catapult/build_xcode/CMakeScripts/ReRunCMake.make\nfi\n";
+			showEnvVarsInLog = 0;
+		};
+		393EDAE87EF535356BD3990F /* Generate CMakeFiles/ALL_BUILD */ = {
+			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputPaths = (
+			);
+			name = "Generate CMakeFiles/ALL_BUILD";
+			outputPaths = (
+				/Users/travers/Projects/catapult/build_xcode/CMakeFiles/ALL_BUILD,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "set -e\nif test \"$CONFIGURATION\" = \"Debug\"; then :\n  cd /Users/travers/Projects/catapult/build_xcode\n  echo Build\\ all\\ projects\nfi\nif test \"$CONFIGURATION\" = \"Release\"; then :\n  cd /Users/travers/Projects/catapult/build_xcode\n  echo Build\\ all\\ projects\nfi\nif test \"$CONFIGURATION\" = \"MinSizeRel\"; then :\n  cd /Users/travers/Projects/catapult/build_xcode\n  echo Build\\ all\\ projects\nfi\nif test \"$CONFIGURATION\" = \"RelWithDebInfo\"; then :\n  cd /Users/travers/Projects/catapult/build_xcode\n  echo Build\\ all\\ projects\nfi\n";
+			showEnvVarsInLog = 0;
+		};
+/* End PBXShellScriptBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		43AD61C6FD5043AF9D414AD4 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				4A529B85AF7F409AA6B91849 /* mylib.cpp in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		471C30A3E19547C587F0B66C /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				E8EBA77B77D04BB6B1529A35 /* blobject1.cpp in Sources */,
+				62F45E44A9E847AC8006FECA /* blobject2.cpp in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		5C91BB1923384F8B8B664060 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				1083D1E12DD34BDF80072C95 /* main.cpp in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		7143B1B2863E4E6AB83967A7 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				8BF3B6AA8B6C4BB5839B03C9 /* my_depend.cpp in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		C4B0AEC418134886B289A068 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				DC92DF72AC9A46BE9AD6BB41 /* nasmsrc.asm in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		200486465EEE434BBE29F51B /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 8E9E5A8844F5EE35E66E45BA /* my_depend_lib */;
+			targetProxy = E528CD3BE6F245D49A318ACC /* PBXContainerItemProxy */;
+		};
+		42CB87009354464F8957E9E1 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 8E9E5A8844F5EE35E66E45BA /* my_depend_lib */;
+			targetProxy = 0384BAAA986D48DFB7D9D46F /* PBXContainerItemProxy */;
+		};
+		4DABCB1EE67049B19A0E8C1C /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = A7970FD56128C1273414D03D /* blobject */;
+			targetProxy = 3E3872204B7F44B2BB7B8E46 /* PBXContainerItemProxy */;
+		};
+		4DB6D79FCFE84A82BAC35C68 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 9D3C3A41B562556B4B217EF2 /* ZERO_CHECK */;
+			targetProxy = 1B6E867A8EF94E60B4B6341E /* PBXContainerItemProxy */;
+		};
+		5C75A900A18C46FFB12628E5 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 56F432763E6755C1B1C3F40E /* mylib */;
+			targetProxy = 19C0EB3F2F234EC8B10FBB0D /* PBXContainerItemProxy */;
+		};
+		7B18555B2CA34F0681DDDFE5 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 9D3C3A41B562556B4B217EF2 /* ZERO_CHECK */;
+			targetProxy = 628A51935E54476B8D0909E2 /* PBXContainerItemProxy */;
+		};
+		80A2913AC2CF45BE8DDCAC79 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 0F9B90181D6DBC741F215381 /* nasmobjs */;
+			targetProxy = 6FA880436D1243C6BE30EF23 /* PBXContainerItemProxy */;
+		};
+		A426E56B7682458880A1E91C /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 8E9E5A8844F5EE35E66E45BA /* my_depend_lib */;
+			targetProxy = 59A45B79ACB74CC7A3AF088C /* PBXContainerItemProxy */;
+		};
+		AE37C4655CC842A3B96899F6 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 0F9B90181D6DBC741F215381 /* nasmobjs */;
+			targetProxy = 99D34C973A5F4907BB30298B /* PBXContainerItemProxy */;
+		};
+		B0ADA7F01998457D893F23B6 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 9D3C3A41B562556B4B217EF2 /* ZERO_CHECK */;
+			targetProxy = 7F7787F3A9A141B0A121CF67 /* PBXContainerItemProxy */;
+		};
+		C292AECC2DEA4619BFFE662B /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 9D3C3A41B562556B4B217EF2 /* ZERO_CHECK */;
+			targetProxy = 9A1192F5077741B5B811DFA0 /* PBXContainerItemProxy */;
+		};
+		C5D09163FE204A74B43B2281 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = A7970FD56128C1273414D03D /* blobject */;
+			targetProxy = 769316052A9F4F35BC39BDF2 /* PBXContainerItemProxy */;
+		};
+		D2D6FEE988FB4DC8B3F2F24D /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 9D3C3A41B562556B4B217EF2 /* ZERO_CHECK */;
+			targetProxy = B1CA87AA57884BE3B232AA40 /* PBXContainerItemProxy */;
+		};
+		DC88AC5DD96F4741AA91302E /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 90C355FBC3D6B7DAED72F522 /* myexe */;
+			targetProxy = A28EE89FF8C6491F9E648436 /* PBXContainerItemProxy */;
+		};
+		E0238997FB9F4BD2AE229509 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 9D3C3A41B562556B4B217EF2 /* ZERO_CHECK */;
+			targetProxy = 7417E26AFBB741D6BA97CEB7 /* PBXContainerItemProxy */;
+		};
+		E738CE565E2D42A9AF35617B /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 56F432763E6755C1B1C3F40E /* mylib */;
+			targetProxy = 61579D0B58424EAEA107DE64 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin XCBuildConfiguration section */
+		068C0FA3FA014A298A319E2E /* MinSizeRel */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ARCHS = arm64;
+				COMBINE_HIDPI_IMAGES = YES;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = YES;
+				GCC_INLINES_ARE_PRIVATE_EXTERN = NO;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"'CMAKE_INTDIR=\"$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)\"'",
+					"$(inherited)",
+				);
+				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
+				INSTALL_PATH = "";
+				ONLY_ACTIVE_ARCH = NO;
+				OTHER_LDFLAGS = " $(inherited)";
+				OTHER_REZFLAGS = "";
+				PRODUCT_NAME = ALL_BUILD;
+				SECTORDER_FLAGS = "";
+				USE_HEADERMAP = NO;
+				WARNING_CFLAGS = "$(inherited)";
+			};
+			name = MinSizeRel;
+		};
+		115E7E88AF644AA0975284CA /* RelWithDebInfo */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ARCHS = x86_64;
+				COMBINE_HIDPI_IMAGES = YES;
+				CONFIGURATION_BUILD_DIR = /Users/travers/Projects/catapult/build_xcode/RelWithDebInfo;
+				EXECUTABLE_PREFIX = "";
+				EXECUTABLE_SUFFIX = "";
+				GCC_GENERATE_DEBUGGING_SYMBOLS = NO;
+				GCC_INLINES_ARE_PRIVATE_EXTERN = NO;
+				GCC_OPTIMIZATION_LEVEL = 2;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"'CMAKE_INTDIR=\"$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)\"'",
+					"'MY_DEFINE=\"abc def\"'",
+					"$(inherited)",
+				);
+				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
+				HEADER_SEARCH_PATHS = (
+					"/Users/travers/Library/Caches/catapult/cache/zstd/travbid/main/zstd-1.5.5/lib",
+					/Users/travers/Projects/catapult/test_data/test_01/submodules/blobject/.,
+					/Users/travers/Projects/catapult/test_data/test_01/submodules/nasmproj/.,
+					"$(inherited)",
+				);
+				INSTALL_PATH = "";
+				LD_NO_PIE = NO;
+				ONLY_ACTIVE_ARCH = NO;
+				OTHER_CPLUSPLUSFLAGS = (
+					"-DNDEBUG",
+					"'-std=c++17'",
+					"-fPIE",
+					"-g",
+				);
+				OTHER_LDFLAGS = (
+					"-Wl,-search_paths_first",
+					"-Wl,-headerpad_max_install_names",
+					"/Users/travers/Projects/catapult/build_xcode/build/blobject.build/$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)/$(OBJECT_FILE_DIR_normal:base)/x86_64/blobject1.o",
+					"/Users/travers/Projects/catapult/build_xcode/build/blobject.build/$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)/$(OBJECT_FILE_DIR_normal:base)/x86_64/blobject2.o",
+					/Users/travers/Projects/catapult/build_xcode/RelWithDebInfo/libmylib.a,
+					/Users/travers/Projects/catapult/build_xcode/submodules/my_depend/RelWithDebInfo/libmy_depend_lib.a,
+					/Users/travers/Projects/catapult/build_ninja/zstd/compress.a,
+					/Users/travers/Projects/catapult/build_ninja/zstd/decompress.a,
+					/Users/travers/Projects/catapult/build_ninja/zstd/deprecated.a,
+					/Users/travers/Projects/catapult/build_ninja/zstd/entropy.a,
+					/Users/travers/Projects/catapult/build_ninja/zstd/errors.a,
+					/Users/travers/Projects/catapult/build_ninja/zstd/legacy.a,
+					/Users/travers/Projects/catapult/build_ninja/zstd/pool.a,
+					/Users/travers/Projects/catapult/build_ninja/zstd/threading.a,
+					/Users/travers/Projects/catapult/build_ninja/zstd/xxhash.a,
+					/Users/travers/Projects/catapult/build_ninja/zstd/zdict.a,
+					/Users/travers/Projects/catapult/build_ninja/zstd/zstd_common.a,
+					"$(inherited)",
+				);
+				OTHER_REZFLAGS = "";
+				PRODUCT_NAME = myexe;
+				SECTORDER_FLAGS = "";
+				TARGET_TEMP_DIR = "/Users/travers/Projects/catapult/build_xcode/build/myexe.build/$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)";
+				USE_HEADERMAP = NO;
+				WARNING_CFLAGS = "$(inherited)";
+			};
+			name = RelWithDebInfo;
+		};
+		17F3A2BE68C046E8B5CC276B /* RelWithDebInfo */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ARCHS = x86_64;
+				COMBINE_HIDPI_IMAGES = YES;
+				CONFIGURATION_BUILD_DIR = "/Users/travers/Projects/catapult/build_xcode/build/blobject.build/$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)";
+				GCC_GENERATE_DEBUGGING_SYMBOLS = YES;
+				GCC_INLINES_ARE_PRIVATE_EXTERN = NO;
+				GCC_OPTIMIZATION_LEVEL = 2;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"'CMAKE_INTDIR=\"$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)\"'",
+					"$(inherited)",
+				);
+				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
+				HEADER_SEARCH_PATHS = (
+					/Users/travers/Projects/catapult/test_data/test_01/submodules/blobject/.,
+					"$(inherited)",
+				);
+				INSTALL_PATH = "";
+				LIBRARY_STYLE = STATIC;
+				ONLY_ACTIVE_ARCH = NO;
+				OTHER_CPLUSPLUSFLAGS = (
+					"-DNDEBUG",
+					"'-std=c++17'",
+					"-fPIC",
+				);
+				OTHER_LIBTOOLFLAGS = "";
+				OTHER_REZFLAGS = "";
+				PRODUCT_NAME = blobject;
+				SECTORDER_FLAGS = "";
+				TARGET_TEMP_DIR = "/Users/travers/Projects/catapult/build_xcode/build/blobject.build/$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)";
+				USE_HEADERMAP = NO;
+				WARNING_CFLAGS = "$(inherited)";
+			};
+			name = RelWithDebInfo;
+		};
+		18A69E71491843FD94F1BFE9 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ARCHS = x86_64;
+				COMBINE_HIDPI_IMAGES = YES;
+				CONFIGURATION_BUILD_DIR = /Users/travers/Projects/catapult/build_xcode/submodules/my_depend/Release;
+				EXECUTABLE_PREFIX = lib;
+				EXECUTABLE_SUFFIX = .a;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = NO;
+				GCC_INLINES_ARE_PRIVATE_EXTERN = NO;
+				GCC_OPTIMIZATION_LEVEL = 3;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"'CMAKE_INTDIR=\"$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)\"'",
+					"$(inherited)",
+				);
+				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
+				HEADER_SEARCH_PATHS = (
+					/Users/travers/Projects/catapult/test_data/test_01/submodules/my_depend/.,
+					"$(inherited)",
+				);
+				INSTALL_PATH = "";
+				LIBRARY_STYLE = STATIC;
+				ONLY_ACTIVE_ARCH = NO;
+				OTHER_CPLUSPLUSFLAGS = (
+					"-DNDEBUG",
+					"'-std=c++17'",
+					"-fPIC",
+				);
+				OTHER_LIBTOOLFLAGS = "";
+				OTHER_REZFLAGS = "";
+				PRODUCT_NAME = my_depend_lib;
+				SECTORDER_FLAGS = "";
+				TARGET_TEMP_DIR = "/Users/travers/Projects/catapult/build_xcode/build/my_depend_lib.build/$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)";
+				USE_HEADERMAP = NO;
+				WARNING_CFLAGS = "$(inherited)";
+			};
+			name = Release;
+		};
+		1936FF84FBE64168BDBA1261 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ARCHS = x86_64;
+				SDKROOT = /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX14.5.sdk;
+				SYMROOT = /Users/travers/Projects/catapult/build_xcode/build;
+			};
+			name = Debug;
+		};
+		198945EC59A34A6D86B88594 /* MinSizeRel */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ARCHS = x86_64;
+				SDKROOT = /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX14.5.sdk;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SYMROOT = /Users/travers/Projects/catapult/build_xcode/build;
+			};
+			name = MinSizeRel;
+		};
+		1FE018EC7D134DC8860FD306 /* RelWithDebInfo */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ARCHS = x86_64;
+				COMBINE_HIDPI_IMAGES = YES;
+				CONFIGURATION_BUILD_DIR = /Users/travers/Projects/catapult/build_xcode/submodules/my_depend/RelWithDebInfo;
+				EXECUTABLE_PREFIX = lib;
+				EXECUTABLE_SUFFIX = .a;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = YES;
+				GCC_INLINES_ARE_PRIVATE_EXTERN = NO;
+				GCC_OPTIMIZATION_LEVEL = 2;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"'CMAKE_INTDIR=\"$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)\"'",
+					"$(inherited)",
+				);
+				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
+				HEADER_SEARCH_PATHS = (
+					/Users/travers/Projects/catapult/test_data/test_01/submodules/my_depend/.,
+					"$(inherited)",
+				);
+				INSTALL_PATH = "";
+				LIBRARY_STYLE = STATIC;
+				ONLY_ACTIVE_ARCH = NO;
+				OTHER_CPLUSPLUSFLAGS = (
+					"-DNDEBUG",
+					"'-std=c++17'",
+					"-fPIC",
+				);
+				OTHER_LIBTOOLFLAGS = "";
+				OTHER_REZFLAGS = "";
+				PRODUCT_NAME = my_depend_lib;
+				SECTORDER_FLAGS = "";
+				TARGET_TEMP_DIR = "/Users/travers/Projects/catapult/build_xcode/build/my_depend_lib.build/$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)";
+				USE_HEADERMAP = NO;
+				WARNING_CFLAGS = "$(inherited)";
+			};
+			name = RelWithDebInfo;
+		};
+		263FAAA22E8B445EB393F840 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ARCHS = x86_64;
+				COMBINE_HIDPI_IMAGES = YES;
+				CONFIGURATION_BUILD_DIR = /Users/travers/Projects/catapult/build_xcode/submodules/my_depend/Debug;
+				EXECUTABLE_PREFIX = lib;
+				EXECUTABLE_SUFFIX = .a;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = YES;
+				GCC_INLINES_ARE_PRIVATE_EXTERN = NO;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"'CMAKE_INTDIR=\"$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)\"'",
+					"$(inherited)",
+				);
+				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
+				HEADER_SEARCH_PATHS = (
+					/Users/travers/Projects/catapult/test_data/test_01/submodules/my_depend/.,
+					"$(inherited)",
+				);
+				INSTALL_PATH = "";
+				LIBRARY_STYLE = STATIC;
+				ONLY_ACTIVE_ARCH = NO;
+				OTHER_CPLUSPLUSFLAGS = (
+					"'-std=c++17'",
+					"-fPIC",
+				);
+				OTHER_LIBTOOLFLAGS = "";
+				OTHER_REZFLAGS = "";
+				PRODUCT_NAME = my_depend_lib;
+				SECTORDER_FLAGS = "";
+				TARGET_TEMP_DIR = "/Users/travers/Projects/catapult/build_xcode/build/my_depend_lib.build/$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)";
+				USE_HEADERMAP = NO;
+				WARNING_CFLAGS = "$(inherited)";
+			};
+			name = Debug;
+		};
+		36B5EBBC5CFD404DA1F09E01 /* MinSizeRel */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ARCHS = arm64;
+				COMBINE_HIDPI_IMAGES = YES;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = YES;
+				GCC_INLINES_ARE_PRIVATE_EXTERN = NO;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"'CMAKE_INTDIR=\"$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)\"'",
+					"$(inherited)",
+				);
+				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
+				INSTALL_PATH = "";
+				ONLY_ACTIVE_ARCH = NO;
+				OTHER_LDFLAGS = " $(inherited)";
+				OTHER_REZFLAGS = "";
+				PRODUCT_NAME = ZERO_CHECK;
+				SECTORDER_FLAGS = "";
+				USE_HEADERMAP = NO;
+				WARNING_CFLAGS = "$(inherited)";
+			};
+			name = MinSizeRel;
+		};
+		39F0F40D7FAA4BCA8E1BE6CF /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ARCHS = x86_64;
+				SDKROOT = /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX14.5.sdk;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SYMROOT = /Users/travers/Projects/catapult/build_xcode/build;
+			};
+			name = Release;
+		};
+		3A14332550C8451396D2939D /* RelWithDebInfo */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ARCHS = arm64;
+				COMBINE_HIDPI_IMAGES = YES;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = YES;
+				GCC_INLINES_ARE_PRIVATE_EXTERN = NO;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"'CMAKE_INTDIR=\"$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)\"'",
+					"$(inherited)",
+				);
+				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
+				INSTALL_PATH = "";
+				ONLY_ACTIVE_ARCH = NO;
+				OTHER_LDFLAGS = " $(inherited)";
+				OTHER_REZFLAGS = "";
+				PRODUCT_NAME = ZERO_CHECK;
+				SECTORDER_FLAGS = "";
+				USE_HEADERMAP = NO;
+				WARNING_CFLAGS = "$(inherited)";
+			};
+			name = RelWithDebInfo;
+		};
+		4B7AC1A19D3445439FA34EBA /* MinSizeRel */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ARCHS = x86_64;
+				COMBINE_HIDPI_IMAGES = YES;
+				CONFIGURATION_BUILD_DIR = /Users/travers/Projects/catapult/build_xcode/submodules/my_depend/MinSizeRel;
+				EXECUTABLE_PREFIX = lib;
+				EXECUTABLE_SUFFIX = .a;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = NO;
+				GCC_INLINES_ARE_PRIVATE_EXTERN = NO;
+				GCC_OPTIMIZATION_LEVEL = s;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"'CMAKE_INTDIR=\"$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)\"'",
+					"$(inherited)",
+				);
+				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
+				HEADER_SEARCH_PATHS = (
+					/Users/travers/Projects/catapult/test_data/test_01/submodules/my_depend/.,
+					"$(inherited)",
+				);
+				INSTALL_PATH = "";
+				LIBRARY_STYLE = STATIC;
+				ONLY_ACTIVE_ARCH = NO;
+				OTHER_CPLUSPLUSFLAGS = (
+					"-DNDEBUG",
+					"'-std=c++17'",
+					"-fPIC",
+				);
+				OTHER_LIBTOOLFLAGS = "";
+				OTHER_REZFLAGS = "";
+				PRODUCT_NAME = my_depend_lib;
+				SECTORDER_FLAGS = "";
+				TARGET_TEMP_DIR = "/Users/travers/Projects/catapult/build_xcode/build/my_depend_lib.build/$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)";
+				USE_HEADERMAP = NO;
+				WARNING_CFLAGS = "$(inherited)";
+			};
+			name = MinSizeRel;
+		};
+		51D0F0CC46EC4D5C9C7D3422 /* RelWithDebInfo */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ARCHS = x86_64;
+				COMBINE_HIDPI_IMAGES = YES;
+				CONFIGURATION_BUILD_DIR = "/Users/travers/Projects/catapult/build_xcode/build/nasmobjs.build/$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)";
+				GCC_GENERATE_DEBUGGING_SYMBOLS = NO;
+				GCC_INLINES_ARE_PRIVATE_EXTERN = NO;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"'CMAKE_INTDIR=\"$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)\"'",
+					"$(inherited)",
+				);
+				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
+				HEADER_SEARCH_PATHS = (
+					/Users/travers/Projects/catapult/test_data/test_01/submodules/nasmproj/.,
+					"$(inherited)",
+				);
+				INSTALL_PATH = "";
+				LIBRARY_STYLE = STATIC;
+				ONLY_ACTIVE_ARCH = NO;
+				OTHER_LIBTOOLFLAGS = "";
+				OTHER_REZFLAGS = "";
+				PRODUCT_NAME = nasmobjs;
+				SECTORDER_FLAGS = "";
+				TARGET_TEMP_DIR = "/Users/travers/Projects/catapult/build_xcode/build/nasmobjs.build/$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)";
+				USE_HEADERMAP = NO;
+				WARNING_CFLAGS = "$(inherited)";
+			};
+			name = RelWithDebInfo;
+		};
+		54E400FAA40C4CF5B65E159E /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ARCHS = x86_64;
+				COMBINE_HIDPI_IMAGES = YES;
+				CONFIGURATION_BUILD_DIR = /Users/travers/Projects/catapult/build_xcode/Debug;
+				EXECUTABLE_PREFIX = lib;
+				EXECUTABLE_SUFFIX = .a;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = YES;
+				GCC_INLINES_ARE_PRIVATE_EXTERN = NO;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"'CMAKE_INTDIR=\"$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)\"'",
+					"$(inherited)",
+				);
+				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
+				HEADER_SEARCH_PATHS = (
+					/Users/travers/Projects/catapult/test_data/test_01/submodules/my_depend/.,
+					"$(inherited)",
+				);
+				INSTALL_PATH = "";
+				LIBRARY_STYLE = STATIC;
+				ONLY_ACTIVE_ARCH = NO;
+				OTHER_CPLUSPLUSFLAGS = (
+					"'-std=c++17'",
+					"-fPIC",
+				);
+				OTHER_LIBTOOLFLAGS = "";
+				OTHER_REZFLAGS = "";
+				PRODUCT_NAME = mylib;
+				SECTORDER_FLAGS = "";
+				TARGET_TEMP_DIR = "/Users/travers/Projects/catapult/build_xcode/build/mylib.build/$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)";
+				USE_HEADERMAP = NO;
+				WARNING_CFLAGS = "$(inherited)";
+			};
+			name = Debug;
+		};
+		5D81540E2B3B4B81855104AD /* MinSizeRel */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ARCHS = x86_64;
+				COMBINE_HIDPI_IMAGES = YES;
+				CONFIGURATION_BUILD_DIR = /Users/travers/Projects/catapult/build_xcode/MinSizeRel;
+				EXECUTABLE_PREFIX = "";
+				EXECUTABLE_SUFFIX = "";
+				GCC_GENERATE_DEBUGGING_SYMBOLS = NO;
+				GCC_INLINES_ARE_PRIVATE_EXTERN = NO;
+				GCC_OPTIMIZATION_LEVEL = s;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"'CMAKE_INTDIR=\"$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)\"'",
+					"'MY_DEFINE=\"abc def\"'",
+					"$(inherited)",
+				);
+				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
+				HEADER_SEARCH_PATHS = (
+					"/Users/travers/Library/Caches/catapult/cache/zstd/travbid/main/zstd-1.5.5/lib",
+					/Users/travers/Projects/catapult/test_data/test_01/submodules/blobject/.,
+					/Users/travers/Projects/catapult/test_data/test_01/submodules/nasmproj/.,
+					"$(inherited)",
+				);
+				INSTALL_PATH = "";
+				LD_NO_PIE = NO;
+				ONLY_ACTIVE_ARCH = NO;
+				OTHER_CPLUSPLUSFLAGS = (
+					"-DNDEBUG",
+					"'-std=c++17'",
+					"-fPIE",
+				);
+				OTHER_LDFLAGS = (
+					"-Wl,-search_paths_first",
+					"-Wl,-headerpad_max_install_names",
+					"/Users/travers/Projects/catapult/build_xcode/build/blobject.build/$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)/$(OBJECT_FILE_DIR_normal:base)/x86_64/blobject1.o",
+					"/Users/travers/Projects/catapult/build_xcode/build/blobject.build/$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)/$(OBJECT_FILE_DIR_normal:base)/x86_64/blobject2.o",
+					/Users/travers/Projects/catapult/build_xcode/MinSizeRel/libmylib.a,
+					/Users/travers/Projects/catapult/build_xcode/submodules/my_depend/MinSizeRel/libmy_depend_lib.a,
+					/Users/travers/Projects/catapult/build_ninja/zstd/compress.a,
+					/Users/travers/Projects/catapult/build_ninja/zstd/decompress.a,
+					/Users/travers/Projects/catapult/build_ninja/zstd/deprecated.a,
+					/Users/travers/Projects/catapult/build_ninja/zstd/entropy.a,
+					/Users/travers/Projects/catapult/build_ninja/zstd/errors.a,
+					/Users/travers/Projects/catapult/build_ninja/zstd/legacy.a,
+					/Users/travers/Projects/catapult/build_ninja/zstd/pool.a,
+					/Users/travers/Projects/catapult/build_ninja/zstd/threading.a,
+					/Users/travers/Projects/catapult/build_ninja/zstd/xxhash.a,
+					/Users/travers/Projects/catapult/build_ninja/zstd/zdict.a,
+					/Users/travers/Projects/catapult/build_ninja/zstd/zstd_common.a,
+					"$(inherited)",
+				);
+				OTHER_REZFLAGS = "";
+				PRODUCT_NAME = myexe;
+				SECTORDER_FLAGS = "";
+				TARGET_TEMP_DIR = "/Users/travers/Projects/catapult/build_xcode/build/myexe.build/$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)";
+				USE_HEADERMAP = NO;
+				WARNING_CFLAGS = "$(inherited)";
+			};
+			name = MinSizeRel;
+		};
+		671CAAE9FD344766966F54DC /* MinSizeRel */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ARCHS = x86_64;
+				COMBINE_HIDPI_IMAGES = YES;
+				CONFIGURATION_BUILD_DIR = /Users/travers/Projects/catapult/build_xcode/MinSizeRel;
+				EXECUTABLE_PREFIX = lib;
+				EXECUTABLE_SUFFIX = .a;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = NO;
+				GCC_INLINES_ARE_PRIVATE_EXTERN = NO;
+				GCC_OPTIMIZATION_LEVEL = s;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"'CMAKE_INTDIR=\"$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)\"'",
+					"$(inherited)",
+				);
+				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
+				HEADER_SEARCH_PATHS = (
+					/Users/travers/Projects/catapult/test_data/test_01/submodules/my_depend/.,
+					"$(inherited)",
+				);
+				INSTALL_PATH = "";
+				LIBRARY_STYLE = STATIC;
+				ONLY_ACTIVE_ARCH = NO;
+				OTHER_CPLUSPLUSFLAGS = (
+					"-DNDEBUG",
+					"'-std=c++17'",
+					"-fPIC",
+				);
+				OTHER_LIBTOOLFLAGS = "";
+				OTHER_REZFLAGS = "";
+				PRODUCT_NAME = mylib;
+				SECTORDER_FLAGS = "";
+				TARGET_TEMP_DIR = "/Users/travers/Projects/catapult/build_xcode/build/mylib.build/$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)";
+				USE_HEADERMAP = NO;
+				WARNING_CFLAGS = "$(inherited)";
+			};
+			name = MinSizeRel;
+		};
+		71EC9E13DF7E47E8BC5DBB9F /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ARCHS = x86_64;
+				COMBINE_HIDPI_IMAGES = YES;
+				CONFIGURATION_BUILD_DIR = /Users/travers/Projects/catapult/build_xcode/Release;
+				EXECUTABLE_PREFIX = lib;
+				EXECUTABLE_SUFFIX = .a;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = NO;
+				GCC_INLINES_ARE_PRIVATE_EXTERN = NO;
+				GCC_OPTIMIZATION_LEVEL = 3;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"'CMAKE_INTDIR=\"$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)\"'",
+					"$(inherited)",
+				);
+				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
+				HEADER_SEARCH_PATHS = (
+					/Users/travers/Projects/catapult/test_data/test_01/submodules/my_depend/.,
+					"$(inherited)",
+				);
+				INSTALL_PATH = "";
+				LIBRARY_STYLE = STATIC;
+				ONLY_ACTIVE_ARCH = NO;
+				OTHER_CPLUSPLUSFLAGS = (
+					"-DNDEBUG",
+					"'-std=c++17'",
+					"-fPIC",
+				);
+				OTHER_LIBTOOLFLAGS = "";
+				OTHER_REZFLAGS = "";
+				PRODUCT_NAME = mylib;
+				SECTORDER_FLAGS = "";
+				TARGET_TEMP_DIR = "/Users/travers/Projects/catapult/build_xcode/build/mylib.build/$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)";
+				USE_HEADERMAP = NO;
+				WARNING_CFLAGS = "$(inherited)";
+			};
+			name = Release;
+		};
+		74459448E63C46CEAC5B8041 /* RelWithDebInfo */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ARCHS = arm64;
+				COMBINE_HIDPI_IMAGES = YES;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = YES;
+				GCC_INLINES_ARE_PRIVATE_EXTERN = NO;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"'CMAKE_INTDIR=\"$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)\"'",
+					"$(inherited)",
+				);
+				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
+				INSTALL_PATH = "";
+				ONLY_ACTIVE_ARCH = NO;
+				OTHER_LDFLAGS = " $(inherited)";
+				OTHER_REZFLAGS = "";
+				PRODUCT_NAME = ALL_BUILD;
+				SECTORDER_FLAGS = "";
+				USE_HEADERMAP = NO;
+				WARNING_CFLAGS = "$(inherited)";
+			};
+			name = RelWithDebInfo;
+		};
+		7BC4210B78674DE7AEB7B37A /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ARCHS = arm64;
+				COMBINE_HIDPI_IMAGES = YES;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = YES;
+				GCC_INLINES_ARE_PRIVATE_EXTERN = NO;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"'CMAKE_INTDIR=\"$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)\"'",
+					"$(inherited)",
+				);
+				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
+				INSTALL_PATH = "";
+				ONLY_ACTIVE_ARCH = NO;
+				OTHER_LDFLAGS = " $(inherited)";
+				OTHER_REZFLAGS = "";
+				PRODUCT_NAME = ZERO_CHECK;
+				SECTORDER_FLAGS = "";
+				USE_HEADERMAP = NO;
+				WARNING_CFLAGS = "$(inherited)";
+			};
+			name = Release;
+		};
+		8B12403DB215425784C51186 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ARCHS = x86_64;
+				COMBINE_HIDPI_IMAGES = YES;
+				CONFIGURATION_BUILD_DIR = "/Users/travers/Projects/catapult/build_xcode/build/nasmobjs.build/$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)";
+				GCC_GENERATE_DEBUGGING_SYMBOLS = NO;
+				GCC_INLINES_ARE_PRIVATE_EXTERN = NO;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"'CMAKE_INTDIR=\"$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)\"'",
+					"$(inherited)",
+				);
+				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
+				HEADER_SEARCH_PATHS = (
+					/Users/travers/Projects/catapult/test_data/test_01/submodules/nasmproj/.,
+					"$(inherited)",
+				);
+				INSTALL_PATH = "";
+				LIBRARY_STYLE = STATIC;
+				ONLY_ACTIVE_ARCH = NO;
+				OTHER_LIBTOOLFLAGS = "";
+				OTHER_REZFLAGS = "";
+				PRODUCT_NAME = nasmobjs;
+				SECTORDER_FLAGS = "";
+				TARGET_TEMP_DIR = "/Users/travers/Projects/catapult/build_xcode/build/nasmobjs.build/$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)";
+				USE_HEADERMAP = NO;
+				WARNING_CFLAGS = "$(inherited)";
+			};
+			name = Release;
+		};
+		A55B0C98392A47E0B0793281 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ARCHS = arm64;
+				COMBINE_HIDPI_IMAGES = YES;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = YES;
+				GCC_INLINES_ARE_PRIVATE_EXTERN = NO;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"'CMAKE_INTDIR=\"$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)\"'",
+					"$(inherited)",
+				);
+				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
+				INSTALL_PATH = "";
+				ONLY_ACTIVE_ARCH = NO;
+				OTHER_LDFLAGS = " $(inherited)";
+				OTHER_REZFLAGS = "";
+				PRODUCT_NAME = ALL_BUILD;
+				SECTORDER_FLAGS = "";
+				USE_HEADERMAP = NO;
+				WARNING_CFLAGS = "$(inherited)";
+			};
+			name = Release;
+		};
+		AAD76867C5D0419C81EA7DCB /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ARCHS = x86_64;
+				COMBINE_HIDPI_IMAGES = YES;
+				CONFIGURATION_BUILD_DIR = "/Users/travers/Projects/catapult/build_xcode/build/blobject.build/$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)";
+				GCC_GENERATE_DEBUGGING_SYMBOLS = NO;
+				GCC_INLINES_ARE_PRIVATE_EXTERN = NO;
+				GCC_OPTIMIZATION_LEVEL = 3;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"'CMAKE_INTDIR=\"$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)\"'",
+					"$(inherited)",
+				);
+				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
+				HEADER_SEARCH_PATHS = (
+					/Users/travers/Projects/catapult/test_data/test_01/submodules/blobject/.,
+					"$(inherited)",
+				);
+				INSTALL_PATH = "";
+				LIBRARY_STYLE = STATIC;
+				ONLY_ACTIVE_ARCH = NO;
+				OTHER_CPLUSPLUSFLAGS = (
+					"-DNDEBUG",
+					"'-std=c++17'",
+					"-fPIC",
+				);
+				OTHER_LIBTOOLFLAGS = "";
+				OTHER_REZFLAGS = "";
+				PRODUCT_NAME = blobject;
+				SECTORDER_FLAGS = "";
+				TARGET_TEMP_DIR = "/Users/travers/Projects/catapult/build_xcode/build/blobject.build/$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)";
+				USE_HEADERMAP = NO;
+				WARNING_CFLAGS = "$(inherited)";
+			};
+			name = Release;
+		};
+		AF8A39963C6741F1ACD5E1E9 /* MinSizeRel */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ARCHS = x86_64;
+				COMBINE_HIDPI_IMAGES = YES;
+				CONFIGURATION_BUILD_DIR = "/Users/travers/Projects/catapult/build_xcode/build/nasmobjs.build/$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)";
+				GCC_GENERATE_DEBUGGING_SYMBOLS = NO;
+				GCC_INLINES_ARE_PRIVATE_EXTERN = NO;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"'CMAKE_INTDIR=\"$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)\"'",
+					"$(inherited)",
+				);
+				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
+				HEADER_SEARCH_PATHS = (
+					/Users/travers/Projects/catapult/test_data/test_01/submodules/nasmproj/.,
+					"$(inherited)",
+				);
+				INSTALL_PATH = "";
+				LIBRARY_STYLE = STATIC;
+				ONLY_ACTIVE_ARCH = NO;
+				OTHER_LIBTOOLFLAGS = "";
+				OTHER_REZFLAGS = "";
+				PRODUCT_NAME = nasmobjs;
+				SECTORDER_FLAGS = "";
+				TARGET_TEMP_DIR = "/Users/travers/Projects/catapult/build_xcode/build/nasmobjs.build/$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)";
+				USE_HEADERMAP = NO;
+				WARNING_CFLAGS = "$(inherited)";
+			};
+			name = MinSizeRel;
+		};
+		BA6B0167C61F4B72AEB6DC76 /* MinSizeRel */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ARCHS = x86_64;
+				COMBINE_HIDPI_IMAGES = YES;
+				CONFIGURATION_BUILD_DIR = "/Users/travers/Projects/catapult/build_xcode/build/blobject.build/$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)";
+				GCC_GENERATE_DEBUGGING_SYMBOLS = NO;
+				GCC_INLINES_ARE_PRIVATE_EXTERN = NO;
+				GCC_OPTIMIZATION_LEVEL = s;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"'CMAKE_INTDIR=\"$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)\"'",
+					"$(inherited)",
+				);
+				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
+				HEADER_SEARCH_PATHS = (
+					/Users/travers/Projects/catapult/test_data/test_01/submodules/blobject/.,
+					"$(inherited)",
+				);
+				INSTALL_PATH = "";
+				LIBRARY_STYLE = STATIC;
+				ONLY_ACTIVE_ARCH = NO;
+				OTHER_CPLUSPLUSFLAGS = (
+					"-DNDEBUG",
+					"'-std=c++17'",
+					"-fPIC",
+				);
+				OTHER_LIBTOOLFLAGS = "";
+				OTHER_REZFLAGS = "";
+				PRODUCT_NAME = blobject;
+				SECTORDER_FLAGS = "";
+				TARGET_TEMP_DIR = "/Users/travers/Projects/catapult/build_xcode/build/blobject.build/$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)";
+				USE_HEADERMAP = NO;
+				WARNING_CFLAGS = "$(inherited)";
+			};
+			name = MinSizeRel;
+		};
+		C29F130735C84E5F9DA285BD /* RelWithDebInfo */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ARCHS = x86_64;
+				SDKROOT = /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX14.5.sdk;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SYMROOT = /Users/travers/Projects/catapult/build_xcode/build;
+			};
+			name = RelWithDebInfo;
+		};
+		C41058C5BB2C40B7827B9C73 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ARCHS = x86_64;
+				COMBINE_HIDPI_IMAGES = YES;
+				CONFIGURATION_BUILD_DIR = "/Users/travers/Projects/catapult/build_xcode/build/nasmobjs.build/$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)";
+				GCC_GENERATE_DEBUGGING_SYMBOLS = NO;
+				GCC_INLINES_ARE_PRIVATE_EXTERN = NO;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"'CMAKE_INTDIR=\"$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)\"'",
+					"$(inherited)",
+				);
+				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
+				HEADER_SEARCH_PATHS = (
+					/Users/travers/Projects/catapult/test_data/test_01/submodules/nasmproj/.,
+					"$(inherited)",
+				);
+				INSTALL_PATH = "";
+				LIBRARY_STYLE = STATIC;
+				ONLY_ACTIVE_ARCH = NO;
+				OTHER_LIBTOOLFLAGS = "";
+				OTHER_REZFLAGS = "";
+				PRODUCT_NAME = nasmobjs;
+				SECTORDER_FLAGS = "";
+				TARGET_TEMP_DIR = "/Users/travers/Projects/catapult/build_xcode/build/nasmobjs.build/$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)";
+				USE_HEADERMAP = NO;
+				WARNING_CFLAGS = "$(inherited)";
+			};
+			name = Debug;
+		};
+		DAFF2A3E436A44E88C688705 /* RelWithDebInfo */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ARCHS = x86_64;
+				COMBINE_HIDPI_IMAGES = YES;
+				CONFIGURATION_BUILD_DIR = /Users/travers/Projects/catapult/build_xcode/RelWithDebInfo;
+				EXECUTABLE_PREFIX = lib;
+				EXECUTABLE_SUFFIX = .a;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = YES;
+				GCC_INLINES_ARE_PRIVATE_EXTERN = NO;
+				GCC_OPTIMIZATION_LEVEL = 2;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"'CMAKE_INTDIR=\"$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)\"'",
+					"$(inherited)",
+				);
+				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
+				HEADER_SEARCH_PATHS = (
+					/Users/travers/Projects/catapult/test_data/test_01/submodules/my_depend/.,
+					"$(inherited)",
+				);
+				INSTALL_PATH = "";
+				LIBRARY_STYLE = STATIC;
+				ONLY_ACTIVE_ARCH = NO;
+				OTHER_CPLUSPLUSFLAGS = (
+					"-DNDEBUG",
+					"'-std=c++17'",
+					"-fPIC",
+				);
+				OTHER_LIBTOOLFLAGS = "";
+				OTHER_REZFLAGS = "";
+				PRODUCT_NAME = mylib;
+				SECTORDER_FLAGS = "";
+				TARGET_TEMP_DIR = "/Users/travers/Projects/catapult/build_xcode/build/mylib.build/$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)";
+				USE_HEADERMAP = NO;
+				WARNING_CFLAGS = "$(inherited)";
+			};
+			name = RelWithDebInfo;
+		};
+		E14FF76B396342FD87C9CE04 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ARCHS = x86_64;
+				COMBINE_HIDPI_IMAGES = YES;
+				CONFIGURATION_BUILD_DIR = "/Users/travers/Projects/catapult/build_xcode/build/blobject.build/$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)";
+				GCC_GENERATE_DEBUGGING_SYMBOLS = YES;
+				GCC_INLINES_ARE_PRIVATE_EXTERN = NO;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"'CMAKE_INTDIR=\"$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)\"'",
+					"$(inherited)",
+				);
+				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
+				HEADER_SEARCH_PATHS = (
+					/Users/travers/Projects/catapult/test_data/test_01/submodules/blobject/.,
+					"$(inherited)",
+				);
+				INSTALL_PATH = "";
+				LIBRARY_STYLE = STATIC;
+				ONLY_ACTIVE_ARCH = NO;
+				OTHER_CPLUSPLUSFLAGS = (
+					"'-std=c++17'",
+					"-fPIC",
+				);
+				OTHER_LIBTOOLFLAGS = "";
+				OTHER_REZFLAGS = "";
+				PRODUCT_NAME = blobject;
+				SECTORDER_FLAGS = "";
+				TARGET_TEMP_DIR = "/Users/travers/Projects/catapult/build_xcode/build/blobject.build/$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)";
+				USE_HEADERMAP = NO;
+				WARNING_CFLAGS = "$(inherited)";
+			};
+			name = Debug;
+		};
+		E221ECB67DA947239AB0340F /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ARCHS = arm64;
+				COMBINE_HIDPI_IMAGES = YES;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = YES;
+				GCC_INLINES_ARE_PRIVATE_EXTERN = NO;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"'CMAKE_INTDIR=\"$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)\"'",
+					"$(inherited)",
+				);
+				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
+				INSTALL_PATH = "";
+				ONLY_ACTIVE_ARCH = NO;
+				OTHER_LDFLAGS = " $(inherited)";
+				OTHER_REZFLAGS = "";
+				PRODUCT_NAME = ALL_BUILD;
+				SECTORDER_FLAGS = "";
+				USE_HEADERMAP = NO;
+				WARNING_CFLAGS = "$(inherited)";
+			};
+			name = Debug;
+		};
+		E65214D3346845EDADD4C96C /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ARCHS = x86_64;
+				COMBINE_HIDPI_IMAGES = YES;
+				CONFIGURATION_BUILD_DIR = /Users/travers/Projects/catapult/build_xcode/Release;
+				EXECUTABLE_PREFIX = "";
+				EXECUTABLE_SUFFIX = "";
+				GCC_GENERATE_DEBUGGING_SYMBOLS = NO;
+				GCC_INLINES_ARE_PRIVATE_EXTERN = NO;
+				GCC_OPTIMIZATION_LEVEL = 3;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"'CMAKE_INTDIR=\"$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)\"'",
+					"'MY_DEFINE=\"abc def\"'",
+					"$(inherited)",
+				);
+				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
+				HEADER_SEARCH_PATHS = (
+					"/Users/travers/Library/Caches/catapult/cache/zstd/travbid/main/zstd-1.5.5/lib",
+					/Users/travers/Projects/catapult/test_data/test_01/submodules/blobject/.,
+					/Users/travers/Projects/catapult/test_data/test_01/submodules/nasmproj/.,
+					"$(inherited)",
+				);
+				INSTALL_PATH = "";
+				LD_NO_PIE = NO;
+				ONLY_ACTIVE_ARCH = NO;
+				OTHER_CPLUSPLUSFLAGS = (
+					"-DNDEBUG",
+					"'-std=c++17'",
+					"-fPIE",
+				);
+				OTHER_LDFLAGS = (
+					"-Wl,-search_paths_first",
+					"-Wl,-headerpad_max_install_names",
+					"/Users/travers/Projects/catapult/build_xcode/build/blobject.build/$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)/$(OBJECT_FILE_DIR_normal:base)/x86_64/blobject1.o",
+					"/Users/travers/Projects/catapult/build_xcode/build/blobject.build/$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)/$(OBJECT_FILE_DIR_normal:base)/x86_64/blobject2.o",
+					/Users/travers/Projects/catapult/build_xcode/Release/libmylib.a,
+					/Users/travers/Projects/catapult/build_xcode/submodules/my_depend/Release/libmy_depend_lib.a,
+					/Users/travers/Projects/catapult/build_ninja/zstd/compress.a,
+					/Users/travers/Projects/catapult/build_ninja/zstd/decompress.a,
+					/Users/travers/Projects/catapult/build_ninja/zstd/deprecated.a,
+					/Users/travers/Projects/catapult/build_ninja/zstd/entropy.a,
+					/Users/travers/Projects/catapult/build_ninja/zstd/errors.a,
+					/Users/travers/Projects/catapult/build_ninja/zstd/legacy.a,
+					/Users/travers/Projects/catapult/build_ninja/zstd/pool.a,
+					/Users/travers/Projects/catapult/build_ninja/zstd/threading.a,
+					/Users/travers/Projects/catapult/build_ninja/zstd/xxhash.a,
+					/Users/travers/Projects/catapult/build_ninja/zstd/zdict.a,
+					/Users/travers/Projects/catapult/build_ninja/zstd/zstd_common.a,
+					"$(inherited)",
+				);
+				OTHER_REZFLAGS = "";
+				PRODUCT_NAME = myexe;
+				SECTORDER_FLAGS = "";
+				TARGET_TEMP_DIR = "/Users/travers/Projects/catapult/build_xcode/build/myexe.build/$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)";
+				USE_HEADERMAP = NO;
+				WARNING_CFLAGS = "$(inherited)";
+			};
+			name = Release;
+		};
+		E8D901E46E314DD8B85E0FBC /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ARCHS = x86_64;
+				COMBINE_HIDPI_IMAGES = YES;
+				CONFIGURATION_BUILD_DIR = /Users/travers/Projects/catapult/build_xcode/Debug;
+				EXECUTABLE_PREFIX = "";
+				EXECUTABLE_SUFFIX = "";
+				GCC_GENERATE_DEBUGGING_SYMBOLS = NO;
+				GCC_INLINES_ARE_PRIVATE_EXTERN = NO;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"'CMAKE_INTDIR=\"$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)\"'",
+					"'MY_DEFINE=\"abc def\"'",
+					"$(inherited)",
+				);
+				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
+				HEADER_SEARCH_PATHS = (
+					"/Users/travers/Library/Caches/catapult/cache/zstd/travbid/main/zstd-1.5.5/lib",
+					/Users/travers/Projects/catapult/test_data/test_01/submodules/blobject/.,
+					/Users/travers/Projects/catapult/test_data/test_01/submodules/nasmproj/.,
+					"$(inherited)",
+				);
+				INSTALL_PATH = "";
+				LD_NO_PIE = NO;
+				ONLY_ACTIVE_ARCH = NO;
+				OTHER_CPLUSPLUSFLAGS = (
+					"'-std=c++17'",
+					"-fPIE",
+					"-g",
+				);
+				OTHER_LDFLAGS = (
+					"-Wl,-search_paths_first",
+					"-Wl,-headerpad_max_install_names",
+					"/Users/travers/Projects/catapult/build_xcode/build/blobject.build/$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)/$(OBJECT_FILE_DIR_normal:base)/x86_64/blobject1.o",
+					"/Users/travers/Projects/catapult/build_xcode/build/blobject.build/$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)/$(OBJECT_FILE_DIR_normal:base)/x86_64/blobject2.o",
+					/Users/travers/Projects/catapult/build_xcode/Debug/libmylib.a,
+					/Users/travers/Projects/catapult/build_xcode/submodules/my_depend/Debug/libmy_depend_lib.a,
+					/Users/travers/Projects/catapult/build_ninja/zstd/compress.a,
+					/Users/travers/Projects/catapult/build_ninja/zstd/decompress.a,
+					/Users/travers/Projects/catapult/build_ninja/zstd/deprecated.a,
+					/Users/travers/Projects/catapult/build_ninja/zstd/entropy.a,
+					/Users/travers/Projects/catapult/build_ninja/zstd/errors.a,
+					/Users/travers/Projects/catapult/build_ninja/zstd/legacy.a,
+					/Users/travers/Projects/catapult/build_ninja/zstd/pool.a,
+					/Users/travers/Projects/catapult/build_ninja/zstd/threading.a,
+					/Users/travers/Projects/catapult/build_ninja/zstd/xxhash.a,
+					/Users/travers/Projects/catapult/build_ninja/zstd/zdict.a,
+					/Users/travers/Projects/catapult/build_ninja/zstd/zstd_common.a,
+					"$(inherited)",
+				);
+				OTHER_REZFLAGS = "";
+				PRODUCT_NAME = myexe;
+				SECTORDER_FLAGS = "";
+				TARGET_TEMP_DIR = "/Users/travers/Projects/catapult/build_xcode/build/myexe.build/$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)";
+				USE_HEADERMAP = NO;
+				WARNING_CFLAGS = "$(inherited)";
+			};
+			name = Debug;
+		};
+		EC23A1ACC34C4BB1A29D0017 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ARCHS = arm64;
+				COMBINE_HIDPI_IMAGES = YES;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = YES;
+				GCC_INLINES_ARE_PRIVATE_EXTERN = NO;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"'CMAKE_INTDIR=\"$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)\"'",
+					"$(inherited)",
+				);
+				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
+				INSTALL_PATH = "";
+				ONLY_ACTIVE_ARCH = NO;
+				OTHER_LDFLAGS = " $(inherited)";
+				OTHER_REZFLAGS = "";
+				PRODUCT_NAME = ZERO_CHECK;
+				SECTORDER_FLAGS = "";
+				USE_HEADERMAP = NO;
+				WARNING_CFLAGS = "$(inherited)";
+			};
+			name = Debug;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		0EDCBCD0F0C64464AFB5FF0E /* Build configuration list for PBXProject "test_one" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				1936FF84FBE64168BDBA1261 /* Debug */,
+				39F0F40D7FAA4BCA8E1BE6CF /* Release */,
+				198945EC59A34A6D86B88594 /* MinSizeRel */,
+				C29F130735C84E5F9DA285BD /* RelWithDebInfo */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		3A634DF5A6F64A23BE2D114C /* Build configuration list for PBXNativeTarget "myexe" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				E8D901E46E314DD8B85E0FBC /* Debug */,
+				E65214D3346845EDADD4C96C /* Release */,
+				5D81540E2B3B4B81855104AD /* MinSizeRel */,
+				115E7E88AF644AA0975284CA /* RelWithDebInfo */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		3D56687017EB4533AE796CFE /* Build configuration list for PBXAggregateTarget "ZERO_CHECK" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				EC23A1ACC34C4BB1A29D0017 /* Debug */,
+				7BC4210B78674DE7AEB7B37A /* Release */,
+				36B5EBBC5CFD404DA1F09E01 /* MinSizeRel */,
+				3A14332550C8451396D2939D /* RelWithDebInfo */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		5E38EDB0C4F44634B26ED9B8 /* Build configuration list for PBXAggregateTarget "ALL_BUILD" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				E221ECB67DA947239AB0340F /* Debug */,
+				A55B0C98392A47E0B0793281 /* Release */,
+				068C0FA3FA014A298A319E2E /* MinSizeRel */,
+				74459448E63C46CEAC5B8041 /* RelWithDebInfo */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		6FD2758E80F54BD5BA55A7CF /* Build configuration list for PBXNativeTarget "mylib" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				54E400FAA40C4CF5B65E159E /* Debug */,
+				71EC9E13DF7E47E8BC5DBB9F /* Release */,
+				671CAAE9FD344766966F54DC /* MinSizeRel */,
+				DAFF2A3E436A44E88C688705 /* RelWithDebInfo */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		AA46E7B21BE84F77A5450375 /* Build configuration list for PBXNativeTarget "nasmobjs" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				C41058C5BB2C40B7827B9C73 /* Debug */,
+				8B12403DB215425784C51186 /* Release */,
+				AF8A39963C6741F1ACD5E1E9 /* MinSizeRel */,
+				51D0F0CC46EC4D5C9C7D3422 /* RelWithDebInfo */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		D6B9DD55034E45C3BE1B601D /* Build configuration list for PBXNativeTarget "blobject" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				E14FF76B396342FD87C9CE04 /* Debug */,
+				AAD76867C5D0419C81EA7DCB /* Release */,
+				BA6B0167C61F4B72AEB6DC76 /* MinSizeRel */,
+				17F3A2BE68C046E8B5CC276B /* RelWithDebInfo */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		FC2FC3A520014D9A8EAEDE77 /* Build configuration list for PBXNativeTarget "my_depend_lib" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				263FAAA22E8B445EB393F840 /* Debug */,
+				18A69E71491843FD94F1BFE9 /* Release */,
+				4B7AC1A19D3445439FA34EBA /* MinSizeRel */,
+				1FE018EC7D134DC8860FD306 /* RelWithDebInfo */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = 879958F820874477A910A1E2 /* Project object */;
+}

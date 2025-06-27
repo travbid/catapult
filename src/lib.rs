@@ -80,6 +80,7 @@ struct DependencyManifest {
 	registry: Option<String>,
 	channel: Option<String>,
 	// ---
+    // TODO: Rename to input_path
 	path: Option<String>,
 	// ---
 	git: Option<String>,

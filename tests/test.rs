@@ -50,7 +50,7 @@ fn test_01() {
 
 	assert_eq!(project.info.name, "test_one");
 	let test_one = project;
-	println!("test_one: {:?}", *test_one);
+	// println!("test_one: {:?}", *test_one);
 	assert_eq!(test_one.executables.len(), 1);
 	assert_eq!(test_one.static_libraries.len(), 1);
 

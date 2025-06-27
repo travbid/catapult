@@ -1,3 +1,7 @@
+pub mod index_map;
+pub mod index_set;
+pub mod thin_ptr;
+
 use std::{
 	borrow::Borrow,
 	path::{Path, PathBuf},
@@ -40,6 +44,10 @@ pub(crate) fn is_cpp_source(src_filename: &str) -> bool {
 	src_filename.ends_with(".cpp") || src_filename.ends_with(".cc")
 }
 
+pub(crate) fn is_h_source(src_filename: &str) -> bool {
+	src_filename.ends_with(".h") || src_filename.ends_with(".hpp")
+}
+
 pub(crate) fn is_nasm_source(src_filename: &str) -> bool {
 	src_filename.ends_with(".asm")
 }
@@ -48,18 +56,32 @@ pub(crate) fn is_nasm_source(src_filename: &str) -> bool {
 pub struct Sources {
 	pub c: Vec<SourcePath>,
 	pub cpp: Vec<SourcePath>,
+	pub h: Vec<SourcePath>,
 	pub nasm: Vec<SourcePath>,
 }
 
 impl Sources {
 	pub fn iter(&self) -> impl Iterator<Item = &SourcePath> {
-		self.c.iter().chain(self.cpp.iter()).chain(self.nasm.iter())
+		self.c
+			.iter()
+			.chain(self.cpp.iter())
+			.chain(self.h.iter())
+			.chain(self.nasm.iter())
+	}
+
+	pub fn into_iter(self) -> impl IntoIterator<Item = SourcePath> {
+		self.c
+			.into_iter()
+			.chain(self.cpp.into_iter())
+			.chain(self.h.into_iter())
+			.chain(self.nasm.into_iter())
 	}
 
 	pub fn extended_with<T: Borrow<Self>>(&self, other: T) -> Self {
 		Sources {
 			c: self.c.iter().chain(&other.borrow().c).cloned().collect(),
 			cpp: self.cpp.iter().chain(&other.borrow().cpp).cloned().collect(),
+			h: self.h.iter().chain(&other.borrow().h).cloned().collect(),
 			nasm: self.nasm.iter().chain(&other.borrow().nasm).cloned().collect(),
 		}
 	}
@@ -73,6 +95,8 @@ impl Sources {
 					acc.c.push(src);
 				} else if is_cpp_source(&src.name) {
 					acc.cpp.push(src);
+				} else if is_h_source(&src.name) {
+					acc.h.push(src);
 				} else if is_nasm_source(&src.name) {
 					acc.nasm.push(src);
 				} else {

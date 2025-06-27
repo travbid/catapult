@@ -278,15 +278,15 @@ impl StarProject {
 				Arc::get_mut(exe).unwrap().set_parent(weak_parent.clone());
 			}
 			for lib in &mut project.static_libraries {
-				let lib_mut = unsafe { &mut (*Arc::as_ptr(lib).cast_mut()) };
+				let lib_mut = unsafe { &mut *Arc::as_ptr(lib).cast_mut() };
 				lib_mut.set_parent(weak_parent.clone());
 			}
 			for lib in &mut project.object_libraries {
-				let lib_mut = unsafe { &mut (*Arc::as_ptr(lib).cast_mut()) };
+				let lib_mut = unsafe { &mut *Arc::as_ptr(lib).cast_mut() };
 				lib_mut.set_parent(weak_parent.clone());
 			}
 			for lib in &mut project.interface_libraries {
-				let lib_mut = unsafe { &mut (*Arc::as_ptr(lib).cast_mut()) };
+				let lib_mut = unsafe { &mut *Arc::as_ptr(lib).cast_mut() };
 				lib_mut.set_parent(weak_parent.clone());
 			}
 			project
