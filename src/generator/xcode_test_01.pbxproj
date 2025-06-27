@@ -1,0 +1,146 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 77;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		000000000000000000000004 /* main.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000003 /* main.cpp */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXFileReference section */
+		000000000000000000000002 /* basic.exe */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = basic.exe; sourceTree = BUILT_PRODUCTS_DIR; };
+		000000000000000000000003 /* main.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = main.cpp; sourceTree = SOURCE_ROOT; };
+/* End PBXFileReference section */
+
+/* Begin PBXGroup section */
+		000000000000000000000009 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				000000000000000000000002 /* basic.exe */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		00000000000000000000000A /* basic.exe */ = {
+			isa = PBXGroup;
+			children = (
+				000000000000000000000003 /* main.cpp */,
+			);
+			name = basic.exe;
+			sourceTree = "<group>";
+		};
+		00000000000000000000000B = {
+			isa = PBXGroup;
+			children = (
+				00000000000000000000000A /* basic.exe */,
+				000000000000000000000009 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		000000000000000000000006 /* basic.exe */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 000000000000000000000008 /* Build configuration list for PBXNativeTarget "basic.exe" */;
+			buildPhases = (
+				000000000000000000000005 /* Sources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = basic.exe;
+			packageProductDependencies = (
+			);
+			productName = basic.exe;
+			productReference = 000000000000000000000002 /* basic.exe */;
+			productType = "com.apple.product-type.tool";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		00000000000000000000000C /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = 1;
+				LastUpgradeCheck = 2610;
+				TargetAttributes = {
+					000000000000000000000006 = {
+						CreatedOnToolsVersion = 26.1.1;
+					};
+				};
+			};
+			buildConfigurationList = 000000000000000000000001 /* Build configuration list for PBXProject "basic" */;
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				Base,
+			);
+			mainGroup = 00000000000000000000000B;
+			minimizedProjectReferenceProxies = 1;
+			preferredProjectObjectVersion = 77;
+			productRefGroup = 000000000000000000000009 /* Products */;
+			projectDirPath = /path/to/basic;
+			projectRoot = "";
+			targets = (
+				000000000000000000000006 /* basic.exe */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXSourcesBuildPhase section */
+		000000000000000000000005 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				000000000000000000000004 /* main.cpp in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin XCBuildConfiguration section */
+		000000000000000000000000 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_CXX_LANGUAGE_STANDARD = "c++20";
+				GCC_C_LANGUAGE_STANDARD = c17;
+			};
+			name = Debug;
+		};
+		000000000000000000000007 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				STRINGS_FILE_OUTPUT_ENCODING = "UTF-8";
+			};
+			name = Debug;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		000000000000000000000001 /* Build configuration list for PBXProject "basic" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				000000000000000000000000 /* Debug */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		000000000000000000000008 /* Build configuration list for PBXNativeTarget "basic.exe" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				000000000000000000000007 /* Debug */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = 00000000000000000000000C /* Project object */;
+}
