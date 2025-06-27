@@ -1,0 +1,6 @@
+
+add_executable(
+    name = "basic.exe",
+    sources = ["main.cpp"],
+    # include_dirs_public = ["."],
+)

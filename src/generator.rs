@@ -1,5 +1,6 @@
 mod msvc;
 mod ninja;
+mod xcode;
 
 use std::{
 	path::Path, //
@@ -15,6 +16,7 @@ use crate::{
 pub enum Generator {
 	Msvc,
 	Ninja,
+	Xcode,
 }
 
 impl Generator {
@@ -51,6 +53,7 @@ impl Generator {
 				};
 				ninja::Ninja::generate(project, build_dir, toolchain, profile, global_opts, target_platform)
 			}
+			Generator::Xcode => xcode::Xcode::generate(project, build_dir, toolchain, global_opts),
 		}
 	}
 }

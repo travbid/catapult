@@ -13,5 +13,4 @@ add_library(mylib STATIC mylib.cpp)
 target_link_libraries(mylib PRIVATE my_depend_lib)
 
 add_executable(myexe main.cpp)
-target_link_libraries(myexe PRIVATE mylib blobject)
 target_compile_definitions(myexe PRIVATE MY_DEFINE="abc def")

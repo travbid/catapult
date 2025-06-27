@@ -144,6 +144,7 @@ fn main() -> ExitCode {
 	let generator = match generator_str.as_str() {
 		"Ninja" => Generator::Ninja,
 		"MSVC" => Generator::Msvc,
+		"Xcode" => Generator::Xcode,
 		gen => {
 			println!("Error: Not a valid generator '{}'", gen);
 			return ExitCode::FAILURE;

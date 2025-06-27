@@ -173,3 +173,20 @@ jobs:
       - run: tree /f build
       - run: ./build/test_one/myexe.exe abc def
       - run: ./build/my_depend/mytest.exe
+
+  macos-xcode:
+    name: Build and Run (macOS / Xcode)
+    runs-on: macos-latest
+    steps:
+      - run: brew install nasm
+      - name: Checkout
+        uses: actions/checkout@v4
+      - run: cargo build
+      - run: ./target/debug/catapult --source-dir test_data/test_xcode_basic --build-dir build --generator Xcode --toolchain test_data/toolchain_xcode.toml
+      - run: ls -R build
+      - run: xcodebuild -project build/basic/basic.xcodeproj -configuration Debug SYMROOT=$PWD/build/basic/DerivedData build
+      - run: ls -R build
+      - run: ./build/basic/DerivedData/Debug/basic.exe
+      - run: xcodebuild -project build/basic/basic.xcodeproj -configuration Release SYMROOT=$PWD/build/basic/DerivedData build
+      - run: ls -R build
+      - run: ./build/basic/DerivedData/Release/basic.exe

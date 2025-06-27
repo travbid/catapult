@@ -1,6 +1,9 @@
 /build/
-/build_*/
+/build_*/**/*
 /target/
 
 .vs/
 .vscode/
+
+.DS_Store
+XCBuildData
