@@ -1,0 +1,15 @@
+c_compiler = ["/opt/homebrew/opt/llvm/bin/clang"]
+cpp_compiler = ["/opt/homebrew/opt/llvm/bin/clang++"]
+nasm_assembler = ["nasm", "-fmacho64"]
+static_linker = ["/opt/homebrew/opt/llvm/bin/llvm-ar", "qc"]
+exe_linker = ["/opt/homebrew/opt/llvm/bin/clang++"]
+
+[profile.Debug]
+c_compile_flags = ["-Og", "-g3", "-D_DEBUG"]
+cpp_compile_flags = ["-Og", "-g3", "-D_DEBUG"]
+nasm_assemble_flags = ["-O0", "-Xgnu"]
+
+[profile.Release]
+c_compile_flags = ["-O3", "-DNDEBUG"]
+cpp_compile_flags = ["-O3", "-DNDEBUG"]
+nasm_assemble_flags = ["-Ox", "-Xgnu"]

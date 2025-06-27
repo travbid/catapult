@@ -520,6 +520,9 @@ fn generator_func<'module>(arg: Option<Value<'module>>, eval: &mut Evaluator<'mo
 	match arg {
 		None => None,
 		Some(x) => {
+			if x.is_none() {
+				return None;
+			}
 			let id = String::from(GEN_PREFIX) + &uuid::Uuid::new_v4().to_string();
 			eval.module().set(&id, x);
 			Some(id)

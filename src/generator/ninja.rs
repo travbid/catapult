@@ -1033,7 +1033,7 @@ fn test_position_independent_code() {
 		nasm_assembler: Some(Box::new(TestAssembler {})),
 		static_linker: Some(vec!["llvm-ar".to_owned()]),
 		exe_linker: Some(Box::new(TestCompiler {})),
-		profile: Default::default(),
+		..Default::default()
 	};
 	let profile = Default::default();
 	let global_opts = GlobalOptions {
