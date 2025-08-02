@@ -182,7 +182,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
       - run: cargo build
-      - run: ./target/debug/catapult --source-dir test_data/test_xcode_basic --build-dir build --generator Xcode --toolchain test_data/toolchain_xcode.toml
+      - run: ./target/debug/catapult generate --source-dir test_data/test_xcode_basic --build-dir build --generator Xcode --toolchain test_data/toolchain_xcode.toml
       - run: ls -R build
       - run: xcodebuild -project build/basic/basic.xcodeproj -configuration Debug SYMROOT=$PWD/build/basic/DerivedData build
       - run: ls -R build

@@ -33,3 +33,6 @@ uuid = { version = "1.4", features = [
     "fast-rng",          # Use a faster (but still sufficiently random) RNG
     "macro-diagnostics", # Enable better diagnostics for compile-time UUIDs
 ] }
+
+[lints.clippy]
+uninlined_format_args = "allow"
