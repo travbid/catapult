@@ -46,7 +46,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
       - run: cargo build
-      - run: ./target/debug/catapult -S test_data/test_01 -B build -G Ninja -T test_data/toolchain_gcc.toml
+      - run: ./target/debug/catapult generate -S test_data/test_01 -B build -G Ninja -T test_data/toolchain_gcc.toml
       - run: tree build
       - run: cat build/build.ninja
       - run: ninja -C build -v myexe mytest
@@ -67,7 +67,7 @@ jobs:
         uses: actions/checkout@v4
       - run: cargo build
 
-      - run: ./target/debug/catapult --source-dir test_data/test_01 --build-dir build_debug --generator Ninja --toolchain test_data/toolchain_clang.toml --profile Debug
+      - run: ./target/debug/catapult generate --source-dir test_data/test_01 --build-dir build_debug --generator Ninja --toolchain test_data/toolchain_clang.toml --profile Debug
       - run: tree build_debug
       - run: cat build_debug/build.ninja
       - run: ninja -C build_debug -v myexe mytest
@@ -75,7 +75,7 @@ jobs:
       - run: ./build_debug/test_one/myexe abc def
       - run: ./build_debug/my_depend/mytest
 
-      - run: ./target/debug/catapult --source-dir test_data/test_01 --build-dir build_release --generator Ninja --toolchain test_data/toolchain_clang.toml --profile Release
+      - run: ./target/debug/catapult generate --source-dir test_data/test_01 --build-dir build_release --generator Ninja --toolchain test_data/toolchain_clang.toml --profile Release
       - run: tree build_release
       - run: cat build_release/build.ninja
       - run: ninja -C build_release -v myexe mytest
@@ -98,7 +98,7 @@ jobs:
         uses: ./.github/install-emscripten
       - run: cargo build
 
-      - run: ./target/debug/catapult --source-dir test_data/test_01 --build-dir build_debug --generator Ninja --toolchain test_data/toolchain_emscripten.toml --profile Debug
+      - run: ./target/debug/catapult generate --source-dir test_data/test_01 --build-dir build_debug --generator Ninja --toolchain test_data/toolchain_emscripten.toml --profile Debug
       - run: tree build_debug
       - run: cat build_debug/build.ninja
       - run: ninja -C build_debug -v myexe mytest
@@ -106,7 +106,7 @@ jobs:
       - run: node ./build_debug/test_one/myexe abc def
       - run: node ./build_debug/my_depend/mytest
 
-      - run: ./target/debug/catapult --source-dir test_data/test_01 --build-dir build_release --generator Ninja --toolchain test_data/toolchain_emscripten.toml --profile Release
+      - run: ./target/debug/catapult generate --source-dir test_data/test_01 --build-dir build_release --generator Ninja --toolchain test_data/toolchain_emscripten.toml --profile Release
       - run: tree build_release
       - run: cat build_release/build.ninja
       - run: ninja -C build_release -v myexe mytest
@@ -124,7 +124,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
       - run: cargo build
-      - run: ./target/debug/catapult --source-dir test_data/test_01 --build-dir build --generator MSVC --toolchain test_data/toolchain_msvc.toml
+      - run: ./target/debug/catapult generate --source-dir test_data/test_01 --build-dir build --generator MSVC --toolchain test_data/toolchain_msvc.toml
       - run: tree /f build
 
       - shell: cmd
@@ -166,7 +166,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
       - run: cargo build
-      - run: ./target/debug/catapult --source-dir test_data/test_01 --build-dir build --generator Ninja --toolchain test_data/toolchain_clang_win.toml --profile Debug
+      - run: ./target/debug/catapult generate --source-dir test_data/test_01 --build-dir build --generator Ninja --toolchain test_data/toolchain_clang_win.toml --profile Debug
       - run: tree /f build
       - run: Get-Content build/build.ninja
       - run: ninja -C build -v myexe mytest
