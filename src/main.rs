@@ -11,7 +11,7 @@ use getopts::Options;
 use catapult::{generator::Generator, toolchain};
 
 fn print_usage(program: &str, opts: Options) {
-	let brief = format!("Usage: {} [options]", program);
+	let brief = format!("Usage: {} FILE [options]", program);
 	print!("{}", opts.usage(&brief));
 }
 
@@ -224,8 +224,6 @@ fn main() -> ExitCode {
 			return ExitCode::FAILURE;
 		}
 	};
-
-	log::info!("Generation succeeded");
 
 	ExitCode::SUCCESS
 }

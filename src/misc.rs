@@ -1,6 +1,5 @@
 pub mod index_map;
 pub mod index_set;
-pub mod thin_ptr;
 
 use std::{
 	borrow::Borrow,
