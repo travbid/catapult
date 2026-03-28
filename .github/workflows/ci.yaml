@@ -172,3 +172,19 @@ jobs:
       - run: tree /f build
       - run: ./build/test_one/myexe.exe abc def
       - run: ./build/my_depend/mytest.exe
+
+  macos-xcode:
+    name: Build and Run (macOS / Xcode)
+    runs-on: macos-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - run: cargo build
+      - run: ./target/debug/catapult --source-dir test_data/test_xcode_basic --build-dir build --generator Xcode --toolchain test_data/toolchain_xcode.toml
+      - run: ls -R build
+      - run: xcodebuild -project build/basic.xcodeproj -configuration Debug build
+      - run: ls -R build
+      - run: ./build/Build/Products/Debug/basic.exe
+      - run: xcodebuild -project build/basic.xcodeproj -configuration Release build
+      - run: ls -R build
+      - run: ./build/Build/Products/Release/basic.exe

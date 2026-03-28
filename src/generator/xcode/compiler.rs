@@ -44,11 +44,11 @@ impl crate::toolchain::compiler::Compiler for Xcode {
 
 	fn cpp_std_flag(&self, std: &str) -> Result<String, String> {
 		match std {
-			"11" => Ok("\"c++11\"".to_owned()),
-			"14" => Ok("\"c++14\"".to_owned()),
-			"17" => Ok("\"c++17\"".to_owned()),
-			"20" => Ok("\"c++20\"".to_owned()),
-			"23" => Ok("\"c++23\"".to_owned()),
+			"11" => Ok("c++11".to_owned()),
+			"14" => Ok("c++14".to_owned()),
+			"17" => Ok("c++17".to_owned()),
+			"20" => Ok("c++20".to_owned()),
+			"23" => Ok("c++23".to_owned()),
 			_ => Err(format!("C++ standard not supported by compiler: {std}")),
 		}
 	}

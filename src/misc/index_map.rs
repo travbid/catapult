@@ -59,8 +59,14 @@ where
 	pub fn iter(&self) -> core::slice::Iter<(K, V)> {
 		self.vec.iter()
 	}
+	pub fn keys<'a>(&'a self) -> impl Iterator<Item = K> + 'a {
+		self.vec.iter().map(|kv| kv.0.clone())
+	}
 	pub fn into_values(self) -> impl Iterator<Item = V> {
 		self.into_iter().map(|kv| kv.1)
+	}
+	pub fn is_empty(&self) -> bool {
+		self.vec.is_empty()
 	}
 }
 
