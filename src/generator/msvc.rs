@@ -23,30 +23,7 @@ use crate::{
 	GlobalOptions,
 };
 
-// struct ArcTarget<'a>(Arc<dyn Target + 'a>);
-// impl<'a> core::cmp::PartialEq for ArcTarget<'a> {
-// 	fn eq(&self, other: &Self) -> bool {
-// 		Arc::ptr_eq(&self.0, &other.0)
-// 	}
-// }
-// impl<'a> core::cmp::Eq for ArcTarget<'a> {}
-// impl<'a> core::hash::Hash for ArcTarget<'a> {
-// 	fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
-// 		Arc::as_ptr(&self.0).hash(state)
-// 	}
-// }
-// impl<'a> core::borrow::Borrow<ArcTarget<'a>> for LinkPtr {
-// 	fn borrow(&self) -> &ArcTarget<'a> {
-// 		match self {
-// 			&LinkPtr::Static(lib) => &ArcTarget(lib),
-// 			&LinkPtr::Object(lib) => &ArcTarget(lib),
-// 			&LinkPtr::Interface(lib) => &ArcTarget(lib),
-// 		}
-// 	}
-// }
 type TargetProjects<'a> = index_map::IndexMap<*const dyn Target, VsProject>;
-// type TargetProjects<'a> = index_map::IndexMap<Arc<dyn Target + 'a>, VsProject>;
-// type TargetProjects<'a> = index_map::IndexMap<ArcTarget<'a>, VsProject>;
 
 #[inline]
 fn as_key<T: Target>(target: &Arc<T>) -> *const (dyn Target) {
@@ -291,17 +268,6 @@ fn nasm_compile(
 	ret += "    </NASM>\n";
 	Ok(ret)
 }
-
-// struct Targets {
-// 	links: index_map::IndexMap<LinkPtr, VsProject>,
-// 	exes: Vec<VsProject>,
-// }
-
-// impl Targets {
-// 	fn new() -> Targets {
-// 		Targets { links: index_map::IndexMap::new(), exes: Vec::new() }
-// 	}
-// }
 
 struct TargetData {
 	name: String,

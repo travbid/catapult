@@ -53,9 +53,6 @@ where
 			self.vec.push((key, val));
 		}
 	}
-	// pub(super) fn insert_exe(&mut self, val: VsProject) {
-	// 	self.vec.push(val);
-	// }
 	pub fn iter(&self) -> core::slice::Iter<(K, V)> {
 		self.vec.iter()
 	}
@@ -93,40 +90,3 @@ where
 		self.vec.iter()
 	}
 }
-
-// pub(crate) struct IndexMapIter<'map, K, V>
-// where
-// 	K: cmp::Eq + hash::Hash,
-// {
-// 	index: usize,
-// 	map: &'map IndexMap<K, V>,
-// }
-
-// impl<'map, K, V> Iterator for IndexMapIter<'map, K, V>
-// where
-// 	K: cmp::Eq + hash::Hash,
-// {
-// 	type Item = (&'map K, &'map V);
-
-// 	fn next(&mut self) -> Option<Self::Item> {
-// 		if self.index == self.map.vec.len() {
-// 			return None;
-// 		}
-// 		let index = self.index;
-// 		self.index += 1;
-// 		Some((&self.map.vec[index].0, &self.map.vec[index].1))
-// 	}
-// }
-
-// impl<'map, K, V> DoubleEndedIterator for IndexMapIter<'map, K, V>
-// where
-// 	K: cmp::Eq + hash::Hash,
-// {
-// 	fn next_back(&mut self) -> Option<Self::Item> {
-// 		if self.index == self.map.vec.len() {
-// 			return None;
-// 		}
-// 		self.index += 1;
-// 		Some((&self.map.vec[self.map.vec.len() - self.index].0, &self.map.vec[self.map.vec.len() - self.index].1))
-// 	}
-// }

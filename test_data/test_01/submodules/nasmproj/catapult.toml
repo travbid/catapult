@@ -3,4 +3,3 @@ name = "nasmproj"
 description = "A test dependency for NASM sources"
 
 [package_options]
-use_nasm = true

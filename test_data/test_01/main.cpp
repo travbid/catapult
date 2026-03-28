@@ -9,7 +9,7 @@
 #include "nasmproj.h"
 
 int main(int argc, char**) {  //
-//  std::cout << MY_DEFINE << "\n";
+  std::cout << MY_DEFINE << "\n";
 
   const auto ret = add_two(argc);
   std::cout << "add_two(argc) = " << ret << "\n\n";
@@ -37,8 +37,6 @@ int main(int argc, char**) {  //
 
   blobject::DoBlob1();
   blobject::DoBlob2();
-
-//   nasm_always();
 
   const int asm_result = asm_add_two_numbers(argc, argc);
   std::cout << "      argc: " << argc << "\n";

@@ -9,9 +9,7 @@ impl crate::toolchain::compiler::Compiler for Xcode {
 	}
 
 	fn version(&self) -> String {
-		// TODO(Travers): Currently the MSVC generator works even when Visual
-		// Studio is not installed on the build machine. Eventually catapult will
-		// need to query the VS installation for information such as the version.
+		// TODO(Travers)
 		String::new()
 	}
 

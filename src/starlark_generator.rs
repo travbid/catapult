@@ -23,7 +23,7 @@ pub(crate) fn eval_vars(func: &OwnedFrozenValue, ctx: StarContext, name: &str) -
 	};
 	let generator_vars = match StarGeneratorVars::unpack_value(result_val) {
 		Some(x) => x,
-		None => return Err(format!("Result of generator function could not be unpacked: {} {}", name, result_val)),
+		None => return Err(format!("Result of generator function could not be unpacked: {}", name)),
 	};
 	Ok(generator_vars)
 }

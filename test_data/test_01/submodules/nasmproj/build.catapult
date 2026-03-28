@@ -1,6 +1,5 @@
 
 def nasm_sources(target: str):
-    print('>> nasm sources target: ' + target)
     if target.startswith('x86_64'):
         return ["nasmsrc.asm"]
     return ["fallback.c"]
@@ -10,16 +9,12 @@ def nasm_defines(target: str):
         return ['WIN64']
     return []
 
-print('nasmproj build.catapult use_nasm: ' + str(type(GLOBAL.package_options.use_nasm)))
-
 nasmobjs = add_object_library(
     name = "nasmobjs",
-    sources = [] if GLOBAL.package_options.use_nasm == True else ['fallback.c'],
+    sources = [],
     include_dirs_public = ["."],
-    generator_vars = (lambda ctx: generator_vars(
+    generator_vars = lambda ctx: generator_vars(
         sources = nasm_sources(ctx.c_compiler.target_triple),
         defines = nasm_defines(ctx.c_compiler.target_triple),
-    )) if GLOBAL.package_options.use_nasm == True else None,
+    ),
 )
-
-#if GLOBAL.package_options.build_tests == True:
