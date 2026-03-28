@@ -1,3 +1,6 @@
+pub mod index_map;
+pub mod index_set;
+
 use std::{
 	borrow::Borrow,
 	path::{Path, PathBuf},
