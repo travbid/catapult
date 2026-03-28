@@ -1,5 +1,3 @@
-mod index_map;
-
 use std::{
 	collections::BTreeMap,
 	fs,
@@ -13,7 +11,7 @@ use uuid::Uuid;
 
 use crate::{
 	link_type::LinkPtr, //
-	misc::{join_parent, Sources},
+	misc::{index_map, join_parent, Sources},
 	object_library::ObjectLibrary,
 	project::{Project, ProjectInfo},
 	starlark_context::{StarContext, StarContextCompiler},
@@ -25,7 +23,13 @@ use crate::{
 	GlobalOptions,
 };
 
-use index_map::IndexMap;
+type TargetProjects = index_map::IndexMap<*const dyn Target, VsProject>;
+
+#[inline]
+// `dyn Target` is implicitly `(dyn Target + 'static)` so the lifetime signature needs to match.
+fn as_key<T: Target + 'static>(target: &Arc<T>) -> *const dyn Target {
+	Arc::<T>::as_ptr(target) as *const dyn Target
+}
 
 const VS_CPP_GUID: &str = "8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942";
 
@@ -294,7 +298,7 @@ impl Msvc {
 		if toolchain.msvc_platforms.is_empty() {
 			return Err("Toolchain doesn't contain any msvc_platforms, required for MSVC generator".to_owned());
 		}
-		let mut guid_map = IndexMap::new();
+		let mut targets = TargetProjects::new();
 		let c_standard = match global_opts.c_standard {
 			None => None,
 			Some(x) => match x.as_str() {
@@ -348,14 +352,14 @@ impl Msvc {
 			msvc_platforms: toolchain.msvc_platforms,
 			opts: Options { c_standard, cpp_standard },
 		};
-		Self::generate_inner(&project, &proj_opts, &mut guid_map)?;
+		Self::generate_inner(&project, &proj_opts, &mut targets)?;
 
 		let mut sln_content = r#"Microsoft Visual Studio Solution File, Format Version 12.00
 "#
 		.to_string();
 
 		// Reverse iterate to put the most important projects at the top of the Solution Explorer
-		for proj in guid_map.iter().rev() {
+		for (_, proj) in targets.iter().rev() {
 			sln_content += &proj.to_sln_project_section();
 		}
 		sln_content += r#"Global
@@ -370,7 +374,7 @@ impl Msvc {
 		sln_content += "	EndGlobalSection\n";
 
 		sln_content += "	GlobalSection(ProjectConfigurationPlatforms) = postSolution\n";
-		for proj in &guid_map {
+		for (_, proj) in &targets {
 			let guid = &proj.guid.to_string().to_ascii_uppercase();
 			for profile in &toolchain.profile {
 				let prof_name = profile.0;
@@ -397,7 +401,7 @@ impl Msvc {
 		let sln_pathbuf = build_dir.join(project.info.name.clone() + ".sln");
 		write_file(&sln_pathbuf, &sln_content)?;
 
-		if guid_map.iter().any(|x| x.has_nasm) {
+		if targets.iter().any(|x| x.1.has_nasm) {
 			if let Some(nasm_assembler) = toolchain.nasm_assembler {
 				write_file(&build_dir.join("nasm.xml"), NASM_XML_CONTENT)?;
 				write_file(&build_dir.join("nasm.props"), &nasm_props_content(&nasm_assembler.cmd()))?;
@@ -412,19 +416,23 @@ impl Msvc {
 		Ok(())
 	}
 
-	fn generate_inner(project: &Arc<Project>, proj_opts: &VcxprojOpts, guid_map: &mut IndexMap) -> Result<(), String> {
+	fn generate_inner(
+		project: &Arc<Project>,
+		proj_opts: &VcxprojOpts,
+		targets: &mut TargetProjects,
+	) -> Result<(), String> {
 		for subproject in &project.dependencies {
-			Self::generate_inner(subproject, proj_opts, guid_map)?;
+			Self::generate_inner(subproject, proj_opts, targets)?;
 		}
 
 		for lib in &project.static_libraries {
-			if !guid_map.contains_key(&LinkPtr::Static(lib.clone())) {
-				add_static_lib(lib, proj_opts, guid_map)?;
+			if !targets.contains_key(&as_key(lib)) {
+				add_static_lib(lib, proj_opts, targets)?;
 			}
 		}
 		for lib in &project.object_libraries {
-			if !guid_map.contains_key(&LinkPtr::Object(lib.clone())) {
-				add_object_lib(lib, proj_opts, guid_map)?;
+			if !targets.contains_key(&as_key(lib)) {
+				add_object_lib(lib, proj_opts, targets)?;
 			}
 		}
 		for exe in &project.executables {
@@ -443,8 +451,8 @@ impl Msvc {
 				links: exe.links.clone(),
 				generator_vars: exe.generator_vars.clone(),
 			};
-			let vsproj = make_vcxproj(proj_opts, guid_map, configuration_type, project_info, &target_data)?;
-			guid_map.insert_exe(vsproj);
+			let vsproj = make_vcxproj(proj_opts, targets, configuration_type, project_info, &target_data)?;
+			targets.insert(as_key(exe), vsproj);
 		}
 		Ok(())
 	}
@@ -453,7 +461,7 @@ impl Msvc {
 fn add_static_lib(
 	lib: &Arc<StaticLibrary>,
 	proj_opts: &VcxprojOpts,
-	guid_map: &mut IndexMap,
+	targets: &mut TargetProjects,
 ) -> Result<VsProject, String> {
 	log::debug!("add_static_lib: {}", lib.name);
 	let project_info = &lib.project().info;
@@ -480,16 +488,15 @@ fn add_static_lib(
 		links,
 		generator_vars: lib.generator_vars.clone(),
 	};
-	let vsproj = make_vcxproj(proj_opts, guid_map, "StaticLibrary", project_info, &target_data)?;
-	let link_ptr = LinkPtr::Static(lib.clone());
-	guid_map.insert(link_ptr, vsproj.clone());
+	let vsproj = make_vcxproj(proj_opts, targets, "StaticLibrary", project_info, &target_data)?;
+	targets.insert(as_key(lib), vsproj.clone());
 	Ok(vsproj)
 }
 
-fn add_object_lib(
+fn add_object_lib<'a>(
 	lib: &Arc<ObjectLibrary>,
 	proj_opts: &VcxprojOpts,
-	guid_map: &mut IndexMap,
+	targets: &mut TargetProjects,
 ) -> Result<VsProject, String> {
 	log::debug!("add_object_lib: {}", lib.name);
 	let project_info = &lib.project().info;
@@ -516,14 +523,14 @@ fn add_object_lib(
 		links,
 		generator_vars: lib.generator_vars.clone(),
 	};
-	let vsproj = make_vcxproj(proj_opts, guid_map, "StaticLibrary", project_info, &target_data)?;
-	guid_map.insert(LinkPtr::Object(lib.clone()), vsproj.clone());
+	let vsproj = make_vcxproj(proj_opts, targets, "StaticLibrary", project_info, &target_data)?;
+	targets.insert(as_key(lib), vsproj.clone());
 	Ok(vsproj)
 }
 
 fn make_vcxproj(
 	proj_opts: &VcxprojOpts,
-	guid_map: &mut IndexMap,
+	targets: &mut TargetProjects,
 	configuration_type: &str,
 	project_info: &ProjectInfo,
 	target_data: &TargetData,
@@ -693,7 +700,7 @@ fn make_vcxproj(
 	let mut dependencies = Vec::new();
 	if !target_data.links.is_empty() {
 		out_str += "  <ItemGroup>\n";
-		out_str += &add_project_references(&target_data.links, proj_opts, guid_map, &mut dependencies)?;
+		out_str += &add_project_references(&target_data.links, proj_opts, targets, &mut dependencies)?;
 		out_str += "  </ItemGroup>\n";
 	}
 	out_str += r#"  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
@@ -728,7 +735,7 @@ fn make_vcxproj(
 fn add_project_references(
 	project_links: &Vec<LinkPtr>,
 	proj_opts: &VcxprojOpts,
-	guid_map: &mut IndexMap,
+	targets: &mut TargetProjects,
 	dependencies: &mut Vec<VsProject>,
 ) -> Result<String, String> {
 	log::debug!("add_project_references() {}", project_links.len());
@@ -755,27 +762,27 @@ fn add_project_references(
 		log::debug!("   match link: {}", link.name());
 		match link {
 			LinkPtr::Static(static_lib) => {
-				let proj_ref = match guid_map.get(link) {
+				let proj_ref = match targets.get(&as_key(static_lib)) {
 					Some(x) => x,
 					None => {
-						add_static_lib(static_lib, proj_opts, guid_map)?;
-						guid_map.get(link).unwrap()
+						add_static_lib(static_lib, proj_opts, targets)?;
+						targets.get(&as_key(static_lib)).unwrap()
 					}
 				};
 				add_dependency(proj_ref);
 			}
 			LinkPtr::Object(obj_lib) => {
-				let proj_ref = match guid_map.get(link) {
+				let proj_ref = match targets.get(&as_key(obj_lib)) {
 					Some(x) => x,
 					None => {
-						add_object_lib(obj_lib, proj_opts, guid_map)?;
-						guid_map.get(link).unwrap()
+						add_object_lib(obj_lib, proj_opts, targets)?;
+						targets.get(&as_key(obj_lib)).unwrap()
 					}
 				};
 				add_dependency(proj_ref);
 			}
 			LinkPtr::Interface(_) => {
-				out_str += &add_project_references(&link.public_links(), proj_opts, guid_map, dependencies)?;
+				out_str += &add_project_references(&link.public_links(), proj_opts, targets, dependencies)?;
 			}
 		}
 	}
