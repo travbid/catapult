@@ -1,0 +1,9 @@
+[package]
+name = "{name}"
+
+[dependencies]
+
+[options]
+c_standard = "23"
+cpp_standard = "23"
+position_independent_code = true

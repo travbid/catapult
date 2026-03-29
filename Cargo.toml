@@ -9,7 +9,7 @@ edition = "2021"
 
 [[bin]]
 name = "catapult"
-path = "src/main.rs"
+path = "src/bin/main.rs"
 
 [lib]
 name = "catapult"
@@ -18,10 +18,10 @@ name = "catapult"
 allocative = "0.3.1"
 anyhow = "1.0.65"
 base64 = "0.21"
+clap = { version = "4.5.42" }
 dirs = "5.0.1"
 env_logger = "0.10"
 flate2 = "1.0"
-getopts = "0.2"
 log = "0.4"
 reqwest = { version = "0.11", features = ["blocking", "json"] }
 serde = "1.0"
@@ -33,3 +33,6 @@ uuid = { version = "1.4", features = [
     "fast-rng",          # Use a faster (but still sufficiently random) RNG
     "macro-diagnostics", # Enable better diagnostics for compile-time UUIDs
 ] }
+
+[lints.clippy]
+uninlined_format_args = "allow"
