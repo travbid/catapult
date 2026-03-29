@@ -25,6 +25,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
       - run: cargo fmt --check --verbose
+
   test:
     name: Cargo Test
     runs-on: ubuntu-latest
@@ -33,6 +34,29 @@ jobs:
         uses: actions/checkout@v4
       - run: rustc --version
       - run: cargo test
+
+  catapult-new:
+    name: Subcommands: new
+    runs-on: ubuntu-latest
+    steps:
+      - run: >
+          sudo apt-get install -y
+          llvm
+          nasm
+          ninja-build
+      - name: Checkout
+        uses: actions/checkout@v4
+      - run: cargo build
+      - run: ./target/debug/catapult new --bin --name hello_ci --path hello_ci
+      - run: >
+          ./target/debug/catapult generate 
+          --source-dir hello_ci
+          --build-dir hello_ci_build
+          --generator Ninja
+          --toolchain test_data/toolchain_clang.toml
+      - run: ninja -C hello_ci_build -v hello_ci
+      - run: tree hello_ci_build
+      - run: ./hello_ci_build/hello_ci
 
   ubuntu-ninja-gcc:
     name: Build and Run (Ubuntu / Ninja / GCC)

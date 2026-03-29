@@ -1,0 +1,18 @@
+# Build artifacts
+*.a
+*.d
+*.dll
+*.exe
+*.ilk
+*.lib
+*.log
+*.o
+*.out
+*.pdb
+*.so
+
+# IDE directories
+.idea/
+.vscode/
+
+.DS_Store

@@ -1,0 +1,5 @@
+add_static_library(
+    name = "{name}",
+    sources = ["lib.cpp"],
+    include_dirs_public = ["."],
+)

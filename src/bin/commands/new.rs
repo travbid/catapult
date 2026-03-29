@@ -60,94 +60,22 @@ pub(crate) fn handle_new_command(matches: &ArgMatches) -> Result<(), ()> {
 		}
 	};
 
-	write_file("catapult.toml", &format_catapult_toml(name))?;
+	let catapult_toml = include_str!("templates/catapult.toml").replace("{name}", name);
+	write_file("catapult.toml", &catapult_toml)?;
 	if is_bin {
-		write_file("build.catapult", &format_build_catapult_bin(name))?;
-		write_file("src/main.cpp", MAIN_CPP)?;
+		let build = include_str!("templates/build_bin.catapult").replace("{name}", name);
+		write_file("build.catapult", &build)?;
+		write_file("src/main.cpp", include_str!("templates/main.cpp"))?;
 	} else {
-		write_file("build.catapult", &format_build_catapult_lib(name))?;
-		write_file("src/include/lib.hpp", LIB_HPP)?;
-		write_file("src/lib.cpp", LIB_CPP)?;
+		let build = include_str!("templates/build_lib.catapult").replace("{name}", name);
+		write_file("build.catapult", &build)?;
+		write_file("src/include/lib.hpp", include_str!("templates/lib.hpp"))?;
+		write_file("src/lib.cpp", include_str!("templates/lib.cpp"))?;
 	}
-	write_file(".gitignore", GITIGNORE)?;
+
+	write_file(".clang-format", include_str!("templates/clang-format"))?;
+
+	write_file(".gitignore", include_str!("templates/gitignore"))?;
 
 	Ok(())
 }
-
-fn format_catapult_toml(name: &str) -> String {
-	format!(
-		r#"[package]
-name = "{}"
-
-[dependencies]
-
-[options]
-c_standard = "23"
-cpp_standard = "23"
-position_independent_code = true
-"#,
-		name
-	)
-}
-
-fn format_build_catapult_bin(name: &str) -> String {
-	format!(
-		r#"add_executable(
-    name = "{}",
-    sources = ["main.cpp"],
-)
-"#,
-		name
-	)
-}
-
-fn format_build_catapult_lib(name: &str) -> String {
-	format!(
-		r#"add_static_library(
-    name = "{}",
-    sources = ["lib.cpp"],
-    include_dirs_public = ["."],
-)
-"#,
-		name
-	)
-}
-
-const MAIN_CPP: &str = r#"#include <print>
-
-int main() {
-    std::println("Hello, world!");
-}
-"#;
-
-const LIB_CPP: &str = r#"#include "lib.hpp"
-
-int add(int a, int b) {
-    return a + b;
-}
-"#;
-
-const LIB_HPP: &str = r#"#pragma once
-
-int add(int a, int b);
-"#;
-
-const GITIGNORE: &str = r#"# Build artifacts
-*.a
-*.d
-*.dll
-*.exe
-*.ilk
-*.lib
-*.log
-*.o
-*.out
-*.pdb
-*.so
-
-# IDE directories
-.idea/
-.vscode/
-
-.DS_Store
-"#;
