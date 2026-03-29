@@ -47,7 +47,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
       - run: cargo build
-      - run: ./target/debug/catapult new --bin --name hello_ci --path hello_ci
+        - run: ./target/debug/catapult new --bin hello_ci --path hello_ci
       - run: >
           ./target/debug/catapult generate 
           --source-dir hello_ci
