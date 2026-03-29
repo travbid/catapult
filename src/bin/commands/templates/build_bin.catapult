@@ -1,4 +1,4 @@
 add_executable(
     name = "{name}",
-    sources = ["main.cpp"],
+    sources = ["src/main.cpp"],
 )

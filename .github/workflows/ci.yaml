@@ -56,7 +56,7 @@ jobs:
           --toolchain test_data/toolchain_clang.toml
       - run: ninja -C hello_ci_build -v hello_ci
       - run: tree hello_ci_build
-      - run: ./hello_ci_build/hello_ci
+      - run: ./hello_ci_build/hello_ci/hello_ci
 
   ubuntu-ninja-gcc:
     name: Build and Run (Ubuntu / Ninja / GCC)
