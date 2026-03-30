@@ -1,6 +1,13 @@
 
+adder = add_static_library(
+    name = "adder",
+    sources = ["add.cpp"],
+    include_dirs_public = ["."],
+)
+
+
 add_executable(
     name = "basic.exe",
     sources = ["main.cpp"],
-    # include_dirs_public = ["."],
+    links = [adder],
 )
