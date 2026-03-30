@@ -7,47 +7,90 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		000000000000000000000004 /* main.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000003 /* main.cpp */; };
+		000000000000000000000004 /* add.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000003 /* add.cpp */; };
+		00000000000000000000000A /* libadder.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 000000000000000000000002 /* adder */; };
+		00000000000000000000000C /* main.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 00000000000000000000000B /* main.cpp */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
-		000000000000000000000002 /* basic.exe */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = basic.exe; sourceTree = BUILT_PRODUCTS_DIR; };
-		000000000000000000000003 /* main.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = main.cpp; sourceTree = SOURCE_ROOT; };
+		000000000000000000000002 /* adder */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; name = adder; path = libadder.a; sourceTree = BUILT_PRODUCTS_DIR; };
+		000000000000000000000003 /* add.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = add.cpp; sourceTree = SOURCE_ROOT; };
+		000000000000000000000009 /* basic.exe */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = basic.exe; sourceTree = BUILT_PRODUCTS_DIR; };
+		00000000000000000000000B /* main.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = main.cpp; sourceTree = SOURCE_ROOT; };
 /* End PBXFileReference section */
 
+/* Begin PBXFrameworksBuildPhase section */
+		00000000000000000000000E /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				00000000000000000000000A /* adder in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
 /* Begin PBXGroup section */
-		000000000000000000000009 /* Products */ = {
+		000000000000000000000012 /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				000000000000000000000002 /* basic.exe */,
+				000000000000000000000002 /* adder */,
+				000000000000000000000009 /* basic.exe */,
 			);
 			name = Products;
 			sourceTree = "<group>";
 		};
-		00000000000000000000000A /* basic.exe */ = {
+		000000000000000000000013 /* adder */ = {
 			isa = PBXGroup;
 			children = (
-				000000000000000000000003 /* main.cpp */,
+				000000000000000000000003 /* add.cpp */,
+			);
+			name = adder;
+			sourceTree = "<group>";
+		};
+		000000000000000000000014 /* basic.exe */ = {
+			isa = PBXGroup;
+			children = (
+				00000000000000000000000B /* main.cpp */,
 			);
 			name = basic.exe;
 			sourceTree = "<group>";
 		};
-		00000000000000000000000B = {
+		000000000000000000000015 = {
 			isa = PBXGroup;
 			children = (
-				00000000000000000000000A /* basic.exe */,
-				000000000000000000000009 /* Products */,
+				000000000000000000000013 /* adder */,
+				000000000000000000000014 /* basic.exe */,
+				000000000000000000000012 /* Products */,
 			);
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
-		000000000000000000000006 /* basic.exe */ = {
+		000000000000000000000006 /* adder */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 000000000000000000000008 /* Build configuration list for PBXNativeTarget "basic.exe" */;
+			buildConfigurationList = 000000000000000000000008 /* Build configuration list for PBXNativeTarget "adder" */;
 			buildPhases = (
 				000000000000000000000005 /* Sources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = adder;
+			packageProductDependencies = (
+			);
+			productName = adder;
+			productReference = 000000000000000000000002 /* adder */;
+			productType = "com.apple.product-type.library.static";
+		};
+		00000000000000000000000F /* basic.exe */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 000000000000000000000011 /* Build configuration list for PBXNativeTarget "basic.exe" */;
+			buildPhases = (
+				00000000000000000000000D /* Sources */,
+				00000000000000000000000E /* Frameworks */,
 			);
 			buildRules = (
 			);
@@ -57,19 +100,22 @@
 			packageProductDependencies = (
 			);
 			productName = basic.exe;
-			productReference = 000000000000000000000002 /* basic.exe */;
+			productReference = 000000000000000000000009 /* basic.exe */;
 			productType = "com.apple.product-type.tool";
 		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
-		00000000000000000000000C /* Project object */ = {
+		000000000000000000000016 /* Project object */ = {
 			isa = PBXProject;
 			attributes = {
 				BuildIndependentTargetsInParallel = 1;
 				LastUpgradeCheck = 2610;
 				TargetAttributes = {
 					000000000000000000000006 = {
+						CreatedOnToolsVersion = 26.1.1;
+					};
+					00000000000000000000000F = {
 						CreatedOnToolsVersion = 26.1.1;
 					};
 				};
@@ -81,14 +127,15 @@
 				en,
 				Base,
 			);
-			mainGroup = 00000000000000000000000B;
+			mainGroup = 000000000000000000000015;
 			minimizedProjectReferenceProxies = 1;
 			preferredProjectObjectVersion = 77;
-			productRefGroup = 000000000000000000000009 /* Products */;
+			productRefGroup = 000000000000000000000012 /* Products */;
 			projectDirPath = /path/to/basic;
 			projectRoot = "";
 			targets = (
-				000000000000000000000006 /* basic.exe */,
+				000000000000000000000006 /* adder */,
+				00000000000000000000000F /* basic.exe */,
 			);
 		};
 /* End PBXProject section */
@@ -98,7 +145,15 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				000000000000000000000004 /* main.cpp in Sources */,
+				000000000000000000000004 /* add.cpp in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		00000000000000000000000D /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				00000000000000000000000C /* main.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -121,6 +176,13 @@
 			};
 			name = Debug;
 		};
+		000000000000000000000010 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				STRINGS_FILE_OUTPUT_ENCODING = "UTF-8";
+			};
+			name = Debug;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -132,7 +194,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Debug;
 		};
-		000000000000000000000008 /* Build configuration list for PBXNativeTarget "basic.exe" */ = {
+		000000000000000000000008 /* Build configuration list for PBXNativeTarget "adder" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				000000000000000000000007 /* Debug */,
@@ -140,7 +202,15 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Debug;
 		};
+		000000000000000000000011 /* Build configuration list for PBXNativeTarget "basic.exe" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				000000000000000000000010 /* Debug */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
 /* End XCConfigurationList section */
 	};
-	rootObject = 00000000000000000000000C /* Project object */;
+	rootObject = 000000000000000000000016 /* Project object */;
 }

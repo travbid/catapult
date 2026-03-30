@@ -1,6 +1,8 @@
+#include "add.hpp"
+
 #include <iostream>
 
-int main() {
+int main(int argc, char**) {
     std::cout << "Hello, world\n";
-    return 0;
+    return add(argc, argc) - 2;
 }

@@ -1,6 +1,7 @@
 mod compiler;
 
 use core::{cmp, hash};
+use std::collections::HashMap;
 
 use std::{
 	collections::BTreeMap, //
@@ -14,9 +15,17 @@ use std::{
 
 use crate::{
 	executable::Executable,
+	link_type::LinkPtr,
 	misc::{index_map::IndexMap, Sources},
 	project::Project,
-	toolchain::{compiler::Compiler, PbxItem, Toolchain, XcodeprojectProfile},
+	static_library::StaticLibrary,
+	target::{LinkTarget, Target},
+	toolchain::{
+		compiler::Compiler, //
+		PbxItem,
+		Toolchain,
+		XcodeprojectProfile,
+	},
 	GlobalOptions,
 };
 
@@ -170,7 +179,7 @@ impl XcodeprojGraph {
 					}
 					ContainerPortal::Project => (&self.project.id, "Project object"),
 				};
-				let container_proxy = self.container_item_proxies.get(&proxy.remote_global_id_string).unwrap();
+				let remote_target = self.native_targets.get(&proxy.remote_global_id_string).unwrap();
 				project_str += &format!(
 					r#"		{} /* PBXContainerItemProxy */ = {{
 			isa = PBXContainerItemProxy;
@@ -184,7 +193,7 @@ impl XcodeprojGraph {
 					container_portal_id,
 					container_portal_name,
 					proxy.proxy_type,
-					container_proxy.id,
+					remote_target.id,
 					proxy.remote_info
 				);
 			}
@@ -889,8 +898,8 @@ fn transform_graph_inner(
 				build_phase.files.clone()
 			} else if let Some(build_phase) = graph.sources_build_phases.get(build_phase_key) {
 				build_phase.files.clone()
-			} else if let Some(build_phase) = graph.frameworks_build_phases.get(build_phase_key) {
-				build_phase.files.clone()
+			} else if graph.frameworks_build_phases.contains_key(build_phase_key) {
+				continue;
 			} else {
 				panic!("TODO");
 			};
@@ -982,6 +991,19 @@ fn transform_graph_inner(
 	Ok(())
 }
 
+#[inline]
+fn as_key<T: Target + 'static>(target: &Arc<T>) -> *const dyn Target {
+	Arc::<T>::as_ptr(target) as *const dyn Target
+}
+
+fn link_as_key(link: &LinkPtr) -> *const dyn Target {
+	match link {
+		LinkPtr::Static(x) => as_key(x),
+		LinkPtr::Object(x) => as_key(x),
+		LinkPtr::Interface(x) => as_key(x),
+	}
+}
+
 fn project_targets(
 	project: &Project,
 	native_target_build_configs: &[XCBuildConfiguration],
@@ -990,8 +1012,24 @@ fn project_targets(
 	id_gen: &mut IdGenerator,
 ) -> Result<Vec<Key>, String> {
 	let mut ret = Vec::new();
+	let mut target_map = HashMap::<*const dyn Target, Key>::new();
+
+	for lib in &project.static_libraries {
+		let key =
+			new_native_target_static_library(lib, native_target_build_configs, toolchain, graph, id_gen, &target_map)?;
+		target_map.insert(as_key(lib), key);
+		ret.push(key);
+	}
+
 	for exe in &project.executables {
-		ret.push(new_native_target_executable(exe, native_target_build_configs, toolchain, graph, id_gen)?);
+		ret.push(new_native_target_executable(
+			exe,
+			native_target_build_configs,
+			toolchain,
+			graph,
+			id_gen,
+			&target_map,
+		)?);
 	}
 	Ok(ret)
 }
@@ -1002,6 +1040,7 @@ fn new_native_target_executable(
 	toolchain: &Toolchain,
 	graph: &mut SubGraph,
 	id_gen: &mut IdGenerator,
+	target_map: &HashMap<*const dyn Target, Key>,
 ) -> Result<Key, String> {
 	let product_reference = id_gen.next();
 	graph.file_references.insert(
@@ -1027,7 +1066,43 @@ fn new_native_target_executable(
 		.map(|src| src.to_string_lossy().to_string())
 		.collect::<Vec<String>>();
 
-	let build_phases = add_build_phases(&exe.sources, graph, id_gen);
+	let mut framework_build_files = Vec::new();
+
+	for link in &exe.links {
+		let dep_target_key = match target_map.get(&link_as_key(link)) {
+			Some(k) => k,
+			None => return Err(format!("Could not find target for link '{}' in target '{}'", link.name(), exe.name)),
+		};
+		let dep_target = graph.native_targets.get(dep_target_key).unwrap();
+
+		let build_file_key = id_gen.next();
+		let dep_product_ref = graph.file_references.get(&dep_target.product_reference).unwrap();
+		graph.build_files.insert(
+			build_file_key,
+			PBXBuildFile {
+				id: id_gen.new_id("frameworks build file"),
+				file_ref: Reference::File(dep_target.product_reference),
+				x_name: dep_product_ref.path.clone(),
+				x_build_phase: "Frameworks".to_owned(),
+			},
+		);
+		framework_build_files.push(build_file_key);
+	}
+
+	let mut build_phases = add_build_phases(&exe.sources, graph, id_gen);
+	if !framework_build_files.is_empty() {
+		let frameworks_build_phase_key = id_gen.next();
+		graph.frameworks_build_phases.insert(
+			frameworks_build_phase_key,
+			PBXFrameworksBuildPhase {
+				id: id_gen.new_id("frameworks build phase"),
+				build_action_mask: 0x7F_FF_FF_FF,
+				files: framework_build_files,
+				run_only_for_deployment_postprocessing: false,
+			},
+		);
+		build_phases.push(frameworks_build_phase_key);
+	}
 	let mut build_rule_keys = Vec::new();
 	if !exe.sources.nasm.is_empty() {
 		for platform in &toolchain.xcode_platforms {
@@ -1086,9 +1161,109 @@ fn new_native_target_executable(
 		build_rules: build_rule_keys,
 		dependencies: Vec::new(),
 		name: exe.name.clone(),
-		product_name: exe.name.clone(),
+		product_name: exe.output_name().to_owned(),
 		product_reference,
 		product_type: ProductType::Tool,
+	};
+	graph.native_targets.insert(native_target_key, native_target);
+	Ok(native_target_key)
+}
+
+fn new_native_target_static_library(
+	lib: &Arc<StaticLibrary>,
+	native_target_build_configs: &[XCBuildConfiguration],
+	toolchain: &Toolchain,
+	graph: &mut SubGraph,
+	id_gen: &mut IdGenerator,
+	target_map: &HashMap<*const dyn Target, Key>,
+) -> Result<Key, String> {
+	let product_name = lib.output_name().to_owned();
+	let product_reference = id_gen.next();
+	graph.file_references.insert(
+		product_reference,
+		PBXFileReference {
+			id: id_gen.new_id("lib fileref"),
+			file_type: FileRefType::Explicit(ExplicitFileType::Archive),
+			include_in_index: Some(false),
+			name: Some(product_name.clone()),
+			path: format!("lib{}.a", product_name),
+			source_tree: "BUILT_PRODUCTS_DIR".to_owned(),
+		},
+	);
+
+	if lib.generator_vars.is_some() {
+		return Err("generator_vars are not supported with Xcode generator".to_owned());
+	}
+	let mut include_dirs = lib
+		.public_includes_recursive()
+		.into_iter()
+		.map(|src| src.to_string_lossy().to_string())
+		.collect::<Vec<String>>();
+	include_dirs.extend(
+		lib.private_includes()
+			.into_iter()
+			.map(|src| src.to_string_lossy().to_string()),
+	);
+
+	let mut framework_build_files = Vec::new();
+	let links = lib.link_public.iter().chain(lib.link_private.iter());
+
+	for link in links {
+		let dep_target_key = match target_map.get(&link_as_key(link)) {
+			Some(k) => k,
+			None => return Err(format!("Could not find target for link '{}' in target '{}'", link.name(), lib.name)),
+		};
+		let dep_target = graph.native_targets.get(dep_target_key).unwrap();
+
+		let build_file_key = id_gen.next();
+		let dep_product_ref = graph.file_references.get(&dep_target.product_reference).unwrap();
+		graph.build_files.insert(
+			build_file_key,
+			PBXBuildFile {
+				id: id_gen.new_id("frameworks build file"),
+				file_ref: Reference::File(dep_target.product_reference),
+				x_name: dep_product_ref.path.clone(),
+				x_build_phase: "Frameworks".to_owned(),
+			},
+		);
+		framework_build_files.push(build_file_key);
+	}
+
+	let mut build_phases = add_build_phases(&lib.sources, graph, id_gen);
+
+	if !framework_build_files.is_empty() {
+		let frameworks_build_phase_key = id_gen.next();
+		graph.frameworks_build_phases.insert(
+			frameworks_build_phase_key,
+			PBXFrameworksBuildPhase {
+				id: id_gen.new_id("frameworks build phase"),
+				build_action_mask: 0x7F_FF_FF_FF,
+				files: framework_build_files,
+				run_only_for_deployment_postprocessing: false,
+			},
+		);
+		build_phases.push(frameworks_build_phase_key);
+	}
+
+	let build_rule_keys = Vec::new();
+	// TODO: nasm
+	let native_target_key = id_gen.next();
+	let native_target = PBXNativeTarget {
+		id: id_gen.new_id(&("native_target: ".to_owned() + &lib.name)),
+		build_configuration_list: clone_xc_with(
+			native_target_build_configs,
+			graph,
+			include_dirs,
+			lib.name.clone(),
+			id_gen,
+		),
+		build_phases,
+		build_rules: build_rule_keys,
+		dependencies: Vec::new(),
+		name: lib.name.clone(),
+		product_name,
+		product_reference,
+		product_type: ProductType::LibraryStatic,
 	};
 	graph.native_targets.insert(native_target_key, native_target);
 	Ok(native_target_key)
@@ -1706,6 +1881,23 @@ fn test_xcode() {
 	}
 
 	let project = Arc::new_cyclic(|weak_parent| {
+		let adder = Arc::new(StaticLibrary {
+			parent_project: weak_parent.clone(),
+			name: "adder".to_owned(),
+			sources: Sources {
+				cpp: vec![SourcePath { full: PathBuf::from("add.cpp"), name: "add.cpp".to_owned() }],
+				..Default::default()
+			},
+			link_public: Vec::new(),
+			link_private: Vec::new(),
+			include_dirs_public: Vec::new(),
+			include_dirs_private: Vec::new(),
+			defines_private: Vec::new(),
+			defines_public: Vec::new(),
+			link_flags_public: Vec::new(),
+			generator_vars: None,
+			output_name: None,
+		});
 		let exe = Arc::new(Executable {
 			parent_project: weak_parent.clone(),
 			name: "basic.exe".to_owned(),
@@ -1713,7 +1905,7 @@ fn test_xcode() {
 				cpp: vec![SourcePath { full: PathBuf::from("main.cpp"), name: "main.cpp".to_owned() }],
 				..Default::default()
 			},
-			links: Vec::new(),
+			links: vec![LinkPtr::Static(adder.clone())],
 			include_dirs: Vec::new(),
 			defines: Vec::new(),
 			link_flags: Vec::new(),
@@ -1727,7 +1919,7 @@ fn test_xcode() {
 			}),
 			dependencies: Vec::new(),
 			executables: vec![exe],
-			static_libraries: Vec::new(),
+			static_libraries: vec![adder],
 			object_libraries: Vec::new(),
 			interface_libraries: Vec::new(),
 		}
