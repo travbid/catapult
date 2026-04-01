@@ -112,13 +112,14 @@ impl XcodeprojGraph {
 			project_str += &match &build_file.file_ref {
 				Reference::File(file_ref_ix) => {
 					let file_ref = self.file_references.get(file_ref_ix).unwrap();
+                    let file_ref_name = file_ref.name.as_ref().unwrap_or(&file_ref.path);
 					format!(
 						"		{} /* {} in {} */ = {{isa = PBXBuildFile; fileRef = {} /* {} */; }};\n",
 						build_file.id,
-						build_file.x_name,
+						file_ref_name,
 						build_file.x_build_phase,
 						file_ref.id,
-						file_ref.name.as_ref().unwrap_or(&file_ref.path),
+						file_ref_name,
 					)
 				}
 				Reference::Proxy(proxy_ix) => {
