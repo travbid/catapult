@@ -1014,22 +1014,36 @@ fn project_targets(
 	let mut ret = Vec::new();
 	let mut target_map = HashMap::<*const dyn Target, Key>::new();
 
+	let project_portal_key = id_gen.next();
+	graph
+		.container_portals
+		.insert(project_portal_key, ContainerPortal::Project);
+
 	for lib in &project.static_libraries {
-		let key =
-			new_native_target_static_library(lib, native_target_build_configs, toolchain, graph, id_gen, &target_map)?;
+		let key = new_native_target_static_library(
+			lib,
+			native_target_build_configs,
+			toolchain,
+			graph,
+			id_gen,
+			&target_map,
+			project_portal_key,
+		)?;
 		target_map.insert(as_key(lib), key);
 		ret.push(key);
 	}
 
 	for exe in &project.executables {
-		ret.push(new_native_target_executable(
+		let key = new_native_target_executable(
 			exe,
 			native_target_build_configs,
 			toolchain,
 			graph,
 			id_gen,
 			&target_map,
-		)?);
+			project_portal_key,
+		)?;
+		ret.push(key);
 	}
 	Ok(ret)
 }
@@ -1041,6 +1055,7 @@ fn new_native_target_executable(
 	graph: &mut SubGraph,
 	id_gen: &mut IdGenerator,
 	target_map: &HashMap<*const dyn Target, Key>,
+	project_portal_key: Key,
 ) -> Result<Key, String> {
 	let product_reference = id_gen.next();
 	graph.file_references.insert(
@@ -1066,6 +1081,7 @@ fn new_native_target_executable(
 		.map(|src| src.to_string_lossy().to_string())
 		.collect::<Vec<String>>();
 
+	let mut dependencies = Vec::new();
 	let mut framework_build_files = Vec::new();
 
 	for link in &exe.links {
@@ -1074,6 +1090,29 @@ fn new_native_target_executable(
 			None => return Err(format!("Could not find target for link '{}' in target '{}'", link.name(), exe.name)),
 		};
 		let dep_target = graph.native_targets.get(dep_target_key).unwrap();
+
+		let container_item_proxy_key = id_gen.next();
+		graph.container_item_proxies.insert(
+			container_item_proxy_key,
+			PBXContainerItemProxy {
+				id: id_gen.new_id("container item proxy"),
+				container_portal: project_portal_key,
+				proxy_type: 1,
+				remote_global_id_string: *dep_target_key,
+				remote_info: dep_target.name.clone(),
+			},
+		);
+
+		let target_dependency_key = id_gen.next();
+		graph.target_dependencies.insert(
+			target_dependency_key,
+			PBXTargetDependency {
+				id: id_gen.new_id("target dependency"),
+				target: *dep_target_key,
+				target_proxy: container_item_proxy_key,
+			},
+		);
+		dependencies.push(target_dependency_key);
 
 		let build_file_key = id_gen.next();
 		let dep_product_ref = graph.file_references.get(&dep_target.product_reference).unwrap();
@@ -1159,7 +1198,7 @@ fn new_native_target_executable(
 		),
 		build_phases,
 		build_rules: build_rule_keys,
-		dependencies: Vec::new(),
+		dependencies,
 		name: exe.name.clone(),
 		product_name: exe.output_name().to_owned(),
 		product_reference,
@@ -1176,6 +1215,7 @@ fn new_native_target_static_library(
 	graph: &mut SubGraph,
 	id_gen: &mut IdGenerator,
 	target_map: &HashMap<*const dyn Target, Key>,
+	project_portal_key: Key,
 ) -> Result<Key, String> {
 	let product_name = lib.output_name().to_owned();
 	let product_reference = id_gen.next();
@@ -1205,15 +1245,39 @@ fn new_native_target_static_library(
 			.map(|src| src.to_string_lossy().to_string()),
 	);
 
+	let mut dependencies = Vec::new();
 	let mut framework_build_files = Vec::new();
 	let links = lib.link_public.iter().chain(lib.link_private.iter());
 
 	for link in links {
 		let dep_target_key = match target_map.get(&link_as_key(link)) {
-			Some(k) => k,
+			Some(k) => *k,
 			None => return Err(format!("Could not find target for link '{}' in target '{}'", link.name(), lib.name)),
 		};
-		let dep_target = graph.native_targets.get(dep_target_key).unwrap();
+		let dep_target = graph.native_targets.get(&dep_target_key).unwrap();
+
+		let container_item_proxy_key = id_gen.next();
+		graph.container_item_proxies.insert(
+			container_item_proxy_key,
+			PBXContainerItemProxy {
+				id: id_gen.new_id("container item proxy"),
+				container_portal: project_portal_key,
+				proxy_type: 1,
+				remote_global_id_string: dep_target_key,
+				remote_info: dep_target.name.clone(),
+			},
+		);
+
+		let target_dependency_key = id_gen.next();
+		graph.target_dependencies.insert(
+			target_dependency_key,
+			PBXTargetDependency {
+				id: id_gen.new_id("target dependency"),
+				target: dep_target_key,
+				target_proxy: container_item_proxy_key,
+			},
+		);
+		dependencies.push(target_dependency_key);
 
 		let build_file_key = id_gen.next();
 		let dep_product_ref = graph.file_references.get(&dep_target.product_reference).unwrap();
@@ -1259,7 +1323,7 @@ fn new_native_target_static_library(
 		),
 		build_phases,
 		build_rules: build_rule_keys,
-		dependencies: Vec::new(),
+		dependencies,
 		name: lib.name.clone(),
 		product_name,
 		product_reference,
