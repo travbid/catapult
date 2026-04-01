@@ -8,7 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		000000000000000000000004 /* add.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000003 /* add.cpp */; };
-		00000000000000000000000C /* libadder.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 000000000000000000000002 /* adder */; };
+		00000000000000000000000C /* adder in Frameworks */ = {isa = PBXBuildFile; fileRef = 000000000000000000000002 /* adder */; };
 		00000000000000000000000E /* main.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 00000000000000000000000D /* main.cpp */; };
 /* End PBXBuildFile section */
 
