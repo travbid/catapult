@@ -1508,13 +1508,13 @@ fn clone_xc_with(
 	let mut build_configuration_keys = Vec::new();
 	for build_cfg in native_target_build_configs {
 		let mut build_settings = build_cfg.build_settings.clone();
-		if let Some(sett) = build_settings.iter_mut().find(|(key, _)| *key == "HEADER_SEARCH_PATHS") {
-			match sett.1 {
-				BuildSetting::Array(ref mut arr) => arr.extend(include_dirs.clone()),
+		if let Some(sett) = build_settings.get_mut("HEADER_SEARCH_PATHS") {
+			match sett {
+				BuildSetting::Array(arr) => arr.extend(include_dirs.clone()),
 				BuildSetting::Single(item) => {
 					let mut inc_dirs = vec![item.clone()];
 					inc_dirs.extend(include_dirs.clone());
-					build_settings.insert("HEADER_SEARCH_PATHS".to_owned(), BuildSetting::Array(inc_dirs));
+					*sett = BuildSetting::Array(inc_dirs);
 				}
 			}
 		} else if !include_dirs.is_empty() {
