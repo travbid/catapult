@@ -37,58 +37,46 @@ impl LinkTarget for InterfaceLibrary {
 		self.include_dirs.iter().map(|x| x.full.clone()).collect()
 	}
 	fn public_includes_recursive(&self) -> Vec<PathBuf> {
-		let mut includes = Vec::new();
+		let mut includes = crate::misc::index_set::IndexSet::new();
 		for link in &self.links {
 			for include in link.public_includes_recursive() {
-				if !includes.contains(&include) {
-					includes.push(include);
-				}
+				includes.insert(include);
 			}
 		}
 		for include in self.public_includes() {
-			if !includes.contains(&include) {
-				includes.push(include);
-			}
+			includes.insert(include);
 		}
-		includes
+		includes.into_iter().collect()
 	}
 	fn public_defines(&self) -> Vec<String> {
 		self.defines.clone()
 	}
 	fn public_defines_recursive(&self) -> Vec<String> {
-		let mut defines = Vec::new();
+		let mut defines = crate::misc::index_set::IndexSet::new();
 		for link in &self.links {
 			for def in link.public_defines_recursive() {
-				if !defines.contains(&def) {
-					defines.push(def);
-				}
+				defines.insert(def);
 			}
 		}
 		for def in &self.defines {
-			if !defines.contains(def) {
-				defines.push(def.clone());
-			}
+			defines.insert(def.clone());
 		}
-		defines
+		defines.into_iter().collect()
 	}
 	fn public_link_flags(&self) -> Vec<String> {
 		self.link_flags.clone()
 	}
 	fn public_link_flags_recursive(&self) -> Vec<String> {
-		let mut flags = Vec::new();
+		let mut flags = crate::misc::index_set::IndexSet::new();
 		for link in &self.links {
 			for flag in link.public_link_flags_recursive() {
-				if !flags.contains(&flag) {
-					flags.push(flag);
-				}
+				flags.insert(flag);
 			}
 		}
 		for flag in &self.link_flags {
-			if !flags.contains(flag) {
-				flags.push(flag.clone());
-			}
+			flags.insert(flag.clone());
 		}
-		flags
+		flags.into_iter().collect()
 	}
 	fn public_links(&self) -> Vec<LinkPtr> {
 		self.links.clone()

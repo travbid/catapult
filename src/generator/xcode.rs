@@ -1231,16 +1231,8 @@ fn new_native_target_static_library(
 	if lib.generator_vars.is_some() {
 		return Err("generator_vars are not supported with Xcode generator".to_owned());
 	}
-	let mut includes = lib.public_includes_recursive();
-	includes.extend_from_slice(&lib.private_includes());
-	for link in &lib.link_private {
-		for include in link.public_includes_recursive() {
-			if !includes.contains(&include) {
-				includes.push(include);
-			}
-		}
-	}
-	let include_dirs = includes
+	let include_dirs = lib
+		.internal_includes()
 		.into_iter()
 		.map(|src| src.to_string_lossy().to_string())
 		.collect::<Vec<String>>();
