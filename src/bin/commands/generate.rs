@@ -93,8 +93,8 @@ pub(crate) fn handle_generate_command(matches: &ArgMatches) -> ExitCode {
 		"Ninja" => Generator::Ninja,
 		"MSVC" => Generator::Msvc,
 		"Xcode" => Generator::Xcode,
-		gen => {
-			println!("Error: Not a valid generator '{}'", gen);
+		other => {
+			println!("Error: Not a valid generator '{}'", other);
 			return ExitCode::FAILURE;
 		}
 	};
