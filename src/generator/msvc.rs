@@ -465,7 +465,8 @@ fn add_static_lib(
 ) -> Result<VsProject, String> {
 	log::debug!("add_static_lib: {}", lib.name);
 	let project_info = &lib.project().info;
-	let includes = lib.internal_includes()
+	let includes = lib
+		.internal_includes()
 		.into_iter()
 		// Visual Studio doesn't seem to support extended-length name syntax
 		.map(|x| x.to_string_lossy().trim_start_matches(r"\\?\").to_owned())
@@ -497,7 +498,8 @@ fn add_object_lib<'a>(
 ) -> Result<VsProject, String> {
 	log::debug!("add_object_lib: {}", lib.name);
 	let project_info = &lib.project().info;
-	let includes = lib.internal_includes()
+	let includes = lib
+		.internal_includes()
 		.into_iter()
 		// Visual Studio doesn't seem to support extended-length name syntax
 		.map(|x| x.to_string_lossy().trim_start_matches(r"\\?\").to_owned())
