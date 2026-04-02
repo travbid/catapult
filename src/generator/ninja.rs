@@ -399,15 +399,7 @@ fn add_static_lib_target(
 	} else {
 		StarGeneratorVars::default()
 	};
-	let mut includes = lib.public_includes_recursive();
-	includes.extend_from_slice(&lib.private_includes());
-	for link in &lib.link_private {
-		for include in link.public_includes_recursive() {
-			if !includes.contains(&include) {
-				includes.push(include);
-			}
-		}
-	}
+	let mut includes = lib.internal_includes();
 	includes.extend(
 		generator_vars
 			.include_dirs
@@ -417,15 +409,7 @@ fn add_static_lib_target(
 	let sources = lib
 		.sources
 		.extended_with(Sources::from_slice(&generator_vars.sources, &lib.project().info.path)?);
-	let mut defines = lib.public_defines_recursive();
-	defines.extend_from_slice(lib.private_defines());
-	for link in &lib.link_private {
-		for def in link.public_defines_recursive() {
-			if !defines.contains(&def) {
-				defines.push(def);
-			}
-		}
-	}
+	let mut defines = lib.internal_defines();
 	defines.extend_from_slice(&generator_vars.defines);
 
 	let source_data = SourceData { includes, defines };
@@ -487,15 +471,7 @@ fn add_object_lib_target(
 	} else {
 		StarGeneratorVars::default()
 	};
-	let mut includes = lib.public_includes_recursive();
-	includes.extend_from_slice(&lib.private_includes());
-	for link in &lib.link_private {
-		for include in link.public_includes_recursive() {
-			if !includes.contains(&include) {
-				includes.push(include);
-			}
-		}
-	}
+	let mut includes = lib.internal_includes();
 	includes.extend(
 		generator_vars
 			.include_dirs
@@ -505,15 +481,7 @@ fn add_object_lib_target(
 	let sources = lib
 		.sources
 		.extended_with(Sources::from_slice(&generator_vars.sources, &lib.project().info.path)?);
-	let mut defines = lib.public_defines_recursive();
-	defines.extend_from_slice(lib.private_defines());
-	for link in &lib.link_private {
-		for def in link.public_defines_recursive() {
-			if !defines.contains(&def) {
-				defines.push(def);
-			}
-		}
-	}
+	let mut defines = lib.internal_defines();
 	defines.extend_from_slice(&generator_vars.defines);
 
 	let source_data = SourceData { includes, defines };

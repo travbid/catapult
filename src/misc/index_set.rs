@@ -34,10 +34,16 @@ where
 		};
 		Some(&self.vec[index])
 	}
+
 	pub fn insert(&mut self, val: T) {
-		self.map.insert(val.clone(), self.vec.len());
-		self.vec.push(val);
+		if self.map.contains_key(&val) {
+			// Do nothing
+		} else {
+			self.map.insert(val.clone(), self.vec.len());
+			self.vec.push(val);
+		}
 	}
+
 	pub fn iter<'a>(&'a self) -> core::slice::Iter<'a, T> {
 		self.vec.iter()
 	}
