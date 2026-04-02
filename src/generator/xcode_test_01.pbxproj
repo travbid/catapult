@@ -7,82 +7,121 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		000000000000000000000004 /* add.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000003 /* add.cpp */; };
-		00000000000000000000000C /* adder in Frameworks */ = {isa = PBXBuildFile; fileRef = 000000000000000000000002 /* adder */; };
-		00000000000000000000000E /* main.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 00000000000000000000000D /* main.cpp */; };
+		000000000000000000000004 /* subtract.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000003 /* subtract.cpp */; };
+		00000000000000000000000B /* add.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 00000000000000000000000A /* add.cpp */; };
+		000000000000000000000013 /* adder in Frameworks */ = {isa = PBXBuildFile; fileRef = 000000000000000000000009 /* adder */; };
+		000000000000000000000016 /* subtracter in Frameworks */ = {isa = PBXBuildFile; fileRef = 000000000000000000000002 /* subtracter */; };
+		000000000000000000000018 /* main.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000017 /* main.cpp */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
-		00000000000000000000000A /* PBXContainerItemProxy */ = {
+		000000000000000000000011 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
-			containerPortal = 000000000000000000000018 /* Project object */;
+			containerPortal = 000000000000000000000023 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 00000000000000000000000D;
+			remoteInfo = adder;
+		};
+		000000000000000000000014 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 000000000000000000000023 /* Project object */;
 			proxyType = 1;
 			remoteGlobalIDString = 000000000000000000000006;
-			remoteInfo = adder;
+			remoteInfo = subtracter;
 		};
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
-		000000000000000000000002 /* adder */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; name = adder; path = libadder.a; sourceTree = BUILT_PRODUCTS_DIR; };
-		000000000000000000000003 /* add.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = add.cpp; sourceTree = SOURCE_ROOT; };
-		000000000000000000000009 /* basic.exe */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = basic.exe; sourceTree = BUILT_PRODUCTS_DIR; };
-		00000000000000000000000D /* main.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = main.cpp; sourceTree = SOURCE_ROOT; };
+		000000000000000000000002 /* subtracter */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; name = subtracter; path = libsubtracter.a; sourceTree = BUILT_PRODUCTS_DIR; };
+		000000000000000000000003 /* subtract.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = subtract.cpp; sourceTree = SOURCE_ROOT; };
+		000000000000000000000009 /* adder */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; name = adder; path = libadder.a; sourceTree = BUILT_PRODUCTS_DIR; };
+		00000000000000000000000A /* add.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = add.cpp; sourceTree = SOURCE_ROOT; };
+		000000000000000000000010 /* basic.exe */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = basic.exe; sourceTree = BUILT_PRODUCTS_DIR; };
+		000000000000000000000017 /* main.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = main.cpp; sourceTree = SOURCE_ROOT; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
-		000000000000000000000010 /* Frameworks */ = {
+		00000000000000000000001A /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				00000000000000000000000C /* adder in Frameworks */,
+				000000000000000000000013 /* adder in Frameworks */,
+				000000000000000000000016 /* subtracter in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
-		000000000000000000000014 /* Products */ = {
+		00000000000000000000001E /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				000000000000000000000002 /* adder */,
-				000000000000000000000009 /* basic.exe */,
+				000000000000000000000002 /* subtracter */,
+				000000000000000000000009 /* adder */,
+				000000000000000000000010 /* basic.exe */,
 			);
 			name = Products;
 			sourceTree = "<group>";
 		};
-		000000000000000000000015 /* adder */ = {
+		00000000000000000000001F /* subtracter */ = {
 			isa = PBXGroup;
 			children = (
-				000000000000000000000003 /* add.cpp */,
+				000000000000000000000003 /* subtract.cpp */,
+			);
+			name = subtracter;
+			sourceTree = "<group>";
+		};
+		000000000000000000000020 /* adder */ = {
+			isa = PBXGroup;
+			children = (
+				00000000000000000000000A /* add.cpp */,
 			);
 			name = adder;
 			sourceTree = "<group>";
 		};
-		000000000000000000000016 /* basic.exe */ = {
+		000000000000000000000021 /* basic.exe */ = {
 			isa = PBXGroup;
 			children = (
-				00000000000000000000000D /* main.cpp */,
+				000000000000000000000017 /* main.cpp */,
 			);
 			name = basic.exe;
 			sourceTree = "<group>";
 		};
-		000000000000000000000017 = {
+		000000000000000000000022 = {
 			isa = PBXGroup;
 			children = (
-				000000000000000000000015 /* adder */,
-				000000000000000000000016 /* basic.exe */,
-				000000000000000000000014 /* Products */,
+				00000000000000000000001F /* subtracter */,
+				000000000000000000000020 /* adder */,
+				000000000000000000000021 /* basic.exe */,
+				00000000000000000000001E /* Products */,
 			);
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
-		000000000000000000000006 /* adder */ = {
+		000000000000000000000006 /* subtracter */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 000000000000000000000008 /* Build configuration list for PBXNativeTarget "adder" */;
+			buildConfigurationList = 000000000000000000000008 /* Build configuration list for PBXNativeTarget "subtracter" */;
 			buildPhases = (
 				000000000000000000000005 /* Sources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = subtracter;
+			packageProductDependencies = (
+			);
+			productName = subtracter;
+			productReference = 000000000000000000000002 /* subtracter */;
+			productType = "com.apple.product-type.library.static";
+		};
+		00000000000000000000000D /* adder */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 00000000000000000000000F /* Build configuration list for PBXNativeTarget "adder" */;
+			buildPhases = (
+				00000000000000000000000C /* Sources */,
 			);
 			buildRules = (
 			);
@@ -92,32 +131,33 @@
 			packageProductDependencies = (
 			);
 			productName = adder;
-			productReference = 000000000000000000000002 /* adder */;
+			productReference = 000000000000000000000009 /* adder */;
 			productType = "com.apple.product-type.library.static";
 		};
-		000000000000000000000011 /* basic.exe */ = {
+		00000000000000000000001B /* basic.exe */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 000000000000000000000013 /* Build configuration list for PBXNativeTarget "basic.exe" */;
+			buildConfigurationList = 00000000000000000000001D /* Build configuration list for PBXNativeTarget "basic.exe" */;
 			buildPhases = (
-				00000000000000000000000F /* Sources */,
-				000000000000000000000010 /* Frameworks */,
+				000000000000000000000019 /* Sources */,
+				00000000000000000000001A /* Frameworks */,
 			);
 			buildRules = (
 			);
 			dependencies = (
-				00000000000000000000000B /* PBXTargetDependency */,
+				000000000000000000000012 /* PBXTargetDependency */,
+				000000000000000000000015 /* PBXTargetDependency */,
 			);
 			name = basic.exe;
 			packageProductDependencies = (
 			);
 			productName = basic.exe;
-			productReference = 000000000000000000000009 /* basic.exe */;
+			productReference = 000000000000000000000010 /* basic.exe */;
 			productType = "com.apple.product-type.tool";
 		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
-		000000000000000000000018 /* Project object */ = {
+		000000000000000000000023 /* Project object */ = {
 			isa = PBXProject;
 			attributes = {
 				BuildIndependentTargetsInParallel = 1;
@@ -126,7 +166,10 @@
 					000000000000000000000006 = {
 						CreatedOnToolsVersion = 26.1.1;
 					};
-					000000000000000000000011 = {
+					00000000000000000000000D = {
+						CreatedOnToolsVersion = 26.1.1;
+					};
+					00000000000000000000001B = {
 						CreatedOnToolsVersion = 26.1.1;
 					};
 				};
@@ -138,15 +181,16 @@
 				en,
 				Base,
 			);
-			mainGroup = 000000000000000000000017;
+			mainGroup = 000000000000000000000022;
 			minimizedProjectReferenceProxies = 1;
 			preferredProjectObjectVersion = 77;
-			productRefGroup = 000000000000000000000014 /* Products */;
+			productRefGroup = 00000000000000000000001E /* Products */;
 			projectDirPath = /path/to/basic;
 			projectRoot = "";
 			targets = (
-				000000000000000000000006 /* adder */,
-				000000000000000000000011 /* basic.exe */,
+				000000000000000000000006 /* subtracter */,
+				00000000000000000000000D /* adder */,
+				00000000000000000000001B /* basic.exe */,
 			);
 		};
 /* End PBXProject section */
@@ -156,25 +200,38 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				000000000000000000000004 /* add.cpp in Sources */,
+				000000000000000000000004 /* subtract.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-		00000000000000000000000F /* Sources */ = {
+		00000000000000000000000C /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				00000000000000000000000E /* main.cpp in Sources */,
+				00000000000000000000000B /* add.cpp in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		000000000000000000000019 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				000000000000000000000018 /* main.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
-		00000000000000000000000B /* PBXTargetDependency */ = {
+		000000000000000000000012 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
-			target = 000000000000000000000006 /* adder */;
-			targetProxy = 00000000000000000000000A /* PBXContainerItemProxy */;
+			target = 00000000000000000000000D /* adder */;
+			targetProxy = 000000000000000000000011 /* PBXContainerItemProxy */;
+		};
+		000000000000000000000015 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 000000000000000000000006 /* subtracter */;
+			targetProxy = 000000000000000000000014 /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
 
@@ -195,7 +252,14 @@
 			};
 			name = Debug;
 		};
-		000000000000000000000012 /* Debug */ = {
+		00000000000000000000000E /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				STRINGS_FILE_OUTPUT_ENCODING = "UTF-8";
+			};
+			name = Debug;
+		};
+		00000000000000000000001C /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				STRINGS_FILE_OUTPUT_ENCODING = "UTF-8";
@@ -213,7 +277,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Debug;
 		};
-		000000000000000000000008 /* Build configuration list for PBXNativeTarget "adder" */ = {
+		000000000000000000000008 /* Build configuration list for PBXNativeTarget "subtracter" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				000000000000000000000007 /* Debug */,
@@ -221,15 +285,23 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Debug;
 		};
-		000000000000000000000013 /* Build configuration list for PBXNativeTarget "basic.exe" */ = {
+		00000000000000000000000F /* Build configuration list for PBXNativeTarget "adder" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
-				000000000000000000000012 /* Debug */,
+				00000000000000000000000E /* Debug */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		00000000000000000000001D /* Build configuration list for PBXNativeTarget "basic.exe" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				00000000000000000000001C /* Debug */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Debug;
 		};
 /* End XCConfigurationList section */
 	};
-	rootObject = 000000000000000000000018 /* Project object */;
+	rootObject = 000000000000000000000023 /* Project object */;
 }

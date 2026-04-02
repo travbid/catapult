@@ -12,10 +12,13 @@ use std::{
 	sync::Arc,
 };
 
+use starlark::values::OwnedFrozenValue;
+
 use crate::{
 	executable::Executable,
 	link_type::LinkPtr,
 	misc::{index_map::IndexMap, Sources},
+	object_library::ObjectLibrary,
 	project::Project,
 	static_library::StaticLibrary,
 	target::{LinkTarget, Target},
@@ -1015,6 +1018,19 @@ fn project_targets(
 		.container_portals
 		.insert(project_portal_key, ContainerPortal::Project);
 
+	for lib in &project.object_libraries {
+		let key = new_native_target_object_library(
+			lib,
+			native_target_build_configs,
+			graph,
+			id_gen,
+			&target_map,
+			project_portal_key,
+		)?;
+		target_map.insert(as_key(lib), key);
+		ret.push(key);
+	}
+
 	for lib in &project.static_libraries {
 		let key = new_native_target_static_library(
 			lib,
@@ -1211,7 +1227,58 @@ fn new_native_target_static_library(
 	target_map: &HashMap<*const dyn Target, Key>,
 	project_portal_key: Key,
 ) -> Result<Key, String> {
-	let product_name = lib.output_name().to_owned();
+	new_native_target_archive(
+		&lib.name,
+		lib.output_name(),
+		&lib.generator_vars,
+		lib.internal_includes(),
+		lib.link_public.iter().chain(lib.link_private.iter()),
+		&lib.sources,
+		native_target_build_configs,
+		graph,
+		id_gen,
+		target_map,
+		project_portal_key,
+	)
+}
+
+fn new_native_target_object_library(
+	lib: &Arc<ObjectLibrary>,
+	native_target_build_configs: &[XCBuildConfiguration],
+	graph: &mut SubGraph,
+	id_gen: &mut IdGenerator,
+	target_map: &HashMap<*const dyn Target, Key>,
+	project_portal_key: Key,
+) -> Result<Key, String> {
+	new_native_target_archive(
+		&lib.name,
+		lib.output_name(),
+		&lib.generator_vars,
+		lib.internal_includes(),
+		lib.link_public.iter().chain(lib.link_private.iter()),
+		&lib.sources,
+		native_target_build_configs,
+		graph,
+		id_gen,
+		target_map,
+		project_portal_key,
+	)
+}
+
+fn new_native_target_archive<'a>(
+	name: &str,
+	output_name: &str,
+	generator_vars: &Option<OwnedFrozenValue>,
+	internal_includes: Vec<std::path::PathBuf>,
+	links: impl Iterator<Item = &'a LinkPtr>,
+	sources: &Sources,
+	native_target_build_configs: &[XCBuildConfiguration],
+	graph: &mut SubGraph,
+	id_gen: &mut IdGenerator,
+	target_map: &HashMap<*const dyn Target, Key>,
+	project_portal_key: Key,
+) -> Result<Key, String> {
+	let product_name = output_name.to_owned();
 	let product_reference = id_gen.next();
 	graph.file_references.insert(
 		product_reference,
@@ -1228,20 +1295,18 @@ fn new_native_target_static_library(
 	if generator_vars.is_some() {
 		return Err("generator_vars are not supported with Xcode generator".to_owned());
 	}
-	let include_dirs = lib
-		.internal_includes()
+	let include_dirs = internal_includes
 		.into_iter()
 		.map(|src| src.to_string_lossy().to_string())
 		.collect::<Vec<String>>();
 
 	let mut dependencies = Vec::new();
 	let mut framework_build_files = Vec::new();
-	let links = lib.link_public.iter().chain(lib.link_private.iter());
 
 	for link in links {
 		let dep_target_key = match target_map.get(&link_as_key(link)) {
 			Some(k) => *k,
-			None => return Err(format!("Could not find target for link '{}' in target '{}'", link.name(), lib.name)),
+			None => return Err(format!("Could not find target for link '{}' in target '{}'", link.name(), name)),
 		};
 		let dep_target = graph.native_targets.get(&dep_target_key).unwrap();
 
@@ -1282,7 +1347,7 @@ fn new_native_target_static_library(
 		framework_build_files.push(build_file_key);
 	}
 
-	let mut build_phases = add_build_phases(&lib.sources, graph, id_gen);
+	let mut build_phases = add_build_phases(sources, graph, id_gen);
 
 	if !framework_build_files.is_empty() {
 		let frameworks_build_phase_key = id_gen.next();
@@ -1307,13 +1372,13 @@ fn new_native_target_static_library(
 			native_target_build_configs,
 			graph,
 			include_dirs,
-			lib.name.clone(),
+			name.to_owned(),
 			id_gen,
 		),
 		build_phases,
 		build_rules: build_rule_keys,
 		dependencies,
-		name: lib.name.clone(),
+		name: name.to_owned(),
 		product_name,
 		product_reference,
 		product_type: ProductType::LibraryStatic,
@@ -1951,6 +2016,26 @@ fn test_xcode() {
 			generator_vars: None,
 			output_name: None,
 		});
+		let subtracter = Arc::new(ObjectLibrary {
+			parent_project: weak_parent.clone(),
+			name: "subtracter".to_owned(),
+			sources: Sources {
+				cpp: vec![SourcePath {
+					full: PathBuf::from("subtract.cpp"),
+					name: "subtract.cpp".to_owned(),
+				}],
+				..Default::default()
+			},
+			link_public: Vec::new(),
+			link_private: Vec::new(),
+			include_dirs_public: Vec::new(),
+			include_dirs_private: Vec::new(),
+			defines_private: Vec::new(),
+			defines_public: Vec::new(),
+			link_flags_public: Vec::new(),
+			generator_vars: None,
+			output_name: None,
+		});
 		let exe = Arc::new(Executable {
 			parent_project: weak_parent.clone(),
 			name: "basic.exe".to_owned(),
@@ -1958,7 +2043,7 @@ fn test_xcode() {
 				cpp: vec![SourcePath { full: PathBuf::from("main.cpp"), name: "main.cpp".to_owned() }],
 				..Default::default()
 			},
-			links: vec![LinkPtr::Static(adder.clone())],
+			links: vec![LinkPtr::Static(adder.clone()), LinkPtr::Object(subtracter.clone())],
 			include_dirs: Vec::new(),
 			defines: Vec::new(),
 			link_flags: Vec::new(),
@@ -1973,7 +2058,7 @@ fn test_xcode() {
 			dependencies: Vec::new(),
 			executables: vec![exe],
 			static_libraries: vec![adder],
-			object_libraries: Vec::new(),
+			object_libraries: vec![subtracter],
 			interface_libraries: Vec::new(),
 		}
 	});
@@ -2019,5 +2104,8 @@ fn test_xcode() {
 	let (_, project_nodes) = xcodeprojs.into_iter().next().unwrap();
 	let xcodeproj_str = project_nodes.into_string(&project.info.name);
 	let expected = include_str!("./xcode_test_01.pbxproj");
+	// for (counter, line) in xcodeproj_str.lines().enumerate() {
+	// 	println!("{}", line);
+	// }
 	assert_eq!(xcodeproj_str, expected, "{}", diff_at(&xcodeproj_str, expected));
 }
