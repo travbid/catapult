@@ -15,20 +15,24 @@ use std::{
 use starlark::values::OwnedFrozenValue;
 
 use crate::{
+	GlobalOptions,
 	executable::Executable,
 	link_type::LinkPtr,
-	misc::{index_map::IndexMap, Sources},
+	misc::{
+		Sources, //
+		index_map::IndexMap,
+		index_set::IndexSet,
+	},
 	object_library::ObjectLibrary,
 	project::Project,
 	static_library::StaticLibrary,
 	target::{LinkTarget, Target},
 	toolchain::{
-		compiler::Compiler, //
 		PbxItem,
 		Toolchain,
 		XcodeprojectProfile,
+		compiler::Compiler, //
 	},
-	GlobalOptions,
 };
 
 #[derive(Clone)]
@@ -1085,12 +1089,24 @@ fn new_native_target_executable(
 		.into_iter()
 		.map(|src| src.to_string_lossy().to_string())
 		.collect::<Vec<String>>();
+	let defines = exe.public_defines_recursive();
 
 	let mut dependencies = Vec::new();
 	let mut framework_build_files = Vec::new();
 
+	let mut physical_links = IndexSet::new();
 	for link in &exe.links {
-		let dep_target_key = match target_map.get(&link_as_key(link)) {
+		match link {
+			LinkPtr::Interface(_) => {
+				for trans_link in link.public_links_recursive() {
+					physical_links.insert(trans_link);
+				}
+			}
+			_ => physical_links.insert(link.clone()),
+		}
+	}
+	for link in physical_links {
+		let dep_target_key = match target_map.get(&link_as_key(&link)) {
 			Some(k) => k,
 			None => return Err(format!("Could not find target for link '{}' in target '{}'", link.name(), exe.name)),
 		};
@@ -1198,6 +1214,7 @@ fn new_native_target_executable(
 			native_target_build_configs,
 			graph,
 			include_dirs,
+			defines,
 			exe.name.clone(),
 			id_gen,
 		),
@@ -1226,6 +1243,7 @@ fn new_native_target_static_library(
 		lib.output_name(),
 		&lib.generator_vars,
 		lib.internal_includes(),
+		lib.internal_defines(),
 		lib.link_public.iter().chain(lib.link_private.iter()),
 		&lib.sources,
 		native_target_build_configs,
@@ -1249,6 +1267,7 @@ fn new_native_target_object_library(
 		lib.output_name(),
 		&lib.generator_vars,
 		lib.internal_includes(),
+		lib.internal_defines(),
 		lib.link_public.iter().chain(lib.link_private.iter()),
 		&lib.sources,
 		native_target_build_configs,
@@ -1264,6 +1283,7 @@ fn new_native_target_archive<'a>(
 	output_name: &str,
 	generator_vars: &Option<OwnedFrozenValue>,
 	internal_includes: Vec<std::path::PathBuf>,
+	internal_defines: Vec<String>,
 	links: impl Iterator<Item = &'a LinkPtr>,
 	sources: &Sources,
 	native_target_build_configs: &[XCBuildConfiguration],
@@ -1297,8 +1317,19 @@ fn new_native_target_archive<'a>(
 	let mut dependencies = Vec::new();
 	let mut framework_build_files = Vec::new();
 
+	let mut physical_links = IndexSet::new();
 	for link in links {
-		let dep_target_key = match target_map.get(&link_as_key(link)) {
+		match link {
+			LinkPtr::Interface(_) => {
+				for trans_link in link.public_links_recursive() {
+					physical_links.insert(trans_link);
+				}
+			}
+			_ => physical_links.insert(link.clone()),
+		}
+	}
+	for link in physical_links {
+		let dep_target_key = match target_map.get(&link_as_key(&link)) {
 			Some(k) => *k,
 			None => return Err(format!("Could not find target for link '{}' in target '{}'", link.name(), name)),
 		};
@@ -1366,6 +1397,7 @@ fn new_native_target_archive<'a>(
 			native_target_build_configs,
 			graph,
 			include_dirs,
+			internal_defines,
 			name.to_owned(),
 			id_gen,
 		),
@@ -1496,6 +1528,7 @@ fn clone_xc_with(
 	native_target_build_configs: &[XCBuildConfiguration],
 	graph: &mut SubGraph,
 	include_dirs: Vec<String>,
+	defines: Vec<String>,
 	target_name: String,
 	id_gen: &mut IdGenerator,
 ) -> Key {
@@ -1514,6 +1547,20 @@ fn clone_xc_with(
 		} else if !include_dirs.is_empty() {
 			build_settings.insert("HEADER_SEARCH_PATHS".to_owned(), BuildSetting::Array(include_dirs.clone()));
 		}
+
+		if let Some(sett) = build_settings.get_mut("GCC_PREPROCESSOR_DEFINITIONS") {
+			match sett {
+				BuildSetting::Array(arr) => arr.extend(defines.clone()),
+				BuildSetting::Single(item) => {
+					let mut defs = vec![item.clone()];
+					defs.extend(defines.clone());
+					*sett = BuildSetting::Array(defs);
+				}
+			}
+		} else if !defines.is_empty() {
+			build_settings.insert("GCC_PREPROCESSOR_DEFINITIONS".to_owned(), BuildSetting::Array(defines.clone()));
+		}
+
 		let build_cfg_key = id_gen.next();
 		graph.build_configurations.insert(
 			build_cfg_key,
@@ -1888,9 +1935,10 @@ struct PBXReferenceProxy {
 }
 
 #[test]
-fn test_xcode() {
+fn test_pbxproj_generation() {
 	use crate::{
 		executable::Executable,
+		interface_library::InterfaceLibrary,
 		static_library::StaticLibrary, //
 		toolchain::Profile,
 	};
@@ -2030,6 +2078,14 @@ fn test_xcode() {
 			generator_vars: None,
 			output_name: None,
 		});
+		let arithmetic = Arc::new(InterfaceLibrary {
+			parent_project: weak_parent.clone(),
+			name: "arithmetic".to_owned(),
+			links: vec![LinkPtr::Static(adder.clone()), LinkPtr::Object(subtracter.clone())],
+			include_dirs: Vec::new(),
+			defines: Vec::new(),
+			link_flags: Vec::new(),
+		});
 		let exe = Arc::new(Executable {
 			parent_project: weak_parent.clone(),
 			name: "basic.exe".to_owned(),
@@ -2037,7 +2093,7 @@ fn test_xcode() {
 				cpp: vec![SourcePath { full: PathBuf::from("main.cpp"), name: "main.cpp".to_owned() }],
 				..Default::default()
 			},
-			links: vec![LinkPtr::Static(adder.clone()), LinkPtr::Object(subtracter.clone())],
+			links: vec![LinkPtr::Interface(arithmetic.clone())],
 			include_dirs: Vec::new(),
 			defines: Vec::new(),
 			link_flags: Vec::new(),
@@ -2053,7 +2109,7 @@ fn test_xcode() {
 			executables: vec![exe],
 			static_libraries: vec![adder],
 			object_libraries: vec![subtracter],
-			interface_libraries: Vec::new(),
+			interface_libraries: vec![arithmetic],
 		}
 	});
 
@@ -2102,4 +2158,126 @@ fn test_xcode() {
 	// 	println!("{}", line);
 	// }
 	assert_eq!(xcodeproj_str, expected, "{}", diff_at(&xcodeproj_str, expected));
+}
+
+#[test]
+fn test_xcode_transform() {
+	use crate::{
+		executable::Executable, interface_library::InterfaceLibrary, misc::SourcePath, static_library::StaticLibrary,
+		toolchain::Profile,
+	};
+	use std::path::PathBuf;
+
+	let project = Arc::new_cyclic(|weak_parent| {
+		let adder = Arc::new(StaticLibrary {
+			parent_project: weak_parent.clone(),
+			name: "adder".to_owned(),
+			sources: crate::misc::Sources::default(),
+			link_public: Vec::new(),
+			link_private: Vec::new(),
+			include_dirs_public: Vec::new(),
+			include_dirs_private: Vec::new(),
+			defines_private: Vec::new(),
+			defines_public: Vec::new(),
+			link_flags_public: Vec::new(),
+			generator_vars: None,
+			output_name: None,
+		});
+		let iface = Arc::new(InterfaceLibrary {
+			parent_project: weak_parent.clone(),
+			name: "iface".to_owned(),
+			links: vec![LinkPtr::Static(adder.clone())],
+			include_dirs: vec![SourcePath {
+				full: PathBuf::from("iface_inc"),
+				name: "iface_inc".to_owned(),
+			}],
+			defines: vec!["IFACE_DEF=1".to_owned()],
+			link_flags: Vec::new(),
+		});
+		let exe = Arc::new(Executable {
+			parent_project: weak_parent.clone(),
+			name: "basic.exe".to_owned(),
+			sources: crate::misc::Sources::default(),
+			links: vec![LinkPtr::Interface(iface.clone())],
+			include_dirs: Vec::new(),
+			defines: Vec::new(),
+			link_flags: Vec::new(),
+			generator_vars: None,
+			output_name: None,
+		});
+		Project {
+			info: Arc::new(crate::project::ProjectInfo {
+				name: "basic".to_owned(),
+				path: PathBuf::from("/path/to/basic"),
+			}),
+			dependencies: Vec::new(),
+			executables: vec![exe],
+			static_libraries: vec![adder],
+			object_libraries: Vec::new(),
+			interface_libraries: vec![iface],
+		}
+	});
+
+	let toolchain = Toolchain {
+		xcode_platforms: vec!["arm64".to_owned(), "x86_64".to_owned()],
+		profile: BTreeMap::<String, Profile>::from([(
+			"Debug".to_owned(),
+			Profile {
+				c_compile_flags: Vec::new(),
+				cpp_compile_flags: Vec::new(),
+				nasm_assemble_flags: Vec::new(),
+				vcxproj: None,
+				xcodeproj: Some(XcodeprojectProfile { native_target: BTreeMap::new(), project: BTreeMap::new() }),
+			},
+		)]),
+		..Default::default()
+	};
+	let global_opts = GlobalOptions {
+		c_standard: Some("17".to_owned()),
+		cpp_standard: Some("20".to_owned()),
+		position_independent_code: Some(true),
+	};
+	let xcodeprojs =
+		transform_build_graph_to_xcode_graphs(project.clone(), toolchain, &global_opts, Path::new("")).unwrap();
+	let (_, project_nodes) = xcodeprojs.into_iter().next().unwrap();
+
+	// Assert no native target is created for the InterfaceLibrary
+	assert!(
+		project_nodes
+			.native_targets
+			.iter()
+			.find(|(_, t)| t.name == "iface")
+			.is_none()
+	);
+
+	// Find the basic.exe native target
+	let exe_target = &project_nodes
+		.native_targets
+		.iter()
+		.find(|(_, t)| t.name == "basic.exe")
+		.unwrap()
+		.1;
+
+	// Assert the build configuration for basic.exe contains the correctly propagated properties
+	let config_list = project_nodes
+		.configuration_lists
+		.get(&exe_target.build_configuration_list)
+		.unwrap();
+	let config_id = config_list.build_configurations[0];
+	let config = project_nodes.build_configurations.get(&config_id).unwrap();
+
+	match config.build_settings.get("GCC_PREPROCESSOR_DEFINITIONS").unwrap() {
+		BuildSetting::Array(arr) => assert!(arr.contains(&"IFACE_DEF=1".to_owned())),
+		_ => panic!("Expected array"),
+	}
+	match config.build_settings.get("HEADER_SEARCH_PATHS").unwrap() {
+		BuildSetting::Array(arr) => assert!(arr.contains(&"iface_inc".to_owned())),
+		_ => panic!("Expected array"),
+	}
+
+	// Assert that basic.exe natively depends on the transitive underlying physical target (adder)
+	let dep_id = exe_target.dependencies[0];
+	let dep = project_nodes.target_dependencies.get(&dep_id).unwrap();
+	let dep_target = project_nodes.native_targets.get(&dep.target).unwrap();
+	assert_eq!(dep_target.name, "adder");
 }
