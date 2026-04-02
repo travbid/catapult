@@ -51,7 +51,7 @@ impl LinkTarget for StaticLibrary {
 	}
 	fn public_includes_recursive(&self) -> Vec<PathBuf> {
 		let mut includes = Vec::new();
-		for link in &self.link_private {
+		for link in &self.link_public {
 			for include in link.public_includes_recursive() {
 				if !includes.contains(&include) {
 					includes.push(include);
@@ -70,14 +70,7 @@ impl LinkTarget for StaticLibrary {
 	}
 	fn public_defines_recursive(&self) -> Vec<String> {
 		let mut defines = Vec::new();
-		for link in &self.link_private {
-			for def in link.public_defines() {
-				if !defines.contains(&def) {
-					defines.push(def);
-				}
-			}
-		}
-		for link in &self.link_private {
+		for link in &self.link_public {
 			for def in link.public_defines_recursive() {
 				if !defines.contains(&def) {
 					defines.push(def);
@@ -96,20 +89,13 @@ impl LinkTarget for StaticLibrary {
 	}
 	fn public_link_flags_recursive(&self) -> Vec<String> {
 		let mut flags = Vec::new();
-		for link in &self.link_private {
-			for flag in link.public_link_flags() {
+		for link in &self.link_public {
+			for flag in link.public_link_flags_recursive() {
 				if !flags.contains(&flag) {
 					flags.push(flag);
 				}
 			}
 		}
-		// for link in &self.public_links {
-		// 	for flag in link.public_link_flags_recursive() {
-		// 		if !flags.contains(&flag) {
-		// 			flags.push(flag);
-		// 		}
-		// 	}
-		// }
 		for flag in &self.link_flags_public {
 			if !flags.contains(flag) {
 				flags.push(flag.clone());

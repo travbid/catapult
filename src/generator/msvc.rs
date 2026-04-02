@@ -467,6 +467,13 @@ fn add_static_lib(
 	let project_info = &lib.project().info;
 	let mut includes = lib.public_includes_recursive();
 	includes.extend_from_slice(&lib.private_includes());
+	for link in &lib.link_private {
+		for include in link.public_includes_recursive() {
+			if !includes.contains(&include) {
+				includes.push(include);
+			}
+		}
+	}
 	let includes = includes
 		.into_iter()
 		// Visual Studio doesn't seem to support extended-length name syntax
@@ -474,6 +481,13 @@ fn add_static_lib(
 		.collect::<Vec<String>>();
 	let mut defines = lib.public_defines_recursive();
 	defines.extend_from_slice(lib.private_defines());
+	for link in &lib.link_private {
+		for def in link.public_defines_recursive() {
+			if !defines.contains(&def) {
+				defines.push(def);
+			}
+		}
+	}
 	let links = lib
 		.link_private
 		.iter()
@@ -502,6 +516,13 @@ fn add_object_lib<'a>(
 	let project_info = &lib.project().info;
 	let mut includes = lib.public_includes_recursive();
 	includes.extend_from_slice(&lib.private_includes());
+	for link in &lib.link_private {
+		for include in link.public_includes_recursive() {
+			if !includes.contains(&include) {
+				includes.push(include);
+			}
+		}
+	}
 	let includes = includes
 		.into_iter()
 		// Visual Studio doesn't seem to support extended-length name syntax
@@ -509,6 +530,13 @@ fn add_object_lib<'a>(
 		.collect::<Vec<String>>();
 	let mut defines = lib.public_defines_recursive();
 	defines.extend_from_slice(lib.private_defines());
+	for link in &lib.link_private {
+		for def in link.public_defines_recursive() {
+			if !defines.contains(&def) {
+				defines.push(def);
+			}
+		}
+	}
 	let links = lib
 		.link_private
 		.iter()

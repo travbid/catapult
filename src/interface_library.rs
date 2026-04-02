@@ -58,13 +58,6 @@ impl LinkTarget for InterfaceLibrary {
 	fn public_defines_recursive(&self) -> Vec<String> {
 		let mut defines = Vec::new();
 		for link in &self.links {
-			for def in link.public_defines() {
-				if !defines.contains(&def) {
-					defines.push(def);
-				}
-			}
-		}
-		for link in &self.links {
 			for def in link.public_defines_recursive() {
 				if !defines.contains(&def) {
 					defines.push(def);

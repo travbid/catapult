@@ -85,7 +85,7 @@ impl LinkTarget for LinkPtr {
 	fn public_includes_recursive(&self) -> Vec<PathBuf> {
 		match self {
 			Self::Static(x) => x.public_includes_recursive(),
-			Self::Object(x) => x.public_includes(),
+			Self::Object(x) => x.public_includes_recursive(),
 			Self::Interface(x) => x.public_includes_recursive(),
 		}
 	}
