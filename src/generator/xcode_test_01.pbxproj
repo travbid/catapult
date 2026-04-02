@@ -9,8 +9,8 @@
 /* Begin PBXBuildFile section */
 		000000000000000000000004 /* subtract.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000003 /* subtract.cpp */; };
 		00000000000000000000000B /* add.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 00000000000000000000000A /* add.cpp */; };
-		000000000000000000000013 /* adder in Frameworks */ = {isa = PBXBuildFile; fileRef = 000000000000000000000009 /* adder */; };
-		000000000000000000000016 /* subtracter in Frameworks */ = {isa = PBXBuildFile; fileRef = 000000000000000000000002 /* subtracter */; };
+		000000000000000000000013 /* libadder.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 000000000000000000000009 /* libadder.a */; };
+		000000000000000000000016 /* libsubtracter.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 000000000000000000000002 /* libsubtracter.a */; };
 		000000000000000000000018 /* main.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000017 /* main.cpp */; };
 /* End PBXBuildFile section */
 
@@ -32,9 +32,9 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
-		000000000000000000000002 /* subtracter */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; name = subtracter; path = libsubtracter.a; sourceTree = BUILT_PRODUCTS_DIR; };
+		000000000000000000000002 /* libsubtracter.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libsubtracter.a; sourceTree = BUILT_PRODUCTS_DIR; };
 		000000000000000000000003 /* subtract.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = subtract.cpp; sourceTree = SOURCE_ROOT; };
-		000000000000000000000009 /* adder */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; name = adder; path = libadder.a; sourceTree = BUILT_PRODUCTS_DIR; };
+		000000000000000000000009 /* libadder.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libadder.a; sourceTree = BUILT_PRODUCTS_DIR; };
 		00000000000000000000000A /* add.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = add.cpp; sourceTree = SOURCE_ROOT; };
 		000000000000000000000010 /* basic.exe */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = basic.exe; sourceTree = BUILT_PRODUCTS_DIR; };
 		000000000000000000000017 /* main.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = main.cpp; sourceTree = SOURCE_ROOT; };
@@ -45,8 +45,8 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				000000000000000000000013 /* adder in Frameworks */,
-				000000000000000000000016 /* subtracter in Frameworks */,
+				000000000000000000000013 /* libadder.a in Frameworks */,
+				000000000000000000000016 /* libsubtracter.a in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -56,8 +56,8 @@
 		00000000000000000000001E /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				000000000000000000000002 /* subtracter */,
-				000000000000000000000009 /* adder */,
+				000000000000000000000002 /* libsubtracter.a */,
+				000000000000000000000009 /* libadder.a */,
 				000000000000000000000010 /* basic.exe */,
 			);
 			name = Products;
@@ -114,7 +114,7 @@
 			packageProductDependencies = (
 			);
 			productName = subtracter;
-			productReference = 000000000000000000000002 /* subtracter */;
+			productReference = 000000000000000000000002 /* libsubtracter.a */;
 			productType = "com.apple.product-type.library.static";
 		};
 		00000000000000000000000D /* adder */ = {
@@ -131,7 +131,7 @@
 			packageProductDependencies = (
 			);
 			productName = adder;
-			productReference = 000000000000000000000009 /* adder */;
+			productReference = 000000000000000000000009 /* libadder.a */;
 			productType = "com.apple.product-type.library.static";
 		};
 		00000000000000000000001B /* basic.exe */ = {
