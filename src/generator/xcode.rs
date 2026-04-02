@@ -1,10 +1,9 @@
 mod compiler;
 
 use core::{cmp, hash};
-use std::collections::HashMap;
 
 use std::{
-	collections::BTreeMap, //
+	collections::{BTreeMap, HashMap}, //
 	fmt::Write as FmtWrite,
 	fs,
 	io::Write as IoWrite,
@@ -39,7 +38,7 @@ impl cmp::PartialEq for ProjectPtr {
 impl cmp::Eq for ProjectPtr {}
 impl cmp::PartialOrd for ProjectPtr {
 	fn partial_cmp(&self, other: &Self) -> Option<cmp::Ordering> {
-		self.0.info.name.partial_cmp(&other.0.info.name)
+		Some(self.cmp(other))
 	}
 }
 impl cmp::Ord for ProjectPtr {
@@ -233,7 +232,7 @@ impl XcodeprojGraph {
 
 		project_str += "/* Begin PBXFileReference section */\n";
 		for (_, file_ref) in &self.file_references {
-			project_str += &print_pbx_file_reference(&file_ref)
+			project_str += &print_pbx_file_reference(file_ref)
 		}
 		project_str += "/* End PBXFileReference section */\n\n";
 
@@ -272,7 +271,7 @@ impl XcodeprojGraph {
 
 		project_str += "/* Begin PBXGroup section */\n";
 		for (_, group) in &self.groups {
-			project_str += &self.print_pbx_group(&group);
+			project_str += &self.print_pbx_group(group);
 		}
 		project_str += "/* End PBXGroup section */\n\n";
 
@@ -378,7 +377,7 @@ impl XcodeprojGraph {
 					ProjectRef = {} /* {} */;
 				}},
 "#,
-					self.groups.get(&product_group).unwrap().id,
+					self.groups.get(product_group).unwrap().id,
 					project_ref.id,
 					project_ref.name.as_ref().unwrap()
 				);
@@ -717,7 +716,7 @@ impl IdGenerator {
 		self.int_counter += 1;
 		self.int_counter
 	}
-	fn new_id(&mut self, msg: &str) -> String {
+	fn new_id(&mut self) -> String {
 		let ret = format!("{:024X}", self.str_counter);
 		self.str_counter += 1;
 		ret
@@ -815,7 +814,7 @@ fn transform_graph_inner(
 			graph.build_configurations.insert(
 				key,
 				XCBuildConfiguration {
-					id: id_gen.new_id("project xc build config"),
+					id: id_gen.new_id(),
 					name: profile_name.clone(),
 					build_settings: profile
 						.project
@@ -835,7 +834,7 @@ fn transform_graph_inner(
 			project_xc_build_configurations.push(key);
 		}
 		let project_build_configuration_list = XCConfigurationList {
-			id: id_gen.new_id("project xc build config"),
+			id: id_gen.new_id(),
 			build_configurations: project_xc_build_configurations,
 			default_configuration_is_visible: false,
 			default_configuration_name: profiles.first_key_value().unwrap().0.clone(), // TODO(Travers)
@@ -878,7 +877,7 @@ fn transform_graph_inner(
 			children.push(nt.product_reference);
 		}
 		let product_group = PBXGroup {
-			id: id_gen.new_id("group"),
+			id: id_gen.new_id(),
 			children,
 			name: Some("Products".to_owned()),
 			path: None,
@@ -916,7 +915,7 @@ fn transform_graph_inner(
 		graph.groups.insert(
 			child_id,
 			PBXGroup {
-				id: id_gen.new_id("main group child"),
+				id: id_gen.new_id(),
 				children,
 				name: Some(target.name.clone()),
 				path: None,
@@ -932,7 +931,7 @@ fn transform_graph_inner(
 	graph.groups.insert(
 		main_group_key,
 		PBXGroup {
-			id: id_gen.new_id("main group"),
+			id: id_gen.new_id(),
 			children: main_group_children,
 			name: None,
 			path: None,
@@ -941,7 +940,7 @@ fn transform_graph_inner(
 	);
 
 	let pbx_project = PBXProject {
-		id: id_gen.new_id("project"),
+		id: id_gen.new_id(),
 		attribute_build_indpendent_targets_in_parallel: true,
 		attribute_last_upgrade_check: 2610,
 		attribute_target_attributes: native_targets
@@ -1020,7 +1019,6 @@ fn project_targets(
 		let key = new_native_target_static_library(
 			lib,
 			native_target_build_configs,
-			toolchain,
 			graph,
 			id_gen,
 			&target_map,
@@ -1058,7 +1056,7 @@ fn new_native_target_executable(
 	graph.file_references.insert(
 		product_reference,
 		PBXFileReference {
-			id: id_gen.new_id("exe fileref"),
+			id: id_gen.new_id(),
 			file_type: FileRefType::Explicit(ExplicitFileType::Executable),
 			include_in_index: Some(false),
 			name: None,
@@ -1092,7 +1090,7 @@ fn new_native_target_executable(
 		graph.container_item_proxies.insert(
 			container_item_proxy_key,
 			PBXContainerItemProxy {
-				id: id_gen.new_id("container item proxy"),
+				id: id_gen.new_id(),
 				container_portal: project_portal_key,
 				proxy_type: 1,
 				remote_global_id_string: *dep_target_key,
@@ -1104,7 +1102,7 @@ fn new_native_target_executable(
 		graph.target_dependencies.insert(
 			target_dependency_key,
 			PBXTargetDependency {
-				id: id_gen.new_id("target dependency"),
+				id: id_gen.new_id(),
 				target: *dep_target_key,
 				target_proxy: container_item_proxy_key,
 			},
@@ -1116,7 +1114,7 @@ fn new_native_target_executable(
 		graph.build_files.insert(
 			build_file_key,
 			PBXBuildFile {
-				id: id_gen.new_id("frameworks build file"),
+				id: id_gen.new_id(),
 				file_ref: Reference::File(dep_target.product_reference),
 				x_name: dep_product_ref.path.clone(),
 				x_build_phase: "Frameworks".to_owned(),
@@ -1131,7 +1129,7 @@ fn new_native_target_executable(
 		graph.frameworks_build_phases.insert(
 			frameworks_build_phase_key,
 			PBXFrameworksBuildPhase {
-				id: id_gen.new_id("frameworks build phase"),
+				id: id_gen.new_id(),
 				build_action_mask: 0x7F_FF_FF_FF,
 				files: framework_build_files,
 				run_only_for_deployment_postprocessing: false,
@@ -1160,7 +1158,7 @@ fn new_native_target_executable(
 		graph.build_rules.insert(
 			build_rule_key,
 			PBXBuildRule {
-				id: id_gen.new_id("build rule nasm"),
+				id: id_gen.new_id(),
 				compiler_spec: CompilerSpec::ProxyScript,
 				file_type: FileType::Nasm,
 				// inputFiles = ("$(SRCROOT)/submodules/nasmproj/nasmsrc.asm",);
@@ -1185,7 +1183,7 @@ fn new_native_target_executable(
 	}
 	let native_target_key = id_gen.next();
 	let native_target = PBXNativeTarget {
-		id: id_gen.new_id(&("native_target: ".to_owned() + &exe.name)),
+		id: id_gen.new_id(),
 		build_configuration_list: clone_xc_with(
 			native_target_build_configs,
 			graph,
@@ -1208,7 +1206,6 @@ fn new_native_target_executable(
 fn new_native_target_static_library(
 	lib: &Arc<StaticLibrary>,
 	native_target_build_configs: &[XCBuildConfiguration],
-	toolchain: &Toolchain,
 	graph: &mut SubGraph,
 	id_gen: &mut IdGenerator,
 	target_map: &HashMap<*const dyn Target, Key>,
@@ -1219,7 +1216,7 @@ fn new_native_target_static_library(
 	graph.file_references.insert(
 		product_reference,
 		PBXFileReference {
-			id: id_gen.new_id("lib fileref"),
+			id: id_gen.new_id(),
 			file_type: FileRefType::Explicit(ExplicitFileType::Archive),
 			include_in_index: Some(false),
 			name: Some(product_name.clone()),
@@ -1228,7 +1225,7 @@ fn new_native_target_static_library(
 		},
 	);
 
-	if lib.generator_vars.is_some() {
+	if generator_vars.is_some() {
 		return Err("generator_vars are not supported with Xcode generator".to_owned());
 	}
 	let include_dirs = lib
@@ -1252,7 +1249,7 @@ fn new_native_target_static_library(
 		graph.container_item_proxies.insert(
 			container_item_proxy_key,
 			PBXContainerItemProxy {
-				id: id_gen.new_id("container item proxy"),
+				id: id_gen.new_id(),
 				container_portal: project_portal_key,
 				proxy_type: 1,
 				remote_global_id_string: dep_target_key,
@@ -1264,7 +1261,7 @@ fn new_native_target_static_library(
 		graph.target_dependencies.insert(
 			target_dependency_key,
 			PBXTargetDependency {
-				id: id_gen.new_id("target dependency"),
+				id: id_gen.new_id(),
 				target: dep_target_key,
 				target_proxy: container_item_proxy_key,
 			},
@@ -1276,7 +1273,7 @@ fn new_native_target_static_library(
 		graph.build_files.insert(
 			build_file_key,
 			PBXBuildFile {
-				id: id_gen.new_id("frameworks build file"),
+				id: id_gen.new_id(),
 				file_ref: Reference::File(dep_target.product_reference),
 				x_name: dep_product_ref.path.clone(),
 				x_build_phase: "Frameworks".to_owned(),
@@ -1292,7 +1289,7 @@ fn new_native_target_static_library(
 		graph.frameworks_build_phases.insert(
 			frameworks_build_phase_key,
 			PBXFrameworksBuildPhase {
-				id: id_gen.new_id("frameworks build phase"),
+				id: id_gen.new_id(),
 				build_action_mask: 0x7F_FF_FF_FF,
 				files: framework_build_files,
 				run_only_for_deployment_postprocessing: false,
@@ -1305,7 +1302,7 @@ fn new_native_target_static_library(
 	// TODO: nasm
 	let native_target_key = id_gen.next();
 	let native_target = PBXNativeTarget {
-		id: id_gen.new_id(&("native_target: ".to_owned() + &lib.name)),
+		id: id_gen.new_id(),
 		build_configuration_list: clone_xc_with(
 			native_target_build_configs,
 			graph,
@@ -1334,7 +1331,7 @@ fn add_build_phases(sources: &Sources, graph: &mut SubGraph, id_gen: &mut IdGene
 			graph.file_references.insert(
 				file_ref_key,
 				PBXFileReference {
-					id: id_gen.new_id(&src_path.name),
+					id: id_gen.new_id(),
 					file_type: FileRefType::LastKnown(FileType::Header),
 					include_in_index: None,
 					name: None,                  //Some(src_path.name.clone()),
@@ -1346,7 +1343,7 @@ fn add_build_phases(sources: &Sources, graph: &mut SubGraph, id_gen: &mut IdGene
 			graph.build_files.insert(
 				build_file_key,
 				PBXBuildFile {
-					id: id_gen.new_id("build_file"),
+					id: id_gen.new_id(),
 					file_ref: Reference::File(file_ref_key),
 					x_name: src_path.name.clone(),
 					x_build_phase: "Headers".to_owned(),
@@ -1358,7 +1355,7 @@ fn add_build_phases(sources: &Sources, graph: &mut SubGraph, id_gen: &mut IdGene
 		graph.headers_build_phases.insert(
 			build_phase_key,
 			PBXHeadersBuildPhase {
-				id: id_gen.new_id("headers"),
+				id: id_gen.new_id(),
 				build_action_mask: 0x7F_FF_FF_FF, // 2147483647
 				files,
 				run_only_for_deployment_postprocessing: false,
@@ -1373,7 +1370,7 @@ fn add_build_phases(sources: &Sources, graph: &mut SubGraph, id_gen: &mut IdGene
 			graph.file_references.insert(
 				file_ref_key,
 				PBXFileReference {
-					id: id_gen.new_id(&src_path.name),
+					id: id_gen.new_id(),
 					file_type: FileRefType::LastKnown(FileType::C),
 					include_in_index: None,
 					name: None,                  //Some(src_path.name.clone()),
@@ -1385,7 +1382,7 @@ fn add_build_phases(sources: &Sources, graph: &mut SubGraph, id_gen: &mut IdGene
 			graph.build_files.insert(
 				build_file_key,
 				PBXBuildFile {
-					id: id_gen.new_id("build_file"),
+					id: id_gen.new_id(),
 					file_ref: Reference::File(file_ref_key),
 					x_name: src_path.name.clone(),
 					x_build_phase: "Sources".to_owned(),
@@ -1398,7 +1395,7 @@ fn add_build_phases(sources: &Sources, graph: &mut SubGraph, id_gen: &mut IdGene
 			graph.file_references.insert(
 				file_ref_key,
 				PBXFileReference {
-					id: id_gen.new_id(&src_path.name),
+					id: id_gen.new_id(),
 					file_type: FileRefType::LastKnown(FileType::Cpp),
 					include_in_index: None,
 					name: None,                  //Some(src_path.name.clone()),
@@ -1410,7 +1407,7 @@ fn add_build_phases(sources: &Sources, graph: &mut SubGraph, id_gen: &mut IdGene
 			graph.build_files.insert(
 				build_file_key,
 				PBXBuildFile {
-					id: id_gen.new_id("build_file"),
+					id: id_gen.new_id(),
 					file_ref: Reference::File(file_ref_key),
 					x_name: src_path.name.clone(),
 					x_build_phase: "Sources".to_owned(),
@@ -1423,7 +1420,7 @@ fn add_build_phases(sources: &Sources, graph: &mut SubGraph, id_gen: &mut IdGene
 			graph.sources_build_phases.insert(
 				build_phase_key,
 				BuildPhaseBase {
-					id: id_gen.new_id("sources"),
+					id: id_gen.new_id(),
 					build_action_mask: 0x7F_FF_FF_FF, // 2147483647
 					files,
 					run_only_for_deployment_postprocessing: false,
@@ -1462,7 +1459,7 @@ fn clone_xc_with(
 		graph.build_configurations.insert(
 			build_cfg_key,
 			XCBuildConfiguration {
-				id: id_gen.new_id("xc build clone"),
+				id: id_gen.new_id(),
 				build_settings,
 				name: build_cfg.name.clone(),
 			},
@@ -1480,7 +1477,7 @@ fn clone_xc_with(
 	graph.configuration_lists.insert(
 		cfg_list_key,
 		XCConfigurationList {
-			id: id_gen.new_id("xc config clone"),
+			id: id_gen.new_id(),
 			build_configurations: build_configuration_keys,
 			default_configuration_is_visible: false,
 			default_configuration_name,
@@ -1650,7 +1647,7 @@ enum BuildSetting {
 
 impl BuildSetting {
 	fn is_safe_char(c: char) -> bool {
-		matches!(c, '0'..='9') | matches!(c, 'A'..='Z') | matches!(c, 'a'..='z') | matches!(c, '_' | '/' | '.')
+		c.is_ascii_digit() | c.is_ascii_alphabetic() | matches!(c, '_' | '/' | '.')
 	}
 }
 
