@@ -1,0 +1,11 @@
+If:
+  PathMatch: "test_data/test_xcode_basic/.*"
+CompileFlags:
+  CompilationDatabase: "test_data/test_xcode_basic/"
+
+---
+
+If:
+  PathMatch: "test_data/test_01/.*"
+CompileFlags:
+  CompilationDatabase: "test_data/test_01/"
