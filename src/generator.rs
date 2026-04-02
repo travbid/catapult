@@ -8,9 +8,9 @@ use std::{
 };
 
 use crate::{
+	GlobalOptions,
 	project::Project,
 	toolchain::{Profile, Toolchain},
-	GlobalOptions,
 };
 
 pub enum Generator {

@@ -5,12 +5,12 @@ use std::{collections::BTreeMap, fs, path::Path};
 use serde::Deserialize;
 
 use compiler::{
-	identify_assembler, //
-	identify_compiler,
-	identify_linker,
 	Assembler,
 	Compiler,
 	ExeLinker,
+	identify_assembler, //
+	identify_compiler,
+	identify_linker,
 };
 
 #[derive(Debug, Deserialize)]

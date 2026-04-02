@@ -11,9 +11,10 @@ use log;
 
 use super::{TargetPlatform, Toolchain};
 use crate::{
+	GlobalOptions,
 	executable::Executable,
 	link_type::LinkPtr,
-	misc::{join_parent, Sources},
+	misc::{Sources, join_parent},
 	object_library::ObjectLibrary,
 	project::Project,
 	starlark_context::{StarContext, StarContextCompiler},
@@ -22,10 +23,9 @@ use crate::{
 	static_library::StaticLibrary,
 	target::{LinkTarget, Target},
 	toolchain::{
-		compiler::{Assembler, Compiler, ExeLinker},
 		Profile,
+		compiler::{Assembler, Compiler, ExeLinker},
 	},
-	GlobalOptions,
 };
 
 fn input_path(src: &Path, project_path: &Path) -> String {
@@ -427,7 +427,7 @@ fn add_static_lib_target(
 					return Err(format!(
 						"No static linker specified in toolchain. A static linker is required to build \"{}\".",
 						lib.name()
-					))
+					));
 				}
 			};
 			let link_static_lib_rule = link_static_lib(static_linker);
@@ -670,7 +670,7 @@ fn add_executable_target(
 					return Err(format!(
 						"No executable linker specified in toolchain. An executable linker is required to build \"{}\".",
 						exe.name()
-					))
+					));
 				}
 			};
 			let exe_link_rule = link_exe(exe_linker.as_ref());
