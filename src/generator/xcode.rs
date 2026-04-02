@@ -114,10 +114,9 @@ impl XcodeprojGraph {
 			project_str += &match &build_file.file_ref {
 				Reference::File(file_ref_ix) => {
 					let file_ref = self.file_references.get(file_ref_ix).unwrap();
-					let file_ref_name = file_ref.name.as_ref().unwrap_or(&file_ref.path);
 					format!(
 						"		{} /* {} in {} */ = {{isa = PBXBuildFile; fileRef = {} /* {} */; }};\n",
-						build_file.id, file_ref_name, build_file.x_build_phase, file_ref.id, file_ref_name,
+						build_file.id, file_ref.path, build_file.x_build_phase, file_ref.id, file_ref.path,
 					)
 				}
 				Reference::Proxy(proxy_ix) => {
@@ -255,7 +254,7 @@ impl XcodeprojGraph {
 					let file_ref_path = match &file.file_ref {
 						Reference::File(file_ref_id) => {
 							let file_ref = self.file_references.get(file_ref_id).unwrap();
-							file_ref.name.as_ref().unwrap_or(&file_ref.path)
+							&file_ref.path
 						}
 						Reference::Proxy(proxy_id) => &self.reference_proxies.get(proxy_id).unwrap().path,
 					};
@@ -529,8 +528,7 @@ impl XcodeprojGraph {
 					ret += &format!("\t\t\t\t{},\n", group.id);
 				}
 			} else if let Some(file_ref) = self.file_references.get(child_id) {
-				let path = file_ref.name.as_ref().unwrap_or(&file_ref.path);
-				ret += &format!("\t\t\t\t{} /* {} */,\n", file_ref.id, path);
+				ret += &format!("\t\t\t\t{} /* {} */,\n", file_ref.id, file_ref.path);
 			} else if let Some(proxy) = self.reference_proxies.get(child_id) {
 				ret += &format!("\t\t\t\t{} /* {} */,\n", proxy.id, proxy.path);
 			} else {
@@ -607,7 +605,7 @@ impl XcodeprojGraph {
 			native_target.name,
 			native_target.product_name,
 			product_reference.id,
-			product_reference.name.as_ref().unwrap_or(&product_reference.path),
+			product_reference.path,
 			native_target.product_type
 		);
 		ret
@@ -639,11 +637,7 @@ impl XcodeprojGraph {
 } // impl XcodeprojGraph
 
 fn print_pbx_file_reference(file_ref: &PBXFileReference) -> String {
-	let mut ret = format!(
-		"		{} /* {} */ = {{isa = PBXFileReference; ",
-		file_ref.id,
-		file_ref.name.as_ref().unwrap_or(&file_ref.path)
-	);
+	let mut ret = format!("		{} /* {} */ = {{isa = PBXFileReference; ", file_ref.id, file_ref.path);
 	match &file_ref.file_type {
 		FileRefType::Explicit(file_type) => ret += &format!("explicitFileType = {file_type}; "),
 		FileRefType::LastKnown(file_type) => ret += &format!("lastKnownFileType = {file_type}; "),
@@ -1286,7 +1280,7 @@ fn new_native_target_archive<'a>(
 			id: id_gen.new_id(),
 			file_type: FileRefType::Explicit(ExplicitFileType::Archive),
 			include_in_index: Some(false),
-			name: Some(product_name.clone()),
+			name: None,
 			path: format!("lib{}.a", product_name),
 			source_tree: "BUILT_PRODUCTS_DIR".to_owned(),
 		},
