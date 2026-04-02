@@ -156,3 +156,194 @@ impl ObjectLibrary {
 		self.parent_project = parent;
 	}
 }
+
+#[cfg(test)]
+mod tests {
+	use super::*;
+	use crate::static_library::StaticLibrary;
+
+	fn new_static_lib(
+		weak_parent: &Weak<Project>,
+		name: &str,
+		priv_links: &[&Arc<StaticLibrary>],
+		pub_links: &[&Arc<StaticLibrary>],
+		inc: &str,
+		def: &str,
+	) -> Arc<StaticLibrary> {
+		Arc::new(StaticLibrary {
+			parent_project: weak_parent.clone(),
+			name: name.to_owned(),
+			sources: Sources::default(),
+			link_private: priv_links.iter().map(|x| LinkPtr::Static((*x).clone())).collect(),
+			link_public: pub_links.iter().map(|x| LinkPtr::Static((*x).clone())).collect(),
+			include_dirs_private: vec![SourcePath {
+				full: PathBuf::from("private/include"),
+				name: "private/include".to_owned(),
+			}],
+			include_dirs_public: vec![SourcePath { full: PathBuf::from(inc), name: inc.to_owned() }],
+			defines_private: vec!["PRIVATE_DEF".to_owned()],
+			defines_public: vec![def.to_owned()],
+			link_flags_public: Vec::new(),
+			generator_vars: None,
+			output_name: None,
+		})
+	}
+
+	#[test]
+	fn test_internal_properties() {
+		let project = Arc::new_cyclic(|weak_parent| {
+			let leaf_shared =
+				new_static_lib(weak_parent, "leaf_shared", &[], &[], "leaf_shared_inc", "LEAF_SHARED_DEF");
+			let leaf_priv_priv =
+				new_static_lib(weak_parent, "leaf_priv_priv", &[], &[], "leaf_priv_priv_inc", "LEAF_PRIV_PRIV_DEF");
+			let leaf_priv_pub =
+				new_static_lib(weak_parent, "leaf_priv_pub", &[], &[], "leaf_priv_pub_inc", "LEAF_PRIV_PUB_DEF");
+			let leaf_pub_priv =
+				new_static_lib(weak_parent, "leaf_pub_priv", &[], &[], "leaf_pub_priv_inc", "LEAF_PUB_PRIV_DEF");
+			let leaf_pub_pub =
+				new_static_lib(weak_parent, "leaf_pub_pub", &[], &[], "leaf_pub_pub_inc", "LEAF_PUB_PUB_DEF");
+			let mid_priv = new_static_lib(
+				weak_parent,
+				"mid_priv",
+				&[&leaf_priv_priv],
+				&[&leaf_priv_pub, &leaf_shared],
+				"mid_priv_inc",
+				"MID_PRIV_DEF",
+			);
+			let mid_pub = new_static_lib(
+				weak_parent,
+				"mid_pub",
+				&[&leaf_pub_priv],
+				&[&leaf_pub_pub, &leaf_shared],
+				"mid_pub_inc",
+				"MID_PUB_DEF",
+			);
+			let main_lib = Arc::new(ObjectLibrary {
+				parent_project: weak_parent.clone(),
+				name: "main_lib".to_owned(),
+				sources: Sources::default(),
+				link_private: vec![LinkPtr::Static(mid_priv.clone())],
+				link_public: vec![LinkPtr::Static(mid_pub.clone())],
+				include_dirs_private: vec![SourcePath {
+					full: PathBuf::from("main_priv_inc"),
+					name: "main_priv_inc".to_owned(),
+				}],
+				include_dirs_public: vec![SourcePath {
+					full: PathBuf::from("main_pub_inc"),
+					name: "main_pub_inc".to_owned(),
+				}],
+				defines_private: vec!["MAIN_PRIV_DEF".to_owned()],
+				defines_public: vec!["MAIN_PUB_DEF".to_owned()],
+				link_flags_public: Vec::new(),
+				generator_vars: None,
+				output_name: None,
+			});
+			Project {
+				info: Arc::new(crate::project::ProjectInfo { name: "test".to_owned(), path: PathBuf::from(".") }),
+				dependencies: Vec::new(),
+				executables: Vec::new(),
+				static_libraries: vec![
+					leaf_shared,
+					leaf_pub_pub,
+					leaf_pub_priv,
+					leaf_priv_pub,
+					leaf_priv_priv,
+					mid_pub,
+					mid_priv,
+				],
+				object_libraries: vec![main_lib],
+				interface_libraries: Vec::new(),
+			}
+		});
+
+		let main_lib = project.object_libraries.iter().find(|x| x.name == "main_lib").unwrap();
+
+		let internal_includes = main_lib.internal_includes();
+
+		// Direct properties
+		assert!(internal_includes.contains(&PathBuf::from("main_pub_inc")));
+		assert!(internal_includes.contains(&PathBuf::from("main_priv_inc")));
+
+		// Properties from public links
+		assert!(internal_includes.contains(&PathBuf::from("mid_pub_inc")));
+		assert!(internal_includes.contains(&PathBuf::from("leaf_pub_pub_inc")));
+
+		// Properties from private links
+		assert!(internal_includes.contains(&PathBuf::from("mid_priv_inc")));
+		assert!(internal_includes.contains(&PathBuf::from("leaf_priv_pub_inc")));
+
+		// Properties blocked by private link boundaries
+		assert!(!internal_includes.contains(&PathBuf::from("leaf_pub_priv_inc")));
+		assert!(!internal_includes.contains(&PathBuf::from("leaf_priv_priv_inc")));
+
+		// Shared properties
+		assert!(internal_includes.contains(&PathBuf::from("leaf_shared_inc")));
+		assert_eq!(internal_includes.len(), 7, "Includes should be deduplicated");
+
+		let public_includes = main_lib.public_includes_recursive();
+
+		// Direct public properties
+		assert!(public_includes.contains(&PathBuf::from("main_pub_inc")));
+		assert!(!public_includes.contains(&PathBuf::from("main_priv_inc")));
+
+		// Properties from public links
+		assert!(public_includes.contains(&PathBuf::from("mid_pub_inc")));
+		assert!(public_includes.contains(&PathBuf::from("leaf_pub_pub_inc")));
+
+		// Properties blocked by main_lib's own private link boundary
+		assert!(!public_includes.contains(&PathBuf::from("mid_priv_inc")));
+		assert!(!public_includes.contains(&PathBuf::from("leaf_priv_pub_inc")));
+
+		// Properties blocked by transitive private link boundaries
+		assert!(!public_includes.contains(&PathBuf::from("leaf_pub_priv_inc")));
+		assert!(!public_includes.contains(&PathBuf::from("leaf_priv_priv_inc")));
+
+		// Shared properties
+		assert!(public_includes.contains(&PathBuf::from("leaf_shared_inc")));
+		assert_eq!(public_includes.len(), 4, "Includes should be deduplicated");
+
+		let internal_defines = main_lib.internal_defines();
+
+		// Direct properties
+		assert!(internal_defines.contains(&"MAIN_PUB_DEF".to_owned()));
+		assert!(internal_defines.contains(&"MAIN_PRIV_DEF".to_owned()));
+
+		// Properties from public links
+		assert!(internal_defines.contains(&"MID_PUB_DEF".to_owned()));
+		assert!(internal_defines.contains(&"LEAF_PUB_PUB_DEF".to_owned()));
+
+		// Properties from private links
+		assert!(internal_defines.contains(&"MID_PRIV_DEF".to_owned()));
+		assert!(internal_defines.contains(&"LEAF_PRIV_PUB_DEF".to_owned()));
+
+		// Properties blocked by private link boundaries
+		assert!(!internal_defines.contains(&"LEAF_PUB_PRIV_DEF".to_owned()));
+		assert!(!internal_defines.contains(&"LEAF_PRIV_PRIV_DEF".to_owned()));
+
+		// Shared properties
+		assert!(internal_defines.contains(&"LEAF_SHARED_DEF".to_owned()));
+		assert_eq!(internal_defines.len(), 7, "Defines should be deduplicated");
+
+		let public_defines = main_lib.public_defines_recursive();
+
+		// Direct public properties
+		assert!(public_defines.contains(&"MAIN_PUB_DEF".to_owned()));
+		assert!(!public_defines.contains(&"MAIN_PRIV_DEF".to_owned()));
+
+		// Properties from public links
+		assert!(public_defines.contains(&"MID_PUB_DEF".to_owned()));
+		assert!(public_defines.contains(&"LEAF_PUB_PUB_DEF".to_owned()));
+
+		// Properties blocked by main_lib's own private link boundary
+		assert!(!public_defines.contains(&"MID_PRIV_DEF".to_owned()));
+		assert!(!public_defines.contains(&"LEAF_PRIV_PUB_DEF".to_owned()));
+
+		// Properties blocked by transitive private link boundaries
+		assert!(!public_defines.contains(&"LEAF_PUB_PRIV_DEF".to_owned()));
+		assert!(!public_defines.contains(&"LEAF_PRIV_PRIV_DEF".to_owned()));
+
+		// Shared properties
+		assert!(public_defines.contains(&"LEAF_SHARED_DEF".to_owned()));
+		assert_eq!(public_defines.len(), 4, "Defines should be deduplicated");
+	}
+}
