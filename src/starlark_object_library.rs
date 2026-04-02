@@ -28,7 +28,7 @@ use starlark::{
 
 use super::{
 	link_type::LinkPtr,
-	misc::{join_parent, Sources},
+	misc::{Sources, join_parent},
 	object_library::ObjectLibrary,
 	project::Project,
 	starlark_fmt::{format_link_targets, format_strings},

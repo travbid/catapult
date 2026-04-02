@@ -11,8 +11,6 @@ use starlark::{
 	},
 	typing::Ty,
 	values::{
-		list::UnpackList, //
-		type_repr::StarlarkTypeRepr,
 		AllocValue,
 		FrozenValue,
 		Heap,
@@ -21,6 +19,8 @@ use starlark::{
 		StarlarkValue,
 		UnpackValue,
 		Value,
+		list::UnpackList, //
+		type_repr::StarlarkTypeRepr,
 	},
 };
 

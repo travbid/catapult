@@ -10,8 +10,9 @@ use starlark::values::OwnedFrozenValue;
 use uuid::Uuid;
 
 use crate::{
+	GlobalOptions,
 	link_type::LinkPtr, //
-	misc::{index_map, join_parent, Sources},
+	misc::{Sources, index_map, join_parent},
 	object_library::ObjectLibrary,
 	project::{Project, ProjectInfo},
 	starlark_context::{StarContext, StarContextCompiler},
@@ -20,7 +21,6 @@ use crate::{
 	static_library::StaticLibrary,
 	target::{LinkTarget, Target},
 	toolchain::{Toolchain, VcxprojProfile},
-	GlobalOptions,
 };
 
 type TargetProjects = index_map::IndexMap<*const dyn Target, VsProject>;
@@ -307,7 +307,7 @@ impl Msvc {
 				_ => {
 					return Err(format!(
 						"Unrecognized value for option for \"c_standard\": \"{x}\". Accepted values are \"17\", \"11\"",
-					))
+					));
 				}
 			},
 		};
@@ -321,7 +321,7 @@ impl Msvc {
 				_ => {
 					return Err(format!(
 						"Unrecognized value for option for \"cpp_standard\": \"{x}\". Accepted values are \"20\", \"17\", \"14\", \"11\"",
-					))
+					));
 				}
 			},
 		};
@@ -536,7 +536,9 @@ fn make_vcxproj(
 
 	log::debug!("make_vcxproj: {target_name}");
 	if !target_data.sources.c.is_empty() && !target_data.sources.cpp.is_empty() {
-		return Err(format!("This generator does not support mixing C and C++ sources. Consider splitting them into separate libraries. Target: {target_name}"));
+		return Err(format!(
+			"This generator does not support mixing C and C++ sources. Consider splitting them into separate libraries. Target: {target_name}"
+		));
 	}
 	const PLATFORM_TOOLSET: &str = "v143";
 	let target_guid = Uuid::new_v4().to_string().to_ascii_uppercase();

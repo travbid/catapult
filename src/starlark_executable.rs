@@ -28,7 +28,7 @@ use starlark::{
 use super::{
 	executable::Executable,
 	link_type::LinkPtr,
-	misc::{join_parent, Sources},
+	misc::{Sources, join_parent},
 	project::Project,
 	starlark_fmt::{format_link_targets, format_strings},
 	starlark_link_target::{PtrLinkTarget, StarLinkTarget},
