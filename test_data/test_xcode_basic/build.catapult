@@ -5,14 +5,31 @@ adder = add_static_library(
     include_dirs_public = ["adder"],
 )
 
-subtracter = add_static_library(
+subtracter = add_object_library(
     name = "subtracter",
     sources = ["subtracter/subtract.cpp"],
     include_dirs_public = ["subtracter"],
 )
 
+multiplier = add_static_library(
+    name = "multiplier",
+    sources = ["multiplier/multiply.cpp"],
+    include_dirs_public = ["multiplier"],
+)
+
+divider = add_object_library(
+    name = "divider",
+    sources = ["divider/divide.cpp"],
+    include_dirs_public = ["divider"],
+)
+
+mmath = add_interface_library(
+    name = "mmath",
+    link = [multiplier, divider],
+)
+
 add_executable(
     name = "basic.exe",
     sources = ["main.cpp"],
-    link = [adder, subtracter],
+    link = [adder, subtracter, mmath],
 )
