@@ -1,4 +1,4 @@
-use core::{cell::Cell, fmt};
+use core::fmt;
 use std::sync::{Arc, Mutex};
 
 use allocative::Allocative;
@@ -102,21 +102,21 @@ struct ImplAddStaticLibrary {
 impl starlark::values::function::NativeFunc for ImplAddStaticLibrary {
 	fn invoke<'module>(
 		&self,
-		eval: &mut starlark::eval::Evaluator<'module, '_>,
+		eval: &mut starlark::eval::Evaluator<'module, '_, '_>,
 		parameters: &Arguments<'module, '_>,
 	) -> Result<starlark::values::Value<'module>, starlark::Error> {
-		let args: [Cell<Option<Value<'module>>>; 10] = self.signature.collect_into(parameters, eval.heap())?;
+		let args: [Option<Value<'module>>; 10] = self.signature.collect_into(parameters, eval.heap())?;
 
-		let name: String = Arguments::check_required("name", args[0].get())?;
-		let sources: Vec<String> = required_list("sources", args[1].get())?;
-		let link_private = get_link_targets(optional_list("link_private", args[2].get())?)?;
-		let link_public = get_link_targets(optional_list("link_public", args[3].get())?)?;
-		let include_dirs_private: Vec<String> = optional_list("include_dirs_private", args[4].get())?;
-		let include_dirs_public: Vec<String> = optional_list("include_dirs_public", args[5].get())?;
-		let defines_private: Vec<String> = optional_list("defines_private", args[6].get())?;
-		let defines_public: Vec<String> = optional_list("defines_public", args[7].get())?;
-		let link_flags_public: Vec<String> = optional_list("link_flags_public", args[8].get())?;
-		let generator_vars = generator_func(args[9].get(), eval);
+		let name: String = required_str("name", args[0])?;
+		let sources: Vec<String> = unpack_list("sources", args[1])?;
+		let link_private = get_link_targets(unpack_list("link_private", args[2])?)?;
+		let link_public = get_link_targets(unpack_list("link_public", args[3])?)?;
+		let include_dirs_private: Vec<String> = unpack_list("include_dirs_private", args[4])?;
+		let include_dirs_public: Vec<String> = unpack_list("include_dirs_public", args[5])?;
+		let defines_private: Vec<String> = unpack_list("defines_private", args[6])?;
+		let defines_public: Vec<String> = unpack_list("defines_public", args[7])?;
+		let link_flags_public: Vec<String> = unpack_list("link_flags_public", args[8])?;
+		let generator_vars = generator_func(args[9], eval);
 
 		let mut project = match self.project.lock() {
 			Ok(x) => x,
@@ -150,21 +150,21 @@ struct ImplAddObjectLibrary {
 impl starlark::values::function::NativeFunc for ImplAddObjectLibrary {
 	fn invoke<'module, 'loader, 'extra, 'args>(
 		&self,
-		eval: &mut starlark::eval::Evaluator<'module, 'loader>,
+		eval: &mut starlark::eval::Evaluator<'module, 'loader, '_>,
 		parameters: &Arguments<'module, 'args>,
 	) -> Result<starlark::values::Value<'module>, starlark::Error> {
-		let args: [Cell<Option<Value<'module>>>; 10] = self.signature.collect_into(parameters, eval.heap())?;
+		let args: [Option<Value<'module>>; 10] = self.signature.collect_into(parameters, eval.heap())?;
 
-		let name: String = Arguments::check_required("name", args[0].get())?;
-		let sources: Vec<String> = required_list("sources", args[1].get())?;
-		let link_private = get_link_targets(optional_list("link_private", args[2].get())?)?;
-		let link_public = get_link_targets(optional_list("link_public", args[3].get())?)?;
-		let include_dirs_private: Vec<String> = optional_list("include_dirs_private", args[4].get())?;
-		let include_dirs_public: Vec<String> = optional_list("include_dirs_public", args[5].get())?;
-		let defines_private: Vec<String> = optional_list("defines_private", args[6].get())?;
-		let defines_public: Vec<String> = optional_list("defines_public", args[7].get())?;
-		let link_flags_public: Vec<String> = optional_list("link_flags_public", args[8].get())?;
-		let generator_vars = generator_func(args[9].get(), eval);
+		let name: String = required_str("name", args[0])?;
+		let sources: Vec<String> = unpack_list("sources", args[1])?;
+		let link_private = get_link_targets(unpack_list("link_private", args[2])?)?;
+		let link_public = get_link_targets(unpack_list("link_public", args[3])?)?;
+		let include_dirs_private: Vec<String> = unpack_list("include_dirs_private", args[4])?;
+		let include_dirs_public: Vec<String> = unpack_list("include_dirs_public", args[5])?;
+		let defines_private: Vec<String> = unpack_list("defines_private", args[6])?;
+		let defines_public: Vec<String> = unpack_list("defines_public", args[7])?;
+		let link_flags_public: Vec<String> = unpack_list("link_flags_public", args[8])?;
+		let generator_vars = generator_func(args[9], eval);
 
 		let mut project = match self.project.lock() {
 			Ok(x) => x,
@@ -198,16 +198,16 @@ struct ImplAddInterfaceLibrary {
 impl starlark::values::function::NativeFunc for ImplAddInterfaceLibrary {
 	fn invoke<'module, 'loader, 'extra, 'args>(
 		&self,
-		eval: &mut starlark::eval::Evaluator<'module, 'loader>,
+		eval: &mut starlark::eval::Evaluator<'module, 'loader, '_>,
 		parameters: &Arguments<'module, 'args>,
 	) -> Result<starlark::values::Value<'module>, starlark::Error> {
-		let args: [Cell<Option<Value<'module>>>; 5] = self.signature.collect_into(parameters, eval.heap())?;
+		let args: [Option<Value<'module>>; 5] = self.signature.collect_into(parameters, eval.heap())?;
 
-		let name: String = Arguments::check_required("name", args[0].get())?;
-		let links = get_link_targets(optional_list("link", args[1].get())?)?;
-		let include_dirs: Vec<String> = optional_list("include_dirs", args[2].get())?;
-		let defines: Vec<String> = optional_list("defines", args[3].get())?;
-		let link_flags: Vec<String> = optional_list("link_flags", args[4].get())?;
+		let name: String = required_str("name", args[0])?;
+		let links = get_link_targets(unpack_list("link", args[1])?)?;
+		let include_dirs: Vec<String> = unpack_list("include_dirs", args[2])?;
+		let defines: Vec<String> = unpack_list("defines", args[3])?;
+		let link_flags: Vec<String> = unpack_list("link_flags", args[4])?;
 
 		let mut project = match self.project.lock() {
 			Ok(x) => x,
@@ -235,18 +235,18 @@ struct ImplAddExecutable {
 impl starlark::values::function::NativeFunc for ImplAddExecutable {
 	fn invoke<'module, 'loader, 'extra, 'args>(
 		&self,
-		eval: &mut Evaluator<'module, '_>,
+		eval: &mut Evaluator<'module, '_, '_>,
 		parameters: &Arguments<'module, '_>,
 	) -> Result<starlark::values::Value<'module>, starlark::Error> {
 		let args: [_; 7] = self.signature.collect_into(parameters, eval.heap())?;
 
-		let name: String = Arguments::check_required("name", args[0].get())?;
-		let sources: Vec<String> = required_list("sources", args[1].get())?;
-		let links = get_link_targets(optional_list("link", args[2].get())?)?;
-		let include_dirs: Vec<String> = optional_list("include_dirs", args[3].get())?;
-		let defines: Vec<String> = optional_list("defines", args[4].get())?;
-		let link_flags: Vec<String> = optional_list("link_flags", args[5].get())?;
-		let generator_vars = generator_func(args[6].get(), eval);
+		let name: String = required_str("name", args[0])?;
+		let sources: Vec<String> = unpack_list("sources", args[1])?;
+		let links = get_link_targets(unpack_list("link", args[2])?)?;
+		let include_dirs: Vec<String> = unpack_list("include_dirs", args[3])?;
+		let defines: Vec<String> = unpack_list("defines", args[4])?;
+		let link_flags: Vec<String> = unpack_list("link_flags", args[5])?;
+		let generator_vars = generator_func(args[6], eval);
 
 		let mut project = match self.project.lock() {
 			Ok(x) => x,
@@ -275,61 +275,87 @@ struct ImplGeneratorVar {
 impl starlark::values::function::NativeFunc for ImplGeneratorVar {
 	fn invoke<'module, 'loader, 'extra, 'args>(
 		&self,
-		eval: &mut starlark::eval::Evaluator<'module, 'loader>,
+		eval: &mut starlark::eval::Evaluator<'module, 'loader, '_>,
 		parameters: &Arguments<'module, 'args>,
 	) -> Result<starlark::values::Value<'module>, starlark::Error> {
-		let args: [Cell<Option<Value<'module>>>; 4] = self.signature.collect_into(parameters, eval.heap())?;
+		let args: [Option<Value<'module>>; 4] = self.signature.collect_into(parameters, eval.heap())?;
 		let ret = StarGeneratorVars {
-			sources: optional_list("sources", args[0].get())?,
-			include_dirs: optional_list("include_dirs", args[1].get())?,
-			defines: optional_list("defines", args[2].get())?,
-			link_flags: optional_list("link_flags", args[3].get())?,
+			sources: unpack_list("sources", args[0])?,
+			include_dirs: unpack_list("include_dirs", args[1])?,
+			defines: unpack_list("defines", args[2])?,
+			link_flags: unpack_list("link_flags", args[3])?,
 		};
 		Ok(eval.heap().alloc(ret))
 	}
 }
 
 pub(crate) fn build_api(project: &Arc<Mutex<StarProject>>, builder: &mut GlobalsBuilder) {
+	use starlark::{
+		__derive_refs::{
+			components::NativeCallableComponents,
+			param_spec::{NativeCallableParam, NativeCallableParamDefaultValue, NativeCallableParamSpec},
+		},
+		eval::{
+			ParametersSpec, ParametersSpecParam,
+			ParametersSpecParam::{Defaulted, Optional, Required},
+		},
+	};
+	fn params<'a, 'c, const N: usize>(
+		lst: [(&'static str, Ty, ParametersSpecParam<FrozenValue>); N],
+	) -> (Vec<(&'static str, ParametersSpecParam<FrozenValue>)>, Vec<NativeCallableParam>) {
+		let pair_iter = lst.into_iter().map(|(name, ty, spec)| {
+			let native_callable_param = match spec {
+				Required => NativeCallableParam { name, ty, required: None },
+				Optional => NativeCallableParam {
+					name,
+					ty,
+					required: Some(NativeCallableParamDefaultValue::Optional),
+				},
+				Defaulted(v) => NativeCallableParam {
+					name,
+					ty,
+					required: Some(NativeCallableParamDefaultValue::Value(v)),
+				},
+			};
+			((name, spec), native_callable_param)
+		});
+		let unzipped = pair_iter.unzip();
+		unzipped
+	}
+	fn empty_list() -> FrozenValue {
+		FrozenValue::new_empty_list()
+	}
+
 	{
 		let function_name = "add_static_library";
-		let mut sig_builder = ParametersSpec::new(function_name.to_owned());
-		sig_builder.no_more_positional_only_args();
-		sig_builder.required("name");
-		sig_builder.required("sources");
-		sig_builder.optional("link_private");
-		sig_builder.optional("link_public");
-		sig_builder.optional("include_dirs_private");
-		sig_builder.optional("include_dirs_public");
-		sig_builder.optional("defines_private");
-		sig_builder.optional("defines_public");
-		sig_builder.optional("link_flags_public");
-		sig_builder.optional("generator_vars");
-		let signature = sig_builder.finish();
-		let documentation = {
-			let parameter_types = Vec::<Ty>::from([
-				<&str>::starlark_type_repr(),
-				<Vec<&str>>::starlark_type_repr(),
-				<Vec<&str>>::starlark_type_repr(),
-				<Vec<&str>>::starlark_type_repr(),
-				<Vec<Value>>::starlark_type_repr(),
-				<Vec<Value>>::starlark_type_repr(),
-				<Vec<&str>>::starlark_type_repr(),
-				<Vec<&str>>::starlark_type_repr(),
-				<Vec<&str>>::starlark_type_repr(),
-				<StarGeneratorVars>::starlark_type_repr(),
-			]);
-			starlark::values::function::NativeCallableRawDocs {
-				rust_docstring: None,
-				signature: signature.clone(),
-				parameter_types,
-				return_type: <StarStaticLibWrapper>::starlark_type_repr(),
-				as_type: None,
-			}
+		let params = params([
+			("name", <&str>::starlark_type_repr(), Required),
+			("sources", <Vec<&str>>::starlark_type_repr(), Required),
+			("link_private", <Vec<Value>>::starlark_type_repr(), Defaulted(empty_list())),
+			("link_public", <Vec<Value>>::starlark_type_repr(), Defaulted(empty_list())),
+			("include_dirs_private", <Vec<&str>>::starlark_type_repr(), Defaulted(empty_list())),
+			("include_dirs_public", <Vec<&str>>::starlark_type_repr(), Defaulted(empty_list())),
+			("defines_private", <Vec<&str>>::starlark_type_repr(), Defaulted(empty_list())),
+			("defines_public", <Vec<&str>>::starlark_type_repr(), Defaulted(empty_list())),
+			("link_flags_public", <Vec<&str>>::starlark_type_repr(), Defaulted(empty_list())),
+			("generator_vars", <StarGeneratorVars>::starlark_type_repr(), Optional),
+		]);
+		let signature = ParametersSpec::<FrozenValue>::new_parts(function_name, [], [], false, params.0, false);
+		let components = NativeCallableComponents {
+			speculative_exec_safe: false,
+			rust_docstring: None,
+			param_spec: NativeCallableParamSpec {
+				pos_only: vec![],
+				pos_or_named: vec![],
+				args: None,
+				named_only: params.1,
+				kwargs: None,
+			},
+			return_type: <StarStaticLibWrapper>::starlark_type_repr(),
 		};
 		builder.set_function(
 			function_name,
-			false,
-			documentation,
+			components,
 			None,
 			Some(StarStaticLibWrapper::starlark_type_repr()),
 			None,
@@ -338,44 +364,34 @@ pub(crate) fn build_api(project: &Arc<Mutex<StarProject>>, builder: &mut Globals
 	}
 	{
 		let function_name = "add_object_library";
-		let mut sig_builder = ParametersSpec::new(function_name.to_owned());
-		sig_builder.no_more_positional_only_args();
-		sig_builder.required("name");
-		sig_builder.required("sources");
-		sig_builder.optional("link_private");
-		sig_builder.optional("link_public");
-		sig_builder.optional("include_dirs_private");
-		sig_builder.optional("include_dirs_public");
-		sig_builder.optional("defines_private");
-		sig_builder.optional("defines_public");
-		sig_builder.optional("link_flags_public");
-		sig_builder.optional("generator_vars");
-		let signature = sig_builder.finish();
-		let documentation = {
-			let parameter_types = Vec::<Ty>::from([
-				<&str>::starlark_type_repr(),
-				<Vec<&str>>::starlark_type_repr(),
-				<Vec<Value>>::starlark_type_repr(),
-				<Vec<Value>>::starlark_type_repr(),
-				<Vec<&str>>::starlark_type_repr(),
-				<Vec<&str>>::starlark_type_repr(),
-				<Vec<&str>>::starlark_type_repr(),
-				<Vec<&str>>::starlark_type_repr(),
-				<Vec<&str>>::starlark_type_repr(),
-				<StarGeneratorVars>::starlark_type_repr(),
-			]);
-			starlark::values::function::NativeCallableRawDocs {
-				rust_docstring: None,
-				signature: signature.clone(),
-				parameter_types,
-				return_type: <StarObjLibWrapper>::starlark_type_repr(),
-				as_type: None,
-			}
+		let params = params([
+			("name", <&str>::starlark_type_repr(), Required),
+			("sources", <Vec<&str>>::starlark_type_repr(), Required),
+			("link_private", <Vec<Value>>::starlark_type_repr(), Defaulted(empty_list())),
+			("link_public", <Vec<Value>>::starlark_type_repr(), Defaulted(empty_list())),
+			("include_dirs_private", <Vec<&str>>::starlark_type_repr(), Defaulted(empty_list())),
+			("include_dirs_public", <Vec<&str>>::starlark_type_repr(), Defaulted(empty_list())),
+			("defines_private", <Vec<&str>>::starlark_type_repr(), Defaulted(empty_list())),
+			("defines_public", <Vec<&str>>::starlark_type_repr(), Defaulted(empty_list())),
+			("link_flags_public", <Vec<&str>>::starlark_type_repr(), Defaulted(empty_list())),
+			("generator_vars", <StarGeneratorVars>::starlark_type_repr(), Optional),
+		]);
+		let signature = ParametersSpec::<FrozenValue>::new_parts(function_name, [], [], false, params.0, false);
+		let components = NativeCallableComponents {
+			speculative_exec_safe: false,
+			rust_docstring: None,
+			param_spec: NativeCallableParamSpec {
+				pos_only: vec![],
+				pos_or_named: vec![],
+				args: None,
+				named_only: params.1,
+				kwargs: None,
+			},
+			return_type: <StarObjLibWrapper>::starlark_type_repr(),
 		};
 		builder.set_function(
 			function_name,
-			false,
-			documentation,
+			components,
 			None,
 			Some(StarObjLibWrapper::starlark_type_repr()),
 			None,
@@ -383,34 +399,30 @@ pub(crate) fn build_api(project: &Arc<Mutex<StarProject>>, builder: &mut Globals
 		);
 	}
 	{
-		let mut sig_builder = ParametersSpec::new("add_interface_library".to_owned());
-		sig_builder.no_more_positional_only_args();
-		sig_builder.required("name");
-		sig_builder.optional("link");
-		sig_builder.optional("include_dirs");
-		sig_builder.optional("defines");
-		sig_builder.optional("link_flags");
-		let signature = sig_builder.finish();
-		let documentation = {
-			let parameter_types = Vec::<Ty>::from([
-				<&str>::starlark_type_repr(),
-				<Vec<Value>>::starlark_type_repr(),
-				<Vec<&str>>::starlark_type_repr(),
-				<Vec<&str>>::starlark_type_repr(),
-				<Vec<&str>>::starlark_type_repr(),
-			]);
-			starlark::values::function::NativeCallableRawDocs {
-				rust_docstring: None,
-				signature: signature.clone(),
-				parameter_types,
-				return_type: <Value>::starlark_type_repr(),
-				as_type: None,
-			}
+		let function_name = "add_interface_library";
+		let params = params([
+			("name", <&str>::starlark_type_repr(), Required),
+			("link", <Vec<Value>>::starlark_type_repr(), Defaulted(empty_list())),
+			("include_dirs", <Vec<&str>>::starlark_type_repr(), Defaulted(empty_list())),
+			("defines", <Vec<&str>>::starlark_type_repr(), Defaulted(empty_list())),
+			("link_flags", <Vec<&str>>::starlark_type_repr(), Defaulted(empty_list())),
+		]);
+		let signature = ParametersSpec::<FrozenValue>::new_parts(function_name, [], [], false, params.0, false);
+		let components = NativeCallableComponents {
+			speculative_exec_safe: false,
+			rust_docstring: None,
+			param_spec: NativeCallableParamSpec {
+				pos_only: vec![],
+				pos_or_named: vec![],
+				args: None,
+				named_only: params.1,
+				kwargs: None,
+			},
+			return_type: <Value>::starlark_type_repr(),
 		};
 		builder.set_function(
-			"add_interface_library",
-			false,
-			documentation,
+			function_name,
+			components,
 			None,
 			Some(StarIfaceLibWrapper::starlark_type_repr()),
 			None,
@@ -418,40 +430,32 @@ pub(crate) fn build_api(project: &Arc<Mutex<StarProject>>, builder: &mut Globals
 		);
 	}
 	{
-		let mut sig_builder = ParametersSpec::new("add_executable".to_owned());
-		sig_builder.no_more_positional_only_args();
-		sig_builder.required("name");
-		sig_builder.required("sources");
-		sig_builder.optional("link");
-		sig_builder.optional("include_dirs");
-		sig_builder.optional("defines");
-		sig_builder.optional("link_flags");
-		sig_builder.optional("generator_vars");
-		let signature = sig_builder.finish();
-
-		let documentation = {
-			let parameter_types = Vec::<Ty>::from([
-				<&str>::starlark_type_repr(),
-				<Vec<&str>>::starlark_type_repr(),
-				<Vec<Value>>::starlark_type_repr(),
-				<Vec<&str>>::starlark_type_repr(),
-				<Vec<&str>>::starlark_type_repr(),
-				<Vec<&str>>::starlark_type_repr(),
-				<StarGeneratorVars>::starlark_type_repr(),
-			]);
-			starlark::values::function::NativeCallableRawDocs {
-				rust_docstring: None,
-				signature: signature.clone(),
-				parameter_types,
-				return_type: <Value>::starlark_type_repr(),
-				as_type: None,
-			}
+		let function_name = "add_executable";
+		let params = params([
+			("name", <&str>::starlark_type_repr(), Required),
+			("sources", <Vec<&str>>::starlark_type_repr(), Required),
+			("link", <Vec<Value>>::starlark_type_repr(), Defaulted(empty_list())),
+			("include_dirs", <Vec<&str>>::starlark_type_repr(), Defaulted(empty_list())),
+			("defines", <Vec<&str>>::starlark_type_repr(), Defaulted(empty_list())),
+			("link_flags", <Vec<&str>>::starlark_type_repr(), Defaulted(empty_list())),
+			("generator_vars", <StarGeneratorVars>::starlark_type_repr(), Optional),
+		]);
+		let signature = ParametersSpec::<FrozenValue>::new_parts(function_name, [], [], false, params.0, false);
+		let components = NativeCallableComponents {
+			speculative_exec_safe: false,
+			rust_docstring: None,
+			param_spec: NativeCallableParamSpec {
+				pos_only: vec![],
+				pos_or_named: vec![],
+				args: None,
+				named_only: params.1,
+				kwargs: None,
+			},
+			return_type: <Value>::starlark_type_repr(),
 		};
-
 		builder.set_function(
-			"add_executable",
-			false,
-			documentation,
+			function_name,
+			components,
 			None,
 			Some(StarExecutableWrapper::starlark_type_repr()),
 			None,
@@ -460,32 +464,28 @@ pub(crate) fn build_api(project: &Arc<Mutex<StarProject>>, builder: &mut Globals
 	}
 	{
 		let function_name = "generator_vars";
-		let mut sig_builder = ParametersSpec::new(function_name.to_owned());
-		sig_builder.no_more_positional_only_args();
-		sig_builder.optional("sources");
-		sig_builder.optional("include_dirs");
-		sig_builder.optional("defines");
-		sig_builder.optional("link_flags");
-		let signature = sig_builder.finish();
-		let documentation = {
-			let parameter_types = Vec::<Ty>::from([
-				<Vec<&str>>::starlark_type_repr(),
-				<Vec<&str>>::starlark_type_repr(),
-				<Vec<&str>>::starlark_type_repr(),
-				<Vec<&str>>::starlark_type_repr(),
-			]);
-			starlark::values::function::NativeCallableRawDocs {
-				rust_docstring: None,
-				signature: signature.clone(),
-				parameter_types,
-				return_type: <StarGeneratorVars>::starlark_type_repr(),
-				as_type: None,
-			}
+		let params = params([
+			("sources", <Vec<&str>>::starlark_type_repr(), Defaulted(empty_list())),
+			("include_dirs", <Vec<&str>>::starlark_type_repr(), Defaulted(empty_list())),
+			("defines", <Vec<&str>>::starlark_type_repr(), Defaulted(empty_list())),
+			("link_flags", <Vec<&str>>::starlark_type_repr(), Defaulted(empty_list())),
+		]);
+		let signature = ParametersSpec::<FrozenValue>::new_parts(function_name, [], [], false, params.0, false);
+		let components = NativeCallableComponents {
+			speculative_exec_safe: false,
+			rust_docstring: None,
+			param_spec: NativeCallableParamSpec {
+				pos_only: vec![],
+				pos_or_named: vec![],
+				args: None,
+				named_only: params.1,
+				kwargs: None,
+			},
+			return_type: <StarGeneratorVars>::starlark_type_repr(),
 		};
 		builder.set_function(
 			function_name,
-			false,
-			documentation,
+			components,
 			None,
 			Some(StarGeneratorVars::starlark_type_repr()),
 			None,
@@ -494,29 +494,24 @@ pub(crate) fn build_api(project: &Arc<Mutex<StarProject>>, builder: &mut Globals
 	}
 }
 
-fn required_list<'a, T: UnpackValue<'a>>(name: &str, arg: Option<Value<'a>>) -> anyhow::Result<Vec<T>> {
-	let x = arg.ok_or_else(|| starlark::values::ValueError::MissingRequired(name.to_owned()))?;
-	let items = UnpackList::unpack_named_param(x, name)?.items;
-	Ok(items)
+fn required_str<'a>(name: &str, arg: Option<Value<'a>>) -> anyhow::Result<String> {
+	let x = arg.ok_or_else(|| anyhow::anyhow!("Missing required parameter: {}", name))?;
+	let s = x
+		.unpack_str()
+		.ok_or_else(|| anyhow::anyhow!("{} must be a string", name))?;
+	Ok(s.to_owned())
 }
 
-fn optional_list<'module, T: UnpackValue<'module>>(name: &str, arg: Option<Value<'module>>) -> anyhow::Result<Vec<T>> {
-	match arg {
-		None => Ok(Vec::new()),
-		Some(x) => Ok(UnpackList::unpack_value(x)
-			.ok_or_else::<anyhow::Error, _>(|| {
-				starlark::values::ValueError::IncorrectParameterTypeNamedWithExpected(
-					name.to_owned(),
-					UnpackList::<Value>::expected(),
-					x.get_type().to_owned(),
-				)
-				.into()
-			})?
-			.items),
+fn unpack_list<'a, T: UnpackValue<'a>>(name: &str, arg: Option<Value<'a>>) -> anyhow::Result<Vec<T>> {
+	let x = arg.ok_or_else(|| anyhow::anyhow!("Missing required parameter: {}", name))?;
+	match UnpackList::<T>::unpack_value(x) {
+		Ok(Some(list)) => Ok(list.items),
+		Ok(None) => Err(anyhow::anyhow!("Incorrect parameter type for {}: expected a list", name)),
+		Err(e) => Err(anyhow::anyhow!("Error unpacking {}: {}", name, e)),
 	}
 }
 
-fn generator_func<'module>(arg: Option<Value<'module>>, eval: &mut Evaluator<'module, '_>) -> Option<String> {
+fn generator_func<'module>(arg: Option<Value<'module>>, eval: &mut Evaluator<'module, '_, '_>) -> Option<String> {
 	match arg {
 		None => None,
 		Some(x) => {

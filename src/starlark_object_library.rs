@@ -246,10 +246,10 @@ impl fmt::Display for StarGeneratorVars {
 	}
 }
 
-impl<'a> UnpackValue<'a> for StarGeneratorVars {
-	fn unpack_value(v: Value<'a>) -> Option<Self> {
-		let vl = starlark::values::ValueLike::downcast_ref::<StarGeneratorVars>(v);
-		vl.cloned()
+impl<'v> UnpackValue<'v> for StarGeneratorVars {
+	type Error = starlark::Error;
+	fn unpack_value_impl(v: Value<'v>) -> Result<Option<Self>, starlark::Error> {
+		Ok(starlark::values::ValueLike::downcast_ref::<StarGeneratorVars>(v).cloned())
 	}
 }
 

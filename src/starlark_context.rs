@@ -46,8 +46,14 @@ impl fmt::Display for StarContext {
 impl<'v> StarlarkValue<'v> for StarContext {
 	fn get_attr(&self, attribute: &str, heap: &'v Heap) -> Option<Value<'v>> {
 		match attribute {
-			"c_compiler" => Some(heap.alloc(self.c_compiler.clone())),
-			"cpp_compiler" => Some(heap.alloc(self.cpp_compiler.clone())),
+			"c_compiler" => Some(match &self.c_compiler {
+				Some(c) => heap.alloc(c.clone()),
+				None => heap.alloc(starlark::values::none::NoneType),
+			}),
+			"cpp_compiler" => Some(match &self.cpp_compiler {
+				Some(c) => heap.alloc(c.clone()),
+				None => heap.alloc(starlark::values::none::NoneType),
+			}),
 			_ => None,
 		}
 	}
