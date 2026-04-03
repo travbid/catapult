@@ -208,9 +208,18 @@ impl fmt::Display for StarGlobalOptions {
 impl<'v> StarlarkValue<'v> for StarGlobalOptions {
 	fn get_attr(&self, attribute: &str, heap: &'v Heap) -> Option<Value<'v>> {
 		match attribute {
-			"c_standard" => Some(heap.alloc(self.c_standard.clone())),
-			"cpp_standard" => Some(heap.alloc(self.cpp_standard.clone())),
-			"position_independent_code" => Some(heap.alloc(self.position_independent_code)),
+			"c_standard" => Some(match &self.c_standard {
+				Some(c) => heap.alloc(c.clone()),
+				None => heap.alloc(starlark::values::none::NoneType),
+			}),
+			"cpp_standard" => Some(match &self.cpp_standard {
+				Some(c) => heap.alloc(c.clone()),
+				None => heap.alloc(starlark::values::none::NoneType),
+			}),
+			"position_independent_code" => Some(match self.position_independent_code {
+				Some(c) => heap.alloc(c),
+				None => heap.alloc(starlark::values::none::NoneType),
+			}),
 			_ => None,
 		}
 	}
@@ -316,9 +325,18 @@ impl fmt::Display for StarToolchain {
 impl<'v> StarlarkValue<'v> for StarToolchain {
 	fn get_attr(&self, attribute: &str, heap: &'v Heap) -> Option<Value<'v>> {
 		match attribute {
-			"c_compiler" => Some(heap.alloc(self.c_compiler.clone())),
-			"cpp_compiler" => Some(heap.alloc(self.cpp_compiler.clone())),
-			"nasm_assembler" => Some(heap.alloc(self.nasm_assembler.clone())),
+			"c_compiler" => Some(match &self.c_compiler {
+				Some(c) => heap.alloc(c.clone()),
+				None => heap.alloc(starlark::values::none::NoneType),
+			}),
+			"cpp_compiler" => Some(match &self.cpp_compiler {
+				Some(c) => heap.alloc(c.clone()),
+				None => heap.alloc(starlark::values::none::NoneType),
+			}),
+			"nasm_assembler" => Some(match &self.nasm_assembler {
+				Some(c) => heap.alloc(c.clone()),
+				None => heap.alloc(starlark::values::none::NoneType),
+			}),
 			_ => None,
 		}
 	}
