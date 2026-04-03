@@ -49,7 +49,7 @@ use starlark::{
 use tar::Archive;
 
 use project::Project;
-use starlark_api::err_msg;
+use starlark_api::{ProjectState, err_msg};
 use starlark_global::{PkgOpt, StarGlobal};
 use starlark_project::StarProject;
 use toolchain::Toolchain;
@@ -375,19 +375,6 @@ fn parse_project_inner(
 	Ok(this_project)
 }
 
-pub(crate) fn setup(
-	project: &Arc<Mutex<StarProject>>,
-	global_options: &GlobalOptions,
-	package_options: HashMap<String, PkgOpt>,
-	toolchain: &Toolchain,
-) -> Globals {
-	let mut globals_builder = GlobalsBuilder::standard();
-	starlark::environment::LibraryExtension::Print.add(&mut globals_builder);
-	globals_builder.set("GLOBAL", StarGlobal::new(global_options, package_options, toolchain));
-	starlark_api::build_api(project, &mut globals_builder);
-	globals_builder.build()
-}
-
 pub(crate) fn parse_module(
 	name: String,
 	deps: Vec<Arc<StarProject>>,
@@ -414,10 +401,16 @@ pub(crate) fn parse_module(
 		module.set(&dep_proj.name, proj_value);
 	}
 	{
+		let state = ProjectState { project: project_writable.clone() };
 		let mut eval = Evaluator::new(&module);
+		eval.extra = Some(&state);
 		// eval.enable_static_typechecking(true);
 		// eval.enable_profile(&starlark::eval::ProfileMode::Typecheck)?;
-		let globals = setup(&project_writable, global_options, package_options, toolchain);
+		let mut globals_builder = GlobalsBuilder::standard();
+		starlark::environment::LibraryExtension::Print.add(&mut globals_builder);
+		globals_builder.set("GLOBAL", StarGlobal::new(global_options, package_options, toolchain));
+		starlark_api::build_api(&mut globals_builder);
+		let globals = globals_builder.build();
 		eval.eval_module(ast, &globals).map_err(|e| e.into_anyhow())?;
 	}
 	let frozen_module = module.freeze()?;
