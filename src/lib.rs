@@ -404,7 +404,7 @@ pub(crate) fn parse_module(
 		let state = ProjectState { project: project_writable.clone() };
 		let mut eval = Evaluator::new(&module);
 		eval.extra = Some(&state);
-		// eval.enable_static_typechecking(true);
+		eval.enable_static_typechecking(true);
 		// eval.enable_profile(&starlark::eval::ProfileMode::Typecheck)?;
 		let mut globals_builder = GlobalsBuilder::standard();
 		starlark::environment::LibraryExtension::Print.add(&mut globals_builder);
