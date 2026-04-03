@@ -122,7 +122,7 @@ fn map_to_pkg_opt_map(opt_map: BTreeMap<String, BTreeMap<String, String>>) -> Re
 	type SerdeErr = toml::de::Error;
 
 	fn deserialize_pkg_opt(kv: (String, String)) -> Result<(String, PkgOpt), SerdeErr> {
-		let deserializer = toml::de::ValueDeserializer::new(&kv.1);
+		let deserializer = toml::de::ValueDeserializer::parse(&kv.1)?;
 		let opt_val = PkgOpt::deserialize(deserializer)?;
 		Ok((kv.0, opt_val))
 	}
