@@ -2,6 +2,7 @@
 name = "basic"
 
 [dependencies]
+plusminus = { path = "submodule" }
 
 [options]
 # c_standard = "17"

@@ -1,0 +1,12 @@
+
+adder = add_static_library(
+    name = "adder",
+    sources = ["adder/add.cpp"],
+    include_dirs_public = ["adder"],
+)
+
+subtracter = add_object_library(
+    name = "subtracter",
+    sources = ["subtracter/subtract.cpp"],
+    include_dirs_public = ["subtracter"],
+)
