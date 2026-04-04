@@ -71,17 +71,37 @@ impl Target for LinkPtr {
 			Self::Interface(x) => x.project(),
 		}
 	}
+	fn internal_includes(&self) -> Vec<PathBuf> {
+		match self {
+			Self::Static(x) => x.internal_includes(),
+			Self::Object(x) => x.internal_includes(),
+			Self::Interface(x) => x.internal_includes(),
+		}
+	}
+	fn internal_defines(&self) -> Vec<String> {
+		match self {
+			Self::Static(x) => x.internal_defines(),
+			Self::Object(x) => x.internal_defines(),
+			Self::Interface(x) => x.internal_defines(),
+		}
+	}
+	fn internal_link_flags(&self) -> Vec<String> {
+		match self {
+			Self::Static(x) => x.internal_link_flags(),
+			Self::Object(x) => x.internal_link_flags(),
+			Self::Interface(x) => x.internal_link_flags(),
+		}
+	}
+	fn internal_links(&self) -> Vec<LinkPtr> {
+		match self {
+			Self::Static(x) => x.internal_links(),
+			Self::Object(x) => x.internal_links(),
+			Self::Interface(x) => x.internal_links(),
+		}
+	}
 }
 
 impl LinkTarget for LinkPtr {
-	fn public_includes(&self) -> Vec<PathBuf> {
-		match self {
-			Self::Static(x) => x.public_includes(),
-			Self::Object(x) => x.public_includes(),
-			Self::Interface(x) => x.public_includes(),
-		}
-	}
-
 	fn public_includes_recursive(&self) -> Vec<PathBuf> {
 		match self {
 			Self::Static(x) => x.public_includes_recursive(),
@@ -90,27 +110,11 @@ impl LinkTarget for LinkPtr {
 		}
 	}
 
-	fn public_defines(&self) -> Vec<String> {
-		match self {
-			Self::Static(x) => x.public_defines(),
-			Self::Object(x) => x.public_defines(),
-			Self::Interface(x) => x.public_defines(),
-		}
-	}
-
 	fn public_defines_recursive(&self) -> Vec<String> {
 		match self {
 			Self::Static(x) => x.public_defines_recursive(),
 			Self::Object(x) => x.public_defines_recursive(),
 			Self::Interface(x) => x.public_defines_recursive(),
-		}
-	}
-
-	fn public_link_flags(&self) -> Vec<String> {
-		match self {
-			Self::Static(x) => x.public_link_flags(),
-			Self::Object(x) => x.public_link_flags(),
-			Self::Interface(x) => x.public_link_flags(),
 		}
 	}
 

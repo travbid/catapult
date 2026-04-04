@@ -72,10 +72,7 @@ impl Target for Executable {
 	fn project(&self) -> Arc<Project> {
 		self.parent_project.upgrade().unwrap()
 	}
-}
-
-impl Executable {
-	pub(crate) fn public_includes_recursive(&self) -> Vec<PathBuf> {
+	fn internal_includes(&self) -> Vec<PathBuf> {
 		let mut includes = Vec::new();
 		for link in &self.links {
 			for include in link.public_includes_recursive() {
@@ -92,7 +89,7 @@ impl Executable {
 		}
 		includes
 	}
-	pub(crate) fn public_defines_recursive(&self) -> Vec<String> {
+	fn internal_defines(&self) -> Vec<String> {
 		let mut defines = Vec::new();
 		for link in &self.links {
 			for def in link.public_defines_recursive() {
@@ -108,7 +105,7 @@ impl Executable {
 		}
 		defines
 	}
-	pub(crate) fn link_flags_recursive(&self) -> Vec<String> {
+	fn internal_link_flags(&self) -> Vec<String> {
 		let mut flags = Vec::new();
 		for link in &self.links {
 			for flag in link.public_link_flags_recursive() {
@@ -124,6 +121,19 @@ impl Executable {
 		}
 		flags
 	}
+	fn internal_links(&self) -> Vec<LinkPtr> {
+		let mut links = Vec::new();
+		for link in &self.links {
+			links.push(link.clone());
+		}
+		for link in &self.links {
+			links.extend(link.public_links_recursive());
+		}
+		links
+	}
+}
+
+impl Executable {
 	pub(crate) fn set_parent(&mut self, parent: Weak<Project>) {
 		self.parent_project = parent;
 	}

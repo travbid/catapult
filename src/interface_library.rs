@@ -30,12 +30,21 @@ impl Target for InterfaceLibrary {
 	fn project(&self) -> Arc<Project> {
 		self.parent_project.upgrade().unwrap()
 	}
+	fn internal_includes(&self) -> Vec<PathBuf> {
+		self.public_includes_recursive()
+	}
+	fn internal_defines(&self) -> Vec<String> {
+		self.public_defines_recursive()
+	}
+	fn internal_link_flags(&self) -> Vec<String> {
+		self.public_link_flags_recursive()
+	}
+	fn internal_links(&self) -> Vec<LinkPtr> {
+		self.public_links_recursive()
+	}
 }
 
 impl LinkTarget for InterfaceLibrary {
-	fn public_includes(&self) -> Vec<PathBuf> {
-		self.include_dirs.iter().map(|x| x.full.clone()).collect()
-	}
 	fn public_includes_recursive(&self) -> Vec<PathBuf> {
 		let mut includes = crate::misc::index_set::IndexSet::new();
 		for link in &self.links {
@@ -43,13 +52,10 @@ impl LinkTarget for InterfaceLibrary {
 				includes.insert(include);
 			}
 		}
-		for include in self.public_includes() {
-			includes.insert(include);
+		for include in self.include_dirs.iter().map(|x| x.full.clone()) {
+			includes.insert(include.clone());
 		}
 		includes.into_iter().collect()
-	}
-	fn public_defines(&self) -> Vec<String> {
-		self.defines.clone()
 	}
 	fn public_defines_recursive(&self) -> Vec<String> {
 		let mut defines = crate::misc::index_set::IndexSet::new();
@@ -62,9 +68,6 @@ impl LinkTarget for InterfaceLibrary {
 			defines.insert(def.clone());
 		}
 		defines.into_iter().collect()
-	}
-	fn public_link_flags(&self) -> Vec<String> {
-		self.link_flags.clone()
 	}
 	fn public_link_flags_recursive(&self) -> Vec<String> {
 		let mut flags = crate::misc::index_set::IndexSet::new();
