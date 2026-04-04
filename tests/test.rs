@@ -45,7 +45,9 @@ fn test_01() {
 	assert_eq!(blobject.object_libraries.len(), 1);
 	let obj_lib = blobject.object_libraries.first().unwrap();
 	assert_eq!(obj_lib.name, "blobject");
-	assert_eq!(obj_lib.sources.cpp.len(), 2);
+	assert_eq!(obj_lib.sources.c.len(), 1);
+	assert_eq!(obj_lib.sources.c[0].full, cwd.join("submodules").join("blobject").join("blobject2.c"));
+	assert_eq!(obj_lib.sources.cpp.len(), 1);
 	assert_eq!(obj_lib.sources.cpp[0].full, cwd.join("submodules").join("blobject").join("blobject1.cpp"));
 
 	assert_eq!(project.info.name, "test_one");

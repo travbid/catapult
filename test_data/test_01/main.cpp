@@ -4,7 +4,7 @@
 
 #include "zstd.h"
 
-#include "blobject.hpp"
+#include "blobject.h"
 #include "mylib.hpp"
 #include "nasmproj.h"
 
@@ -36,7 +36,7 @@ int main(int argc, char**) {  //
   std::cout << "\n\n";
 
   blobject::DoBlob1();
-  blobject::DoBlob2();
+  blobject_DoBlob2();
 
   const int asm_result = asm_add_two_numbers(argc, argc);
   std::cout << "      argc: " << argc << "\n";
