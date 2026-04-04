@@ -24,7 +24,7 @@ use crate::{
 		index_set::IndexSet,
 	},
 	object_library::ObjectLibrary,
-	project::Project,
+	project::{Project, ProjectInfo},
 	static_library::StaticLibrary,
 	target::{LinkTarget, Target},
 	toolchain::{
@@ -36,6 +36,7 @@ use crate::{
 };
 
 #[derive(Clone)]
+// TODO: Is there a better way?
 struct ProjectPtr(Arc<Project>);
 impl cmp::PartialEq for ProjectPtr {
 	fn eq(&self, other: &ProjectPtr) -> bool {
@@ -88,7 +89,6 @@ struct XcodeprojGraph {
 	copy_files_build_phases: Map<PBXCopyFilesBuildPhase>,
 	frameworks_build_phases: Map<PBXFrameworksBuildPhase>,
 	build_files: Map<PBXBuildFile>,
-	container_portals: Map<ContainerPortal>,
 	file_references: Map<PBXFileReference>,
 	reference_proxies: Map<PBXReferenceProxy>,
 	container_item_proxies: Map<PBXContainerItemProxy>,
@@ -127,7 +127,7 @@ impl XcodeprojGraph {
 					let proxy = self.reference_proxies.get(proxy_ix).unwrap();
 					format!(
 						"		{} /* {} in {} */ = {{isa = PBXBuildFile; fileRef = {} /* {} */; }};\n",
-						build_file.id, build_file.x_name, proxy.path, proxy.id, proxy.path
+						build_file.id, build_file.x_name, build_file.x_build_phase, proxy.id, proxy.path
 					)
 				}
 			}
@@ -173,15 +173,13 @@ impl XcodeprojGraph {
 		if !self.container_item_proxies.is_empty() {
 			project_str += "/* Begin PBXContainerItemProxy section */\n";
 			for (_, proxy) in &self.container_item_proxies {
-				let container_portal = self.container_portals.get(&proxy.container_portal).unwrap();
-				let (container_portal_id, container_portal_name): (&str, &str) = match container_portal {
+				let (container_portal_id, container_portal_name): (&str, &str) = match &proxy.container_portal {
+					ContainerPortal::Project => (&self.project.id, "Project object"),
 					ContainerPortal::FileReference(fr_ix) => {
 						let file_reference = self.file_references.get(fr_ix).unwrap();
 						(&file_reference.id, file_reference.name.as_ref().unwrap_or(&file_reference.path))
 					}
-					ContainerPortal::Project => (&self.project.id, "Project object"),
 				};
-				let remote_target = self.native_targets.get(&proxy.remote_global_id_string).unwrap();
 				project_str += &format!(
 					r#"		{} /* PBXContainerItemProxy */ = {{
 			isa = PBXContainerItemProxy;
@@ -195,7 +193,7 @@ impl XcodeprojGraph {
 					container_portal_id,
 					container_portal_name,
 					proxy.proxy_type,
-					remote_target.id,
+					proxy.remote_global_id_string,
 					proxy.remote_info
 				);
 			}
@@ -465,20 +463,19 @@ impl XcodeprojGraph {
 		if !self.target_dependencies.is_empty() {
 			project_str += "/* Begin PBXTargetDependency section */\n";
 			for (_, target_dependency) in &self.target_dependencies {
-				let target = self.native_targets.get(&target_dependency.target).unwrap();
 				let target_proxy = self
 					.container_item_proxies
 					.get(&target_dependency.target_proxy)
 					.unwrap();
 				project_str += &format!(
-					r#"		{} /* PBXTargetDependency */ = {{
-			isa = PBXTargetDependency;
-			target = {} /* {} */;
-			targetProxy = {} /* PBXContainerItemProxy */;
-		}};
-"#,
-					target_dependency.id, target.id, target.name, target_proxy.id
+					"		{} /* PBXTargetDependency */ = {{\n			isa = PBXTargetDependency;\n",
+					target_dependency.id
 				);
+				if let Some(target_key) = target_dependency.target {
+					let target = self.native_targets.get(&target_key).unwrap();
+					project_str += &format!("			target = {} /* {} */;\n", target.id, target.name);
+				}
+				project_str += &format!("			targetProxy = {} /* PBXContainerItemProxy */;\n		}};\n", target_proxy.id);
 			}
 			project_str += "/* End PBXTargetDependency section */\n\n";
 		}
@@ -532,7 +529,8 @@ impl XcodeprojGraph {
 					ret += &format!("\t\t\t\t{},\n", group.id);
 				}
 			} else if let Some(file_ref) = self.file_references.get(child_id) {
-				ret += &format!("\t\t\t\t{} /* {} */,\n", file_ref.id, file_ref.path);
+				let file_ref_name = file_ref.name.as_ref().unwrap_or(&file_ref.path);
+				ret += &format!("\t\t\t\t{} /* {} */,\n", file_ref.id, file_ref_name);
 			} else if let Some(proxy) = self.reference_proxies.get(child_id) {
 				ret += &format!("\t\t\t\t{} /* {} */,\n", proxy.id, proxy.path);
 			} else {
@@ -641,7 +639,8 @@ impl XcodeprojGraph {
 } // impl XcodeprojGraph
 
 fn print_pbx_file_reference(file_ref: &PBXFileReference) -> String {
-	let mut ret = format!("		{} /* {} */ = {{isa = PBXFileReference; ", file_ref.id, file_ref.path);
+	let file_ref_name = file_ref.name.as_ref().unwrap_or(&file_ref.path);
+	let mut ret = format!("		{} /* {} */ = {{isa = PBXFileReference; ", file_ref.id, file_ref_name);
 	match &file_ref.file_type {
 		FileRefType::Explicit(file_type) => ret += &format!("explicitFileType = {file_type}; "),
 		FileRefType::LastKnown(file_type) => ret += &format!("lastKnownFileType = {file_type}; "),
@@ -684,7 +683,7 @@ fn generate_xcodeproj(
 	toolchain: Toolchain,
 	global_opts: GlobalOptions,
 ) -> Result<(), String> {
-	let pbx_projects = transform_build_graph_to_xcode_graphs(project.clone(), toolchain, &global_opts, Path::new(""))?;
+	let pbx_projects = transform_build_graph_to_xcode_graphs(project.clone(), toolchain, &global_opts, build_dir)?;
 	for (subproject, xcodeproj) in pbx_projects {
 		let xcodeproj_str = xcodeproj.into_string(&subproject.0.info.name);
 		let pbxproj_path = build_dir
@@ -734,13 +733,21 @@ struct SubGraph {
 	copy_files_build_phases: Map<PBXCopyFilesBuildPhase>,
 	frameworks_build_phases: Map<PBXFrameworksBuildPhase>,
 	build_files: Map<PBXBuildFile>,
-	container_portals: Map<ContainerPortal>,
 	file_references: Map<PBXFileReference>,
 	reference_proxies: Map<PBXReferenceProxy>,
 	container_item_proxies: Map<PBXContainerItemProxy>,
 	target_dependencies: Map<PBXTargetDependency>,
 	configuration_lists: Map<XCConfigurationList>,
 	build_configurations: Map<XCBuildConfiguration>,
+}
+
+struct GlobalTargetMeta {
+	project_info: Arc<ProjectInfo>,
+	native_target_id: String,
+	product_reference_id: String,
+	target_name: String,
+	product_name: String,
+	local_key: Key,
 }
 
 fn transform_build_graph_to_xcode_graphs(
@@ -775,21 +782,38 @@ fn transform_build_graph_to_xcode_graphs(
 				.insert("CLANG_CXX_LANGUAGE_STANDARD".to_owned(), PbxItem::String(compiler.cpp_std_flag(cpp_std)?));
 		}
 	}
+	let mut global_targets = HashMap::new();
 	let mut projects = ProjectMap::new();
 	let mut id_gen = IdGenerator { str_counter: 0, int_counter: 0 };
-	transform_graph_inner(project, &profiles, global_opts, build_dir, &toolchain, &mut projects, &mut id_gen)?;
+	transform_graph_inner(
+		&project,
+		&profiles,
+		global_opts,
+		build_dir,
+		&toolchain,
+		&mut global_targets,
+		&mut projects,
+		&mut id_gen,
+	)?;
 	Ok(projects)
 }
 
 fn transform_graph_inner(
-	project: Arc<Project>,
+	project: &Arc<Project>,
 	profiles: &BTreeMap<String, XcodeprojectProfile>,
 	global_opts: &GlobalOptions,
 	build_dir: &Path,
 	toolchain: &Toolchain,
+	global_targets: &mut HashMap<*const dyn Target, GlobalTargetMeta>,
 	projects: &mut ProjectMap,
 	id_gen: &mut IdGenerator,
 ) -> Result<(), String> {
+	for dep in &project.dependencies {
+		if projects.contains_key(&ProjectPtr(dep.clone())) {
+			continue;
+		}
+		transform_graph_inner(dep, profiles, global_opts, build_dir, toolchain, global_targets, projects, id_gen)?;
+	}
 	let mut graph = SubGraph {
 		groups: Map::new(),
 		native_targets: Map::new(),
@@ -799,7 +823,6 @@ fn transform_graph_inner(
 		copy_files_build_phases: Map::new(),
 		frameworks_build_phases: Map::new(),
 		build_files: Map::new(),
-		container_portals: Map::new(),
 		file_references: Map::new(),
 		reference_proxies: Map::new(),
 		container_item_proxies: Map::new(),
@@ -868,7 +891,15 @@ fn transform_graph_inner(
 		})
 		.collect();
 
-	let native_targets = project_targets(&project, &native_target_build_configurations, toolchain, &mut graph, id_gen)?;
+	let (native_targets, external_projects) = project_targets(
+		&project,
+		&native_target_build_configurations,
+		toolchain,
+		&mut graph,
+		id_gen,
+		global_targets,
+		build_dir,
+	)?;
 
 	let product_group_key = id_gen.next();
 	{
@@ -886,7 +917,10 @@ fn transform_graph_inner(
 		};
 		graph.groups.insert(product_group_key, product_group);
 	}
-	let mut main_group_children = Vec::new();
+	let mut main_group_children: Vec<Key> = external_projects
+		.iter()
+		.map(|(_, project_ref_key)| *project_ref_key)
+		.collect();
 	for nt_id in &native_targets {
 		let target = graph.native_targets.get(nt_id).unwrap();
 		let mut children = Vec::new();
@@ -949,7 +983,7 @@ fn transform_graph_inner(
 			.map(|x| (graph.native_targets.get(x).unwrap().id.clone(), "CreatedOnToolsVersion = 26.1.1".to_owned()))
 			.collect(),
 		build_configuration_list: project_build_configuration_list_id,
-		compatibility_version: "\"Xcode 14.0\"".to_owned(),
+		compatibility_version: "\"Xcode 16.0\"".to_owned(),
 		development_region: "en".to_owned(),
 		has_scanned_for_encodings: false,
 		known_regions: vec!["en".to_owned(), "Base".to_owned()],
@@ -959,7 +993,7 @@ fn transform_graph_inner(
 			.unwrap()
 			.to_string_lossy()
 			.to_string(),
-		project_references: Vec::new(),
+		project_references: external_projects,
 		project_root: String::new(),
 		targets: graph.native_targets.keys().collect(),
 	};
@@ -976,7 +1010,6 @@ fn transform_graph_inner(
 			copy_files_build_phases: graph.copy_files_build_phases,
 			frameworks_build_phases: graph.frameworks_build_phases,
 			build_files: graph.build_files,
-			container_portals: graph.container_portals,
 			file_references: graph.file_references,
 			reference_proxies: graph.reference_proxies,
 			container_item_proxies: graph.container_item_proxies,
@@ -1007,14 +1040,11 @@ fn project_targets(
 	toolchain: &Toolchain,
 	graph: &mut SubGraph,
 	id_gen: &mut IdGenerator,
-) -> Result<Vec<Key>, String> {
-	let mut ret = Vec::new();
-	let mut target_map = HashMap::<*const dyn Target, Key>::new();
-
-	let project_portal_key = id_gen.next();
-	graph
-		.container_portals
-		.insert(project_portal_key, ContainerPortal::Project);
+	global_targets: &mut HashMap<*const dyn Target, GlobalTargetMeta>,
+	build_dir: &Path,
+) -> Result<(Vec<Key>, Vec<(Key, Key)>), String> {
+	let mut native_target_keys = Vec::new();
+	let mut external_projects = HashMap::<String, (Key, Key)>::new();
 
 	for lib in &project.object_libraries {
 		let key = new_native_target_object_library(
@@ -1022,11 +1052,24 @@ fn project_targets(
 			native_target_build_configs,
 			graph,
 			id_gen,
-			&target_map,
-			project_portal_key,
+			global_targets,
+			&mut external_projects,
+			build_dir,
 		)?;
-		target_map.insert(as_key(lib), key);
-		ret.push(key);
+		let nt = graph.native_targets.get(&key).unwrap();
+		let prod_ref = graph.file_references.get(&nt.product_reference).unwrap();
+		global_targets.insert(
+			as_key(lib),
+			GlobalTargetMeta {
+				project_info: project.info.clone(),
+				native_target_id: nt.id.clone(),
+				product_reference_id: prod_ref.id.clone(),
+				target_name: nt.name.clone(),
+				product_name: nt.product_name.clone(),
+				local_key: key,
+			},
+		);
+		native_target_keys.push(key);
 	}
 
 	for lib in &project.static_libraries {
@@ -1035,11 +1078,24 @@ fn project_targets(
 			native_target_build_configs,
 			graph,
 			id_gen,
-			&target_map,
-			project_portal_key,
+			global_targets,
+			&mut external_projects,
+			build_dir,
 		)?;
-		target_map.insert(as_key(lib), key);
-		ret.push(key);
+		let nt = graph.native_targets.get(&key).unwrap();
+		let prod_ref = graph.file_references.get(&nt.product_reference).unwrap();
+		global_targets.insert(
+			as_key(lib),
+			GlobalTargetMeta {
+				project_info: project.info.clone(),
+				native_target_id: nt.id.clone(),
+				product_reference_id: prod_ref.id.clone(),
+				target_name: nt.name.clone(),
+				product_name: nt.product_name.clone(),
+				local_key: key,
+			},
+		);
+		native_target_keys.push(key);
 	}
 
 	for exe in &project.executables {
@@ -1049,12 +1105,26 @@ fn project_targets(
 			toolchain,
 			graph,
 			id_gen,
-			&target_map,
-			project_portal_key,
+			global_targets,
+			&mut external_projects,
+			build_dir,
 		)?;
-		ret.push(key);
+		let nt = graph.native_targets.get(&key).unwrap();
+		let prod_ref = graph.file_references.get(&nt.product_reference).unwrap();
+		global_targets.insert(
+			as_key(exe),
+			GlobalTargetMeta {
+				project_info: project.info.clone(),
+				native_target_id: nt.id.clone(),
+				product_reference_id: prod_ref.id.clone(),
+				target_name: nt.name.clone(),
+				product_name: nt.product_name.clone(),
+				local_key: key,
+			},
+		);
+		native_target_keys.push(key);
 	}
-	Ok(ret)
+	Ok((native_target_keys, external_projects.into_values().collect()))
 }
 
 fn new_native_target_executable(
@@ -1063,8 +1133,9 @@ fn new_native_target_executable(
 	toolchain: &Toolchain,
 	graph: &mut SubGraph,
 	id_gen: &mut IdGenerator,
-	target_map: &HashMap<*const dyn Target, Key>,
-	project_portal_key: Key,
+	global_targets: &HashMap<*const dyn Target, GlobalTargetMeta>,
+	external_projects: &mut HashMap<String, (Key, Key)>,
+	build_dir: &Path,
 ) -> Result<Key, String> {
 	let product_reference = id_gen.next();
 	graph.file_references.insert(
@@ -1099,54 +1170,133 @@ fn new_native_target_executable(
 		match link {
 			LinkPtr::Interface(_) => {
 				for trans_link in link.public_links_recursive() {
-					physical_links.insert(trans_link);
+					if !matches!(trans_link, LinkPtr::Interface(_)) {
+						physical_links.insert(trans_link);
+					}
 				}
 			}
 			_ => physical_links.insert(link.clone()),
 		}
 	}
 	for link in physical_links {
-		let dep_target_key = match target_map.get(&link_as_key(&link)) {
+		let dep_meta = match global_targets.get(&link_as_key(&link)) {
 			Some(k) => k,
 			None => return Err(format!("Could not find target for link '{}' in target '{}'", link.name(), exe.name)),
 		};
-		let dep_target = graph.native_targets.get(dep_target_key).unwrap();
 
-		let container_item_proxy_key = id_gen.next();
-		graph.container_item_proxies.insert(
-			container_item_proxy_key,
-			PBXContainerItemProxy {
-				id: id_gen.new_id(),
-				container_portal: project_portal_key,
-				proxy_type: 1,
-				remote_global_id_string: *dep_target_key,
-				remote_info: dep_target.name.clone(),
-			},
-		);
+		let is_local = Arc::ptr_eq(&dep_meta.project_info, &exe.project().info);
 
-		let target_dependency_key = id_gen.next();
-		graph.target_dependencies.insert(
-			target_dependency_key,
-			PBXTargetDependency {
-				id: id_gen.new_id(),
-				target: *dep_target_key,
-				target_proxy: container_item_proxy_key,
-			},
-		);
-		dependencies.push(target_dependency_key);
+		if is_local {
+			let dep_target_key = dep_meta.local_key;
+			let dep_target = graph.native_targets.get(&dep_target_key).unwrap();
 
-		let build_file_key = id_gen.next();
-		let dep_product_ref = graph.file_references.get(&dep_target.product_reference).unwrap();
-		graph.build_files.insert(
-			build_file_key,
-			PBXBuildFile {
-				id: id_gen.new_id(),
-				file_ref: Reference::File(dep_target.product_reference),
-				x_name: dep_product_ref.path.clone(),
-				x_build_phase: "Frameworks".to_owned(),
-			},
-		);
-		framework_build_files.push(build_file_key);
+			let container_item_proxy_key = id_gen.next();
+			graph.container_item_proxies.insert(
+				container_item_proxy_key,
+				PBXContainerItemProxy {
+					id: id_gen.new_id(),
+					container_portal: ContainerPortal::Project,
+					proxy_type: 1,
+					remote_global_id_string: dep_meta.native_target_id.clone(),
+					remote_info: dep_target.name.clone(),
+				},
+			);
+
+			let target_dependency_key = id_gen.next();
+			graph.target_dependencies.insert(
+				target_dependency_key,
+				PBXTargetDependency {
+					id: id_gen.new_id(),
+					target: Some(dep_target_key),
+					target_proxy: container_item_proxy_key,
+				},
+			);
+			dependencies.push(target_dependency_key);
+
+			let build_file_key = id_gen.next();
+			let dep_product_ref = graph.file_references.get(&dep_target.product_reference).unwrap();
+			graph.build_files.insert(
+				build_file_key,
+				PBXBuildFile {
+					id: id_gen.new_id(),
+					file_ref: Reference::File(dep_target.product_reference),
+					x_name: dep_product_ref.path.clone(),
+					x_build_phase: "Frameworks".to_owned(),
+				},
+			);
+			framework_build_files.push(build_file_key);
+		} else {
+			let (product_group_key, project_ref_key) =
+				get_or_create_external_project(&dep_meta.project_info, graph, id_gen, external_projects, build_dir);
+
+			let target_proxy_key = id_gen.next();
+			graph.container_item_proxies.insert(
+				target_proxy_key,
+				PBXContainerItemProxy {
+					id: id_gen.new_id(),
+					container_portal: ContainerPortal::FileReference(project_ref_key),
+					proxy_type: 1,
+					remote_global_id_string: dep_meta.native_target_id.clone(),
+					remote_info: dep_meta.target_name.clone(),
+				},
+			);
+
+			let target_dependency_key = id_gen.next();
+			graph.target_dependencies.insert(
+				target_dependency_key,
+				PBXTargetDependency {
+					id: id_gen.new_id(),
+					target: None,
+					target_proxy: target_proxy_key,
+				},
+			);
+			dependencies.push(target_dependency_key);
+
+			let file_proxy_key = id_gen.next();
+			graph.container_item_proxies.insert(
+				file_proxy_key,
+				PBXContainerItemProxy {
+					id: id_gen.new_id(),
+					container_portal: ContainerPortal::FileReference(project_ref_key),
+					proxy_type: 2,
+					remote_global_id_string: dep_meta.product_reference_id.clone(),
+					remote_info: dep_meta.target_name.clone(),
+				},
+			);
+
+			let reference_proxy_key = id_gen.next();
+			let ref_proxy_path = format!("lib{}.a", dep_meta.product_name);
+			graph.reference_proxies.insert(
+				reference_proxy_key,
+				PBXReferenceProxy {
+					id: id_gen.new_id(),
+					file_type: ExplicitFileType::Archive,
+					name: None,
+					path: ref_proxy_path.clone(),
+					remote_ref: file_proxy_key,
+					source_tree: "BUILT_PRODUCTS_DIR".to_owned(),
+				},
+			);
+
+			graph
+				.groups
+				.get_mut(&product_group_key)
+				.unwrap()
+				.children
+				.push(reference_proxy_key);
+
+			let build_file_key = id_gen.next();
+			graph.build_files.insert(
+				build_file_key,
+				PBXBuildFile {
+					id: id_gen.new_id(),
+					file_ref: Reference::Proxy(reference_proxy_key),
+					x_name: ref_proxy_path,
+					x_build_phase: "Frameworks".to_owned(),
+				},
+			);
+			framework_build_files.push(build_file_key);
+		}
 	}
 
 	let mut build_phases = add_build_phases(&exe.sources, graph, id_gen);
@@ -1235,8 +1385,9 @@ fn new_native_target_static_library(
 	native_target_build_configs: &[XCBuildConfiguration],
 	graph: &mut SubGraph,
 	id_gen: &mut IdGenerator,
-	target_map: &HashMap<*const dyn Target, Key>,
-	project_portal_key: Key,
+	global_targets: &HashMap<*const dyn Target, GlobalTargetMeta>,
+	external_projects: &mut HashMap<String, (Key, Key)>,
+	build_dir: &Path,
 ) -> Result<Key, String> {
 	new_native_target_archive(
 		&lib.name,
@@ -1249,8 +1400,10 @@ fn new_native_target_static_library(
 		native_target_build_configs,
 		graph,
 		id_gen,
-		target_map,
-		project_portal_key,
+		global_targets,
+		external_projects,
+		&lib.project().info,
+		build_dir,
 	)
 }
 
@@ -1259,8 +1412,9 @@ fn new_native_target_object_library(
 	native_target_build_configs: &[XCBuildConfiguration],
 	graph: &mut SubGraph,
 	id_gen: &mut IdGenerator,
-	target_map: &HashMap<*const dyn Target, Key>,
-	project_portal_key: Key,
+	global_targets: &HashMap<*const dyn Target, GlobalTargetMeta>,
+	external_projects: &mut HashMap<String, (Key, Key)>,
+	build_dir: &Path,
 ) -> Result<Key, String> {
 	new_native_target_archive(
 		&lib.name,
@@ -1273,8 +1427,10 @@ fn new_native_target_object_library(
 		native_target_build_configs,
 		graph,
 		id_gen,
-		target_map,
-		project_portal_key,
+		global_targets,
+		external_projects,
+		&lib.project().info,
+		build_dir,
 	)
 }
 
@@ -1289,8 +1445,10 @@ fn new_native_target_archive<'a>(
 	native_target_build_configs: &[XCBuildConfiguration],
 	graph: &mut SubGraph,
 	id_gen: &mut IdGenerator,
-	target_map: &HashMap<*const dyn Target, Key>,
-	project_portal_key: Key,
+	global_targets: &HashMap<*const dyn Target, GlobalTargetMeta>,
+	external_projects: &mut HashMap<String, (Key, Key)>,
+	current_project_info: &Arc<ProjectInfo>,
+	build_dir: &Path,
 ) -> Result<Key, String> {
 	let product_name = output_name.to_owned();
 	let product_reference = id_gen.next();
@@ -1322,54 +1480,133 @@ fn new_native_target_archive<'a>(
 		match link {
 			LinkPtr::Interface(_) => {
 				for trans_link in link.public_links_recursive() {
-					physical_links.insert(trans_link);
+					if !matches!(trans_link, LinkPtr::Interface(_)) {
+						physical_links.insert(trans_link);
+					}
 				}
 			}
 			_ => physical_links.insert(link.clone()),
 		}
 	}
 	for link in physical_links {
-		let dep_target_key = match target_map.get(&link_as_key(&link)) {
-			Some(k) => *k,
+		let dep_meta = match global_targets.get(&link_as_key(&link)) {
+			Some(k) => k,
 			None => return Err(format!("Could not find target for link '{}' in target '{}'", link.name(), name)),
 		};
-		let dep_target = graph.native_targets.get(&dep_target_key).unwrap();
 
-		let container_item_proxy_key = id_gen.next();
-		graph.container_item_proxies.insert(
-			container_item_proxy_key,
-			PBXContainerItemProxy {
-				id: id_gen.new_id(),
-				container_portal: project_portal_key,
-				proxy_type: 1,
-				remote_global_id_string: dep_target_key,
-				remote_info: dep_target.name.clone(),
-			},
-		);
+		let is_local = Arc::ptr_eq(&dep_meta.project_info, current_project_info);
 
-		let target_dependency_key = id_gen.next();
-		graph.target_dependencies.insert(
-			target_dependency_key,
-			PBXTargetDependency {
-				id: id_gen.new_id(),
-				target: dep_target_key,
-				target_proxy: container_item_proxy_key,
-			},
-		);
-		dependencies.push(target_dependency_key);
+		if is_local {
+			let dep_target_key = dep_meta.local_key;
+			let dep_target = graph.native_targets.get(&dep_target_key).unwrap();
 
-		let build_file_key = id_gen.next();
-		let dep_product_ref = graph.file_references.get(&dep_target.product_reference).unwrap();
-		graph.build_files.insert(
-			build_file_key,
-			PBXBuildFile {
-				id: id_gen.new_id(),
-				file_ref: Reference::File(dep_target.product_reference),
-				x_name: dep_product_ref.path.clone(),
-				x_build_phase: "Frameworks".to_owned(),
-			},
-		);
-		framework_build_files.push(build_file_key);
+			let container_item_proxy_key = id_gen.next();
+			graph.container_item_proxies.insert(
+				container_item_proxy_key,
+				PBXContainerItemProxy {
+					id: id_gen.new_id(),
+					container_portal: ContainerPortal::Project,
+					proxy_type: 1,
+					remote_global_id_string: dep_meta.native_target_id.clone(),
+					remote_info: dep_target.name.clone(),
+				},
+			);
+
+			let target_dependency_key = id_gen.next();
+			graph.target_dependencies.insert(
+				target_dependency_key,
+				PBXTargetDependency {
+					id: id_gen.new_id(),
+					target: Some(dep_target_key),
+					target_proxy: container_item_proxy_key,
+				},
+			);
+			dependencies.push(target_dependency_key);
+
+			let build_file_key = id_gen.next();
+			let dep_product_ref = graph.file_references.get(&dep_target.product_reference).unwrap();
+			graph.build_files.insert(
+				build_file_key,
+				PBXBuildFile {
+					id: id_gen.new_id(),
+					file_ref: Reference::File(dep_target.product_reference),
+					x_name: dep_product_ref.path.clone(),
+					x_build_phase: "Frameworks".to_owned(),
+				},
+			);
+			framework_build_files.push(build_file_key);
+		} else {
+			let (product_group_key, project_ref_key) =
+				get_or_create_external_project(&dep_meta.project_info, graph, id_gen, external_projects, build_dir);
+
+			let target_proxy_key = id_gen.next();
+			graph.container_item_proxies.insert(
+				target_proxy_key,
+				PBXContainerItemProxy {
+					id: id_gen.new_id(),
+					container_portal: ContainerPortal::FileReference(project_ref_key),
+					proxy_type: 1,
+					remote_global_id_string: dep_meta.native_target_id.clone(),
+					remote_info: dep_meta.target_name.clone(),
+				},
+			);
+
+			let target_dependency_key = id_gen.next();
+			graph.target_dependencies.insert(
+				target_dependency_key,
+				PBXTargetDependency {
+					id: id_gen.new_id(),
+					target: None,
+					target_proxy: target_proxy_key,
+				},
+			);
+			dependencies.push(target_dependency_key);
+
+			let file_proxy_key = id_gen.next();
+			graph.container_item_proxies.insert(
+				file_proxy_key,
+				PBXContainerItemProxy {
+					id: id_gen.new_id(),
+					container_portal: ContainerPortal::FileReference(project_ref_key),
+					proxy_type: 2,
+					remote_global_id_string: dep_meta.product_reference_id.clone(),
+					remote_info: dep_meta.target_name.clone(),
+				},
+			);
+
+			let reference_proxy_key = id_gen.next();
+			let ref_proxy_path = format!("lib{}.a", dep_meta.product_name);
+			graph.reference_proxies.insert(
+				reference_proxy_key,
+				PBXReferenceProxy {
+					id: id_gen.new_id(),
+					file_type: ExplicitFileType::Archive,
+					name: None,
+					path: ref_proxy_path.clone(),
+					remote_ref: file_proxy_key,
+					source_tree: "BUILT_PRODUCTS_DIR".to_owned(),
+				},
+			);
+
+			graph
+				.groups
+				.get_mut(&product_group_key)
+				.unwrap()
+				.children
+				.push(reference_proxy_key);
+
+			let build_file_key = id_gen.next();
+			graph.build_files.insert(
+				build_file_key,
+				PBXBuildFile {
+					id: id_gen.new_id(),
+					file_ref: Reference::Proxy(reference_proxy_key),
+					x_name: ref_proxy_path,
+					x_build_phase: "Frameworks".to_owned(),
+				},
+			);
+			framework_build_files.push(build_file_key);
+		}
 	}
 
 	let mut build_phases = add_build_phases(sources, graph, id_gen);
@@ -1411,6 +1648,51 @@ fn new_native_target_archive<'a>(
 	};
 	graph.native_targets.insert(native_target_key, native_target);
 	Ok(native_target_key)
+}
+
+fn get_or_create_external_project(
+	dep_project_info: &Arc<ProjectInfo>,
+	graph: &mut SubGraph,
+	id_gen: &mut IdGenerator,
+	external_projects: &mut HashMap<String, (Key, Key)>,
+	build_dir: &Path,
+) -> (Key, Key) {
+	if let Some(&keys) = external_projects.get(&dep_project_info.name) {
+		return keys;
+	}
+
+	let product_group_key = id_gen.next();
+	graph.groups.insert(
+		product_group_key,
+		PBXGroup {
+			id: id_gen.new_id(),
+			children: Vec::new(),
+			name: Some("Products".to_owned()),
+			path: None,
+			source_tree: "\"<group>\"".to_owned(),
+		},
+	);
+
+	let ext_project_path = path::absolute(build_dir)
+		.unwrap()
+		.join(&dep_project_info.name)
+		.join(format!("{}.xcodeproj", dep_project_info.name));
+
+	let project_ref_key = id_gen.next();
+	graph.file_references.insert(
+		project_ref_key,
+		PBXFileReference {
+			id: id_gen.new_id(),
+			file_type: FileRefType::LastKnown(FileType::PbProject),
+			include_in_index: None,
+			name: Some(format!("{}.xcodeproj", dep_project_info.name)),
+			path: ext_project_path.to_string_lossy().to_string(),
+			source_tree: "\"<absolute>\"".to_owned(),
+		},
+	);
+
+	external_projects.insert(dep_project_info.name.clone(), (product_group_key, project_ref_key));
+	(product_group_key, project_ref_key)
 }
 
 fn add_build_phases(sources: &Sources, graph: &mut SubGraph, id_gen: &mut IdGenerator) -> Vec<Key> {
@@ -1863,11 +2145,6 @@ enum ExplicitFileType {
 	Executable, // compiled.mach-o.executable
 }
 
-enum ContainerPortal {
-	FileReference(Key),
-	Project,
-}
-
 impl core::fmt::Display for ExplicitFileType {
 	fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
 		match self {
@@ -1902,7 +2179,7 @@ struct PBXTargetDependency {
 	pub id: String,
 	// isa = PBXTargetDependency;
 	// target = 5D654BE92C4CCF39003465E3 /* exmath */;
-	pub target: Key, // PBXNativeTarget
+	pub target: Option<Key>, // PBXNativeTarget
 	// targetProxy = 5D654BF72C4CD166003465E3 /* PBXContainerItemProxy */;
 	pub target_proxy: Key, // PBXContainerItemProxy
 }
@@ -1911,13 +2188,18 @@ struct PBXContainerItemProxy {
 	pub id: String,
 	// isa = PBXContainerItemProxy;
 	// containerPortal = 5DEA4D4D2C43D053008D0969 /* Project object */;
-	pub container_portal: Key, // PBXFileReference // PBXProject,
+	pub container_portal: ContainerPortal, // PBXFileReference // PBXProject,
 	// proxyType = 1;
 	pub proxy_type: u32,
 	// remoteGlobalIDString = 5D654BE92C4CCF39003465E3;
-	pub remote_global_id_string: Key, // PBXFileReference or PBXNativeTarget
+	pub remote_global_id_string: String, // PBXFileReference or PBXNativeTarget
 	// remoteInfo = exmath;
 	pub remote_info: String,
+}
+
+enum ContainerPortal {
+	Project,
+	FileReference(Key),
 }
 
 struct PBXReferenceProxy {
@@ -2278,6 +2560,6 @@ fn test_xcode_transform() {
 	// Assert that basic.exe natively depends on the transitive underlying physical target (adder)
 	let dep_id = exe_target.dependencies[0];
 	let dep = project_nodes.target_dependencies.get(&dep_id).unwrap();
-	let dep_target = project_nodes.native_targets.get(&dep.target).unwrap();
+	let dep_target = project_nodes.native_targets.get(&dep.target.unwrap()).unwrap();
 	assert_eq!(dep_target.name, "adder");
 }
