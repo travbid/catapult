@@ -5,5 +5,6 @@ blobject = add_object_library(
         "blobject1.cpp",
         "blobject2.cpp",
     ],
+    include_dirs_private = ["utils"],
     include_dirs_public = ["."],
 )
