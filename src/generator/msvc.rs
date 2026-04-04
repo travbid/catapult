@@ -135,7 +135,7 @@ fn item_definition_group(
 	);
 
 	if !sources.c.is_empty() || !sources.cpp.is_empty() {
-		ret += &cl_compile(&profile.vcxproj, include_dirs, defines, opts, sources.cpp.is_empty());
+		ret += &cl_compile(&profile.vcxproj, include_dirs, defines, opts, sources);
 	}
 	if !sources.nasm.is_empty() {
 		ret += &nasm_compile(profile, platform, include_dirs, defines)?;
@@ -190,7 +190,7 @@ fn cl_compile(
 	include_dirs: &[String],
 	defines: &[String],
 	opts: &Options,
-	compile_as_c: bool,
+	sources: &Sources,
 ) -> String {
 	let mut ret = "    <ClCompile>\n".to_owned();
 
@@ -198,17 +198,19 @@ fn cl_compile(
 		ret += &format!("      <{key}>{val}</{key}>\n");
 	}
 
-	if compile_as_c {
+	if !sources.c.is_empty() {
 		if let Some(c_std) = &opts.c_standard {
 			ret += "      <LanguageStandard_C>";
 			ret += c_std.as_str();
 			ret += "</LanguageStandard_C>\n";
-			ret += "      <CompileAs>CompileAsC</CompileAs>\n";
 		}
-	} else if let Some(cpp_std) = &opts.cpp_standard {
-		ret += "      <LanguageStandard>";
-		ret += cpp_std.as_str();
-		ret += "</LanguageStandard>\n";
+	}
+	if !sources.cpp.is_empty() {
+		if let Some(cpp_std) = &opts.cpp_standard {
+			ret += "      <LanguageStandard>";
+			ret += cpp_std.as_str();
+			ret += "</LanguageStandard>\n";
+		}
 	}
 
 	ret += "      <AdditionalIncludeDirectories>";
@@ -535,11 +537,7 @@ fn make_vcxproj(
 	let sources = &target_data.sources;
 
 	log::debug!("make_vcxproj: {target_name}");
-	if !target_data.sources.c.is_empty() && !target_data.sources.cpp.is_empty() {
-		return Err(format!(
-			"This generator does not support mixing C and C++ sources. Consider splitting them into separate libraries. Target: {target_name}"
-		));
-	}
+
 	const PLATFORM_TOOLSET: &str = "v143";
 	let target_guid = Uuid::new_v4().to_string().to_ascii_uppercase();
 	let mut out_str = r#"<?xml version="1.0" encoding="utf-8"?>
