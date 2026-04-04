@@ -23,9 +23,7 @@ use crate::{
 		index_map::IndexMap,
 		index_set::IndexSet,
 	},
-	object_library::ObjectLibrary,
 	project::{Project, ProjectInfo},
-	static_library::StaticLibrary,
 	target::{LinkTarget, Target},
 	toolchain::{
 		PbxItem,
@@ -98,9 +96,9 @@ struct XcodeprojGraph {
 }
 
 impl XcodeprojGraph {
-	fn into_string(self, project_name: &str) -> String {
-		let mut project_str = String::new();
-		project_str += r#"// !$*UTF8*$!
+	fn write<W: IoWrite>(self, mut writer: W, project_name: &str) -> std::io::Result<()> {
+		writer.write(
+			br#"// !$*UTF8*$!
 {
 	archiveVersion = 1;
 	classes = {
@@ -108,70 +106,76 @@ impl XcodeprojGraph {
 	objectVersion = 77;
 	objects = {
 
-"#;
+"#,
+		)?;
 
-		// project_str += "/* Begin PBXAggregateTarget section */\n";
-		// project_str += "/* End PBXAggregateTarget section */\n\n";
+		// /* Begin PBXAggregateTarget section */";
+		// /* End PBXAggregateTarget section */";
 
-		project_str += "/* Begin PBXBuildFile section */\n";
+		writer.write(b"/* Begin PBXBuildFile section */\n")?;
 		for (_, build_file) in &self.build_files {
-			project_str += &match &build_file.file_ref {
+			match &build_file.file_ref {
 				Reference::File(file_ref_ix) => {
 					let file_ref = self.file_references.get(file_ref_ix).unwrap();
-					format!(
+					write!(
+						writer,
 						"		{} /* {} in {} */ = {{isa = PBXBuildFile; fileRef = {} /* {} */; }};\n",
 						build_file.id, file_ref.path, build_file.x_build_phase, file_ref.id, file_ref.path,
-					)
+					)?;
 				}
 				Reference::Proxy(proxy_ix) => {
 					let proxy = self.reference_proxies.get(proxy_ix).unwrap();
-					format!(
+					write!(
+						writer,
 						"		{} /* {} in {} */ = {{isa = PBXBuildFile; fileRef = {} /* {} */; }};\n",
 						build_file.id, build_file.x_name, build_file.x_build_phase, proxy.id, proxy.path
-					)
+					)?;
 				}
 			}
 		}
-		project_str += "/* End PBXBuildFile section */\n\n";
+		writer.write(b"/* End PBXBuildFile section */\n\n")?;
 
 		if !self.build_rules.is_empty() {
-			project_str += "/* Begin PBXBuildRules section */\n\n";
+			writer.write(b"/* Begin PBXBuildRules section */\n\n")?;
 
 			for (_, build_rule) in &self.build_rules {
 				let PBXBuildRule { id, compiler_spec, file_type, .. } = build_rule;
 				let script = build_rule.script.replace(r#"""#, r#"\""#);
 				let is_editable = build_rule.is_editable as u8;
-				project_str += &format!(
+				write!(
+					writer,
 					r#"		{id} /* PBXBuildRule */ = {{
 			isa = PBXBuildRule;
 			compilerSpec = {compiler_spec};
 			fileType = {file_type};
 			inputFiles = (
 "#
-				);
+				)?;
 				for input in &build_rule.input_files {
-					project_str += &format!("\t\t\t\t\"{input}\",\n");
+					write!(writer, "\t\t\t\t\"{input}\",\n")?;
 				}
-				project_str += &format!(
+				write!(
+					writer,
 					r#"			);
 			isEditable = {is_editable};
 			outputFiles = (
 "#
-				);
+				)?;
 				for output in &build_rule.output_files {
-					project_str += &format!("\t\t\t\t\"{output}\",\n");
+					write!(writer, "\t\t\t\t\"{output}\",\n")?;
 				}
-				project_str += &format!(
+				write!(
+					writer,
 					r#"			);
 			script = "{script}";
 		}};"#
-				);
+				)?;
 			}
-			project_str += "/* End PBXBuildRules section */\n\n";
+			writer.write(b"/* End PBXBuildRules section */\n\n")?;
 		}
 
 		if !self.container_item_proxies.is_empty() {
-			project_str += "/* Begin PBXContainerItemProxy section */\n";
+			writer.write(b"/* Begin PBXContainerItemProxy section */\n")?;
 			for (_, proxy) in &self.container_item_proxies {
 				let (container_portal_id, container_portal_name): (&str, &str) = match &proxy.container_portal {
 					ContainerPortal::Project => (&self.project.id, "Project object"),
@@ -180,7 +184,8 @@ impl XcodeprojGraph {
 						(&file_reference.id, file_reference.name.as_ref().unwrap_or(&file_reference.path))
 					}
 				};
-				project_str += &format!(
+				write!(
+					writer,
 					r#"		{} /* PBXContainerItemProxy */ = {{
 			isa = PBXContainerItemProxy;
 			containerPortal = {} /* {} */;
@@ -195,14 +200,15 @@ impl XcodeprojGraph {
 					proxy.proxy_type,
 					proxy.remote_global_id_string,
 					proxy.remote_info
-				);
+				)?;
 			}
-			project_str += "/* End PBXContainerItemProxy section */\n\n";
+			writer.write(b"/* End PBXContainerItemProxy section */\n\n")?;
 		}
 		if !self.copy_files_build_phases.is_empty() {
-			project_str += "/* Begin PBXCopyFilesBuildPhase section */\n";
+			writer.write(b"/* Begin PBXCopyFilesBuildPhase section */\n")?;
 			for (_, build_phase) in &self.copy_files_build_phases {
-				project_str += &format!(
+				write!(
+					writer,
 					r#"		{} /* CopyFiles */ = {{
 			isa = PBXCopyFilesBuildPhase;
 			buildActionMask = {};
@@ -214,43 +220,45 @@ impl XcodeprojGraph {
 					build_phase.base.build_action_mask,
 					build_phase.dst_path,
 					build_phase.dst_subfolder_spec
-				);
+				)?;
 				for file_id in &build_phase.base.files {
 					let file = self.build_files.get(file_id).unwrap();
 					let file_ref_path = match &file.file_ref {
 						Reference::File(file_ref) => &self.file_references.get(file_ref).unwrap().path,
 						Reference::Proxy(proxy) => &self.reference_proxies.get(proxy).unwrap().path,
 					};
-					project_str += &format!("\t\t\t\t{} /* {file_ref_path} in CopyFiles */,\n", file.id);
+					write!(writer, "\t\t\t\t{} /* {file_ref_path} in CopyFiles */,\n", file.id)?;
 				}
-				project_str += &format!(
+				write!(
+					writer,
 					r#"			);
 			runOnlyForDeploymentPostprocessing = {};
 		}};
 "#,
 					build_phase.base.run_only_for_deployment_postprocessing as u8
-				);
+				)?;
 			}
-			project_str += "/* End PBXCopyFilesBuildPhase section */\n\n";
+			writer.write(b"/* End PBXCopyFilesBuildPhase section */\n\n")?;
 		}
 
-		project_str += "/* Begin PBXFileReference section */\n";
+		writer.write(b"/* Begin PBXFileReference section */\n")?;
 		for (_, file_ref) in &self.file_references {
-			project_str += &print_pbx_file_reference(file_ref)
+			write_pbx_file_reference(&mut writer, file_ref)?;
 		}
-		project_str += "/* End PBXFileReference section */\n\n";
+		writer.write(b"/* End PBXFileReference section */\n\n")?;
 
 		if !self.frameworks_build_phases.is_empty() {
-			project_str += "/* Begin PBXFrameworksBuildPhase section */\n";
+			writer.write(b"/* Begin PBXFrameworksBuildPhase section */\n")?;
 			for (_, build_phase) in &self.frameworks_build_phases {
-				project_str += &format!(
+				write!(
+					writer,
 					r#"		{} /* Frameworks */ = {{
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = {};
 			files = (
 "#,
 					build_phase.id, build_phase.build_action_mask
-				);
+				)?;
 				for file_id in &build_phase.files {
 					let file = self.build_files.get(file_id).unwrap();
 					let file_ref_path = match &file.file_ref {
@@ -260,64 +268,68 @@ impl XcodeprojGraph {
 						}
 						Reference::Proxy(proxy_id) => &self.reference_proxies.get(proxy_id).unwrap().path,
 					};
-					project_str += &format!("\t\t\t\t{} /* {} in Frameworks */,\n", file.id, file_ref_path);
+					write!(writer, "\t\t\t\t{} /* {} in Frameworks */,\n", file.id, file_ref_path)?;
 				}
-				project_str += &format!(
+				write!(
+					writer,
 					r#"			);
 			runOnlyForDeploymentPostprocessing = {};
 		}};
 "#,
 					build_phase.run_only_for_deployment_postprocessing as u8
-				);
+				)?;
 			}
-			project_str += "/* End PBXFrameworksBuildPhase section */\n\n";
+			writer.write(b"/* End PBXFrameworksBuildPhase section */\n\n")?;
 		}
 
-		project_str += "/* Begin PBXGroup section */\n";
+		writer.write(b"/* Begin PBXGroup section */\n")?;
 		for (_, group) in &self.groups {
-			project_str += &self.print_pbx_group(group);
+			self.write_pbx_group(&mut writer, group)?;
 		}
-		project_str += "/* End PBXGroup section */\n\n";
+		writer.write(b"/* End PBXGroup section */\n\n")?;
 
 		if !self.headers_build_phases.is_empty() {
-			project_str += "/* Begin PBXHeadersBuildPhase section */\n";
+			writer.write(b"/* Begin PBXHeadersBuildPhase section */\n")?;
 			for (_, build_phase) in &self.headers_build_phases {
-				project_str += &format!(
+				write!(
+					writer,
 					r#"		{} /* Headers */ = {{
 			isa = PBXHeadersBuildPhase;
 			buildActionMask = {};
 			files = (
 "#,
 					build_phase.id, build_phase.build_action_mask
-				);
+				)?;
 				for file_id in &build_phase.files {
 					let file = self.build_files.get(file_id).unwrap();
 					let file_ref = match &file.file_ref {
 						Reference::File(file_ref) => self.file_references.get(file_ref).unwrap(),
 						Reference::Proxy(_) => panic!("TODO"),
 					};
-					project_str += &format!("\t\t\t\t{} /* {} in Headers */,\n", file.id, file_ref.path);
+					write!(writer, "\t\t\t\t{} /* {} in Headers */,\n", file.id, file_ref.path)?;
 				}
-				project_str += &format!(
+				write!(
+					writer,
 					r#"			);
 			runOnlyForDeploymentPostprocessing = {};
 		}};
 "#,
 					build_phase.run_only_for_deployment_postprocessing as u8
-				);
+				)?;
 			}
-			project_str += "/* End PBXHeadersBuildPhase section */\n\n";
+			writer.write(b"/* End PBXHeadersBuildPhase section */\n\n")?;
 		}
 
-		project_str += "/* Begin PBXNativeTarget section */\n";
+		writer.write(b"/* Begin PBXNativeTarget section */\n")?;
 		for (_, native_target) in &self.native_targets {
-			project_str += &self.print_pbx_native_target(native_target);
+			self.write_pbx_native_target(&mut writer, native_target)?;
 		}
-		project_str += "/* End PBXNativeTarget section */\n\n";
+		writer.write(b"/* End PBXNativeTarget section */\n\n")?;
 
-		project_str += "/* Begin PBXProject section */\n";
+		writer.write(b"/* Begin PBXProject section */\n")?;
 		let pbx_project = &self.project;
-		project_str += &format!(
+		write!(
+			writer,
 			r#"		{} /* Project object */ = {{
 			isa = PBXProject;
 			attributes = {{
@@ -328,17 +340,19 @@ impl XcodeprojGraph {
 			pbx_project.id,
 			pbx_project.attribute_build_indpendent_targets_in_parallel as u8,
 			pbx_project.attribute_last_upgrade_check
-		);
+		)?;
 		for target_attribute in &pbx_project.attribute_target_attributes {
-			project_str += &format!(
+			write!(
+				writer,
 				r#"					{} = {{
 						{};
 					}};
 "#,
 				target_attribute.0, target_attribute.1
-			);
+			)?;
 		}
-		project_str += &format!(
+		write!(
+			writer,
 			r#"				}};
 			}};
 			buildConfigurationList = {} /* Build configuration list for PBXProject "{project_name}" */;
@@ -353,12 +367,13 @@ impl XcodeprojGraph {
 			// pbx_project.compatibility_version,
 			pbx_project.development_region,
 			pbx_project.has_scanned_for_encodings as u8,
-		);
+		)?;
 		for region in &pbx_project.known_regions {
-			project_str += &format!("				{region},\n");
+			write!(writer, "				{region},\n")?;
 		}
 		let product_ref_group = self.groups.get(&pbx_project.product_ref_group).unwrap();
-		project_str += &format!(
+		write!(
+			writer,
 			r#"			);
 			mainGroup = {};
 			minimizedProjectReferenceProxies = 1;
@@ -370,12 +385,13 @@ impl XcodeprojGraph {
 			product_ref_group.id,
 			product_ref_group.name.as_ref().unwrap(),
 			pbx_project.project_dir_path,
-		);
+		)?;
 		if !pbx_project.project_references.is_empty() {
-			project_str += "			projectReferences = (\n";
+			writer.write(b"			projectReferences = (\n")?;
 			for (product_group, project_ref) in &pbx_project.project_references {
 				let project_ref = self.file_references.get(project_ref).unwrap();
-				project_str += &format!(
+				write!(
+					writer,
 					r#"				{{
 					ProductGroup = {} /* Products */;
 					ProjectRef = {} /* {} */;
@@ -384,37 +400,40 @@ impl XcodeprojGraph {
 					self.groups.get(product_group).unwrap().id,
 					project_ref.id,
 					project_ref.name.as_ref().unwrap()
-				);
+				)?;
 			}
-			project_str += "			);\n";
+			writer.write(b"			);\n")?;
 		}
-		project_str += &format!(
+		write!(
+			writer,
 			r#"			projectRoot = "{}";
 			targets = (
 "#,
 			pbx_project.project_root,
-		);
+		)?;
 		for target_id in &pbx_project.targets {
 			let target = self.native_targets.get(target_id).unwrap();
-			project_str += &format!("				{} /* {} */,\n", target.id, target.name);
+			write!(writer, "				{} /* {} */,\n", target.id, target.name)?;
 		}
-		project_str += "			);\n		};\n";
-		project_str += "/* End PBXProject section */\n\n";
+		writer.write(b"			);\n		};\n")?;
+		writer.write(b"/* End PBXProject section */\n\n")?;
 
 		if !self.reference_proxies.is_empty() {
-			project_str += "/* Begin PBXReferenceProxy section */\n";
+			writer.write(b"/* Begin PBXReferenceProxy section */\n")?;
 			for (_, ref_proxy) in &self.reference_proxies {
-				project_str += &format!(
+				write!(
+					writer,
 					r#"		{} /* {} */ = {{
 			isa = PBXReferenceProxy;
 			fileType = {};
 "#,
 					ref_proxy.id, ref_proxy.path, ref_proxy.file_type,
-				);
+				)?;
 				if let Some(name) = &ref_proxy.name {
-					project_str += &format!("\t\t\tname = {name};\n");
+					write!(writer, "\t\t\tname = {name};\n")?;
 				}
-				project_str += &format!(
+				write!(
+					writer,
 					r#"			path = {};
 			remoteRef = {} /* PBXContainerItemProxy */;
 			sourceTree = {};
@@ -423,88 +442,90 @@ impl XcodeprojGraph {
 					ref_proxy.path,
 					self.container_item_proxies.get(&ref_proxy.remote_ref).unwrap().id,
 					ref_proxy.source_tree
-				);
+				)?;
 			}
-			project_str += "/* End PBXReferenceProxy section */\n\n";
+			writer.write(b"/* End PBXReferenceProxy section */\n\n")?;
 		}
 
-		project_str += "/* Begin PBXSourcesBuildPhase section */\n";
+		writer.write(b"/* Begin PBXSourcesBuildPhase section */\n")?;
 		for (_, build_phase) in &self.sources_build_phases {
-			project_str += &format!(
+			write!(
+				writer,
 				r#"		{} /* Sources */ = {{
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = {};
 			files = (
 "#,
 				build_phase.id, build_phase.build_action_mask
-			);
+			)?;
 			for file_id in &build_phase.files {
 				let file = self.build_files.get(file_id).unwrap();
 				let file_ref = match &file.file_ref {
 					Reference::File(file_ref) => self.file_references.get(file_ref).unwrap(),
 					Reference::Proxy(_) => panic!("Unexpected PBXReferenceProxy"),
 				};
-				project_str += &format!(
+				write!(
+					writer,
 					"\t\t\t\t{} /* {} in Sources */,\n",
 					file.id,
 					file_ref.name.as_ref().unwrap_or(&file_ref.path)
-				);
+				)?;
 			}
-			project_str += &format!(
+			write!(
+				writer,
 				r#"			);
 			runOnlyForDeploymentPostprocessing = {};
 		}};
 "#,
 				build_phase.run_only_for_deployment_postprocessing as u8
-			);
+			)?;
 		}
-		project_str += "/* End PBXSourcesBuildPhase section */\n\n";
+		writer.write(b"/* End PBXSourcesBuildPhase section */\n\n")?;
 
 		if !self.target_dependencies.is_empty() {
-			project_str += "/* Begin PBXTargetDependency section */\n";
+			writer.write(b"/* Begin PBXTargetDependency section */\n")?;
 			for (_, target_dependency) in &self.target_dependencies {
 				let target_proxy = self
 					.container_item_proxies
 					.get(&target_dependency.target_proxy)
 					.unwrap();
-				project_str += &format!(
+				write!(
+					writer,
 					"		{} /* PBXTargetDependency */ = {{\n			isa = PBXTargetDependency;\n",
 					target_dependency.id
-				);
+				)?;
 				if let Some(target_key) = target_dependency.target {
 					let target = self.native_targets.get(&target_key).unwrap();
-					project_str += &format!("			target = {} /* {} */;\n", target.id, target.name);
+					write!(writer, "			target = {} /* {} */;\n", target.id, target.name)?;
 				}
-				project_str += &format!("			targetProxy = {} /* PBXContainerItemProxy */;\n		}};\n", target_proxy.id);
+				write!(writer, "			targetProxy = {} /* PBXContainerItemProxy */;\n		}};\n", target_proxy.id)?;
 			}
-			project_str += "/* End PBXTargetDependency section */\n\n";
+			writer.write(b"/* End PBXTargetDependency section */\n\n")?;
 		}
 
-		project_str += "/* Begin XCBuildConfiguration section */\n";
+		writer.write(b"/* Begin XCBuildConfiguration section */\n")?;
 		for (_, build_configuration) in &self.build_configurations {
-			project_str += &print_xc_build_configuration(build_configuration);
+			write_xc_build_configuration(&mut writer, build_configuration)?;
 		}
-		project_str += "/* End XCBuildConfiguration section */\n\n";
+		writer.write(b"/* End XCBuildConfiguration section */\n\n")?;
 
-		project_str += "/* Begin XCConfigurationList section */\n";
+		writer.write(b"/* Begin XCConfigurationList section */\n")?;
 		for (_, configuration_list) in &self.configuration_lists {
-			project_str += &self.print_xc_configuration_list(configuration_list);
+			self.write_xc_configuration_list(&mut writer, configuration_list)?;
 		}
-		project_str += "/* End XCConfigurationList section */\n";
+		writer.write(b"/* End XCConfigurationList section */\n")?;
 
-		project_str += &format!(
+		write!(
+			writer,
 			r#"	}};
 	rootObject = {} /* Project object */;
 }}
 "#,
 			pbx_project.id
-		);
-
-		project_str
+		)
 	}
 
-	fn print_pbx_group(&self, group: &PBXGroup) -> String {
-		let mut ret = String::new();
+	fn write_pbx_group<W: IoWrite>(&self, mut writer: W, group: &PBXGroup) -> std::io::Result<()> {
 		let comment = if let Some(name) = &group.name {
 			"/* ".to_owned() + name + " */ "
 		} else if let Some(path) = &group.path {
@@ -512,89 +533,100 @@ impl XcodeprojGraph {
 		} else {
 			String::new()
 		};
-		ret += &format!(
+		write!(
+			writer,
 			r#"		{} {}= {{
 			isa = PBXGroup;
 			children = (
 "#,
 			group.id, comment
-		);
+		)?;
 		for child_id in &group.children {
 			if let Some(group) = self.groups.get(child_id) {
 				if let Some(name) = group.name.as_ref() {
-					ret += &format!("\t\t\t\t{} /* {name} */,\n", group.id);
+					write!(writer, "\t\t\t\t{} /* {name} */,\n", group.id)?;
 				} else if let Some(path) = group.path.as_ref() {
-					ret += &format!("\t\t\t\t{} /* {path} */,\n", group.id);
+					write!(writer, "\t\t\t\t{} /* {path} */,\n", group.id)?;
 				} else {
-					ret += &format!("\t\t\t\t{},\n", group.id);
+					write!(writer, "\t\t\t\t{},\n", group.id)?;
 				}
 			} else if let Some(file_ref) = self.file_references.get(child_id) {
 				let file_ref_name = file_ref.name.as_ref().unwrap_or(&file_ref.path);
-				ret += &format!("\t\t\t\t{} /* {} */,\n", file_ref.id, file_ref_name);
+				write!(writer, "\t\t\t\t{} /* {} */,\n", file_ref.id, file_ref_name)?;
 			} else if let Some(proxy) = self.reference_proxies.get(child_id) {
-				ret += &format!("\t\t\t\t{} /* {} */,\n", proxy.id, proxy.path);
+				write!(writer, "\t\t\t\t{} /* {} */,\n", proxy.id, proxy.path)?;
 			} else {
 				panic!("Could not find {child_id}");
 			}
 		}
-		ret += "			);\n";
+		writer.write(b"			);\n")?;
 		if let Some(name) = &group.name {
-			ret += &format!("			name = {};\n", name);
+			write!(writer, "			name = {};\n", name)?;
 		}
 		if let Some(path) = &group.path {
-			ret += &format!("			path = {};\n", path);
+			write!(writer, "			path = {};\n", path)?;
 		}
-		ret += &format!(
+		write!(
+			writer,
 			r#"			sourceTree = {};
 		}};
 "#,
 			group.source_tree
-		);
-		ret
+		)
 	}
 
-	fn print_pbx_native_target(&self, native_target: &PBXNativeTarget) -> String {
+	fn write_pbx_native_target<W: IoWrite>(
+		&self,
+		mut writer: W,
+		native_target: &PBXNativeTarget,
+	) -> std::io::Result<()> {
 		let build_configuration_list = self
 			.configuration_lists
 			.get(&native_target.build_configuration_list)
 			.unwrap();
-		let mut ret = format!(
+		write!(
+			writer,
 			r#"		{} /* {} */ = {{
 			isa = PBXNativeTarget;
 			buildConfigurationList = {} /* Build configuration list for PBXNativeTarget "{}" */;
 			buildPhases = (
 "#,
 			native_target.id, native_target.name, build_configuration_list.id, native_target.name
-		);
+		)?;
 		for build_phase_id in &native_target.build_phases {
 			if let Some(build_phase) = self.headers_build_phases.get(build_phase_id) {
-				ret += &format!("				{} /* Headers */,\n", build_phase.id);
+				write!(writer, "				{} /* Headers */,\n", build_phase.id)?;
 			} else if let Some(build_phase) = self.sources_build_phases.get(build_phase_id) {
-				ret += &format!("				{} /* Sources */,\n", build_phase.id);
+				write!(writer, "				{} /* Sources */,\n", build_phase.id)?;
 			} else if let Some(build_phase) = self.frameworks_build_phases.get(build_phase_id) {
-				ret += &format!("				{} /* Frameworks */,\n", build_phase.id);
+				write!(writer, "				{} /* Frameworks */,\n", build_phase.id)?;
 			} else if let Some(build_phase) = self.copy_files_build_phases.get(build_phase_id) {
-				ret += &format!("				{} /* CopyFiles */,\n", build_phase.base.id);
+				write!(writer, "				{} /* CopyFiles */,\n", build_phase.base.id)?;
 			} else {
 				panic!("TODO");
 			}
 		}
-		ret += r#"			);
+		writer.write(
+			br#"			);
 			buildRules = (
-"#;
+"#,
+		)?;
 		for build_rule_key in &native_target.build_rules {
 			let build_rule = self.build_rules.get(build_rule_key).unwrap();
-			ret += &format!("				{},\n", build_rule.id);
+			write!(writer, "				{},\n", build_rule.id)?;
 		}
-		ret += r#"			);
+		writer.write(
+			br#"			);
 			dependencies = (
-"#;
+"#,
+		)?;
 		for dependency in &native_target.dependencies {
 			let target_dependency = self.target_dependencies.get(dependency).unwrap();
-			ret += &format!("				{} /* PBXTargetDependency */,\n", target_dependency.id);
+			write!(writer, "				{} /* PBXTargetDependency */,\n", target_dependency.id)?;
 		}
 		let product_reference = self.file_references.get(&native_target.product_reference).unwrap();
-		ret += &format!(
+		write!(
+			writer,
 			r#"			);
 			name = {};
 			packageProductDependencies = (
@@ -609,23 +641,28 @@ impl XcodeprojGraph {
 			product_reference.id,
 			product_reference.path,
 			native_target.product_type
-		);
-		ret
+		)
 	}
 
-	fn print_xc_configuration_list(&self, build_configuration_list: &XCConfigurationList) -> String {
-		let mut ret = format!(
+	fn write_xc_configuration_list<W: IoWrite>(
+		&self,
+		mut writer: W,
+		build_configuration_list: &XCConfigurationList,
+	) -> std::io::Result<()> {
+		write!(
+			writer,
 			r#"		{} /* Build configuration list for {} "{}" */ = {{
 			isa = XCConfigurationList;
 			buildConfigurations = (
 "#,
 			build_configuration_list.id, build_configuration_list.x_target_type, build_configuration_list.x_target_name
-		);
+		)?;
 		for build_config_id in &build_configuration_list.build_configurations {
 			let build_config = self.build_configurations.get(build_config_id).unwrap();
-			ret += &format!("				{} /* {} */,\n", build_config.id, build_config.name);
+			write!(writer, "				{} /* {} */,\n", build_config.id, build_config.name)?;
 		}
-		ret += &format!(
+		write!(
+			writer,
 			r#"			);
 			defaultConfigurationIsVisible = {};
 			defaultConfigurationName = {};
@@ -633,48 +670,46 @@ impl XcodeprojGraph {
 "#,
 			build_configuration_list.default_configuration_is_visible as u8,
 			build_configuration_list.default_configuration_name
-		);
-		ret
+		)
 	}
 } // impl XcodeprojGraph
 
-fn print_pbx_file_reference(file_ref: &PBXFileReference) -> String {
+fn write_pbx_file_reference<W: IoWrite>(mut writer: W, file_ref: &PBXFileReference) -> std::io::Result<()> {
 	let file_ref_name = file_ref.name.as_ref().unwrap_or(&file_ref.path);
-	let mut ret = format!("		{} /* {} */ = {{isa = PBXFileReference; ", file_ref.id, file_ref_name);
+	write!(writer, "		{} /* {} */ = {{isa = PBXFileReference; ", file_ref.id, file_ref_name)?;
 	match &file_ref.file_type {
-		FileRefType::Explicit(file_type) => ret += &format!("explicitFileType = {file_type}; "),
-		FileRefType::LastKnown(file_type) => ret += &format!("lastKnownFileType = {file_type}; "),
+		FileRefType::Explicit(file_type) => write!(writer, "explicitFileType = {file_type}; ")?,
+		FileRefType::LastKnown(file_type) => write!(writer, "lastKnownFileType = {file_type}; ")?,
 	};
 	if let Some(include) = file_ref.include_in_index {
-		ret += &format!("includeInIndex = {}; ", include as u8);
+		write!(writer, "includeInIndex = {}; ", include as u8)?;
 	}
 	if let Some(name) = &file_ref.name {
-		ret += &format!("name = {name}; ");
+		write!(writer, "name = {name}; ")?;
 	}
-	ret += &format!("path = {}; sourceTree = {}; }};\n", file_ref.path, file_ref.source_tree);
-	ret
+	write!(writer, "path = {}; sourceTree = {}; }};\n", file_ref.path, file_ref.source_tree)
 }
 
-fn print_xc_build_configuration(build_config: &XCBuildConfiguration) -> String {
-	let mut ret = String::new();
-	ret += &format!(
+fn write_xc_build_configuration<W: IoWrite>(mut writer: W, build_config: &XCBuildConfiguration) -> std::io::Result<()> {
+	write!(
+		writer,
 		r#"		{} /* {} */ = {{
 			isa = XCBuildConfiguration;
 			buildSettings = {{
 "#,
 		build_config.id, build_config.name,
-	);
+	)?;
 	for (key, value) in &build_config.build_settings {
-		ret += &format!("				{} = {:\t>4};\n", key, value);
+		write!(writer, "				{} = {:\t>4};\n", key, value)?;
 	}
-	ret += &format!(
+	write!(
+		writer,
 		r#"			}};
 			name = {};
 		}};
 "#,
 		build_config.name
-	);
-	ret
+	)
 }
 
 fn generate_xcodeproj(
@@ -685,7 +720,6 @@ fn generate_xcodeproj(
 ) -> Result<(), String> {
 	let pbx_projects = transform_build_graph_to_xcode_graphs(project.clone(), toolchain, &global_opts, build_dir)?;
 	for (subproject, xcodeproj) in pbx_projects {
-		let xcodeproj_str = xcodeproj.into_string(&subproject.0.info.name);
 		let pbxproj_path = build_dir
 			.join(&subproject.0.info.name)
 			.join(subproject.0.info.name.clone() + ".xcodeproj")
@@ -694,13 +728,20 @@ fn generate_xcodeproj(
 			return Err(format!("Error creating directory for \"{}\": {}", pbxproj_path.to_string_lossy(), e));
 		};
 
-		let mut f = match fs::File::create(&pbxproj_path) {
+		let tmp_pbxproj_path = pbxproj_path.with_added_extension(".tmp");
+		let mut f = match fs::File::create(&tmp_pbxproj_path) {
 			Ok(x) => x,
 			Err(e) => return Err(format!("Error creating file at \"{}\": {}", pbxproj_path.to_string_lossy(), e)),
 		};
-
-		if let Err(e) = f.write_all(xcodeproj_str.as_bytes()) {
-			return Err(format!("Error writing to {}: {}", pbxproj_path.to_string_lossy(), e));
+		if let Err(e) = xcodeproj.write(&mut f, &subproject.0.info.name) {
+			return Err(format!("Error writing file at \"{}\": {}", pbxproj_path.to_string_lossy(), e));
+		};
+		if let Err(e) = f.sync_all() {
+			return Err(format!("Error syncing file at \"{}\": {}", pbxproj_path.to_string_lossy(), e));
+		}
+		if let Err(e) = fs::rename(&tmp_pbxproj_path, &pbxproj_path) {
+			let _ = fs::remove_file(&tmp_pbxproj_path);
+			return Err(format!("Error saving {}: {}", pbxproj_path.to_string_lossy(), e));
 		}
 	}
 	Ok(())
@@ -2042,6 +2083,7 @@ fn test_pbxproj_generation() {
 	use crate::{
 		executable::Executable,
 		interface_library::InterfaceLibrary,
+		object_library::ObjectLibrary,
 		static_library::StaticLibrary, //
 		toolchain::Profile,
 	};
@@ -2255,10 +2297,12 @@ fn test_pbxproj_generation() {
 			Ok(x) => x,
 		};
 	let (_, project_nodes) = xcodeprojs.into_iter().next().unwrap();
-	let xcodeproj_str = project_nodes.into_string(&project.info.name);
+	let mut buf = Vec::new();
+	project_nodes.write(&mut buf, &project.info.name).unwrap();
+	let xcodeproj_str = String::from_utf8(buf).unwrap();
 	let expected = include_str!("./xcode_test_01.pbxproj");
 	// for (counter, line) in xcodeproj_str.lines().enumerate() {
-	// 	println!("{}", line);
+	// 	println!("{}:{}", counter, line);
 	// }
 	assert_eq!(xcodeproj_str, expected, "{}", diff_at(&xcodeproj_str, expected));
 }
