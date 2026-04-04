@@ -1047,9 +1047,12 @@ fn project_targets(
 	let mut external_projects = HashMap::<String, (Key, Key)>::new();
 
 	for lib in &project.object_libraries {
-		let key = new_native_target_object_library(
-			lib,
+		let key = new_native_target_archive(
+			lib.as_ref(),
+			&lib.sources,
+			&lib.generator_vars,
 			native_target_build_configs,
+			toolchain,
 			graph,
 			id_gen,
 			global_targets,
@@ -1073,9 +1076,12 @@ fn project_targets(
 	}
 
 	for lib in &project.static_libraries {
-		let key = new_native_target_static_library(
-			lib,
+		let key = new_native_target_archive(
+			lib.as_ref(),
+			&lib.sources,
+			&lib.generator_vars,
 			native_target_build_configs,
+			toolchain,
 			graph,
 			id_gen,
 			global_targets,
@@ -1100,7 +1106,7 @@ fn project_targets(
 
 	for exe in &project.executables {
 		let key = new_native_target_executable(
-			exe,
+			exe.as_ref(),
 			native_target_build_configs,
 			toolchain,
 			graph,
@@ -1127,8 +1133,75 @@ fn project_targets(
 	Ok((native_target_keys, external_projects.into_values().collect()))
 }
 
+fn new_native_target_archive(
+	target: &dyn LinkTarget,
+	sources: &Sources,
+	generator_vars: &Option<OwnedFrozenValue>,
+	native_target_build_configs: &[XCBuildConfiguration],
+	toolchain: &Toolchain,
+	graph: &mut SubGraph,
+	id_gen: &mut IdGenerator,
+	global_targets: &HashMap<*const dyn Target, GlobalTargetMeta>,
+	external_projects: &mut HashMap<String, (Key, Key)>,
+	build_dir: &Path,
+) -> Result<Key, String> {
+	let product_reference = id_gen.next();
+	graph.file_references.insert(
+		product_reference,
+		PBXFileReference {
+			id: id_gen.new_id(),
+			file_type: FileRefType::Explicit(ExplicitFileType::Archive),
+			include_in_index: Some(false),
+			name: None,
+			path: format!("lib{}.a", target.output_name()),
+			source_tree: "BUILT_PRODUCTS_DIR".to_owned(),
+		},
+	);
+
+	let (dependencies, build_phases, build_rules) = new_native_target_common(
+		target,
+		sources,
+		generator_vars,
+		toolchain,
+		graph,
+		id_gen,
+		global_targets,
+		external_projects,
+		build_dir,
+	)?;
+
+	let include_dirs = target
+		.internal_includes()
+		.into_iter()
+		.map(|src| src.to_string_lossy().to_string())
+		.collect::<Vec<String>>();
+	let defines = target.internal_defines();
+
+	let native_target_key = id_gen.next();
+	let native_target = PBXNativeTarget {
+		id: id_gen.new_id(),
+		build_configuration_list: clone_xc_with(
+			native_target_build_configs,
+			graph,
+			include_dirs,
+			defines,
+			target.name().to_owned(),
+			id_gen,
+		),
+		build_phases,
+		build_rules,
+		dependencies,
+		name: target.name().to_owned(),
+		product_name: target.output_name().to_owned(),
+		product_reference,
+		product_type: ProductType::LibraryStatic,
+	};
+	graph.native_targets.insert(native_target_key, native_target);
+	Ok(native_target_key)
+}
+
 fn new_native_target_executable(
-	exe: &Arc<Executable>,
+	exe: &Executable,
 	native_target_build_configs: &[XCBuildConfiguration],
 	toolchain: &Toolchain,
 	graph: &mut SubGraph,
@@ -1150,41 +1223,82 @@ fn new_native_target_executable(
 		},
 	);
 
-	if let Some(_) = exe.generator_vars.as_ref() {
-		return Err("generator_vars are not supported with Xcode generator".to_owned());
-		// let gen_sources = self.evaluate_generator_vars(generator_vars, &lib.project().info.path, toolchain)?;
-		// &lib.sources.extended_with(gen_sources)
-	}
+	let (dependencies, build_phases, build_rules) = new_native_target_common(
+		exe,
+		&exe.sources,
+		&exe.generator_vars,
+		toolchain,
+		graph,
+		id_gen,
+		global_targets,
+		external_projects,
+		build_dir,
+	)?;
+
 	let include_dirs = exe
-		.public_includes_recursive()
+		.internal_includes()
 		.into_iter()
 		.map(|src| src.to_string_lossy().to_string())
 		.collect::<Vec<String>>();
-	let defines = exe.public_defines_recursive();
+	let defines = exe.internal_defines();
+
+	let native_target_key = id_gen.next();
+	let native_target = PBXNativeTarget {
+		id: id_gen.new_id(),
+		build_configuration_list: clone_xc_with(
+			native_target_build_configs,
+			graph,
+			include_dirs,
+			defines,
+			exe.name.clone(),
+			id_gen,
+		),
+		build_phases,
+		build_rules,
+		dependencies,
+		name: exe.name.clone(),
+		product_name: exe.output_name().to_owned(),
+		product_reference,
+		product_type: ProductType::Tool,
+	};
+	graph.native_targets.insert(native_target_key, native_target);
+	Ok(native_target_key)
+}
+
+fn new_native_target_common(
+	target: &dyn Target,
+	sources: &Sources,
+	generator_vars: &Option<OwnedFrozenValue>,
+	toolchain: &Toolchain,
+	graph: &mut SubGraph,
+	id_gen: &mut IdGenerator,
+	global_targets: &HashMap<*const dyn Target, GlobalTargetMeta>,
+	external_projects: &mut HashMap<String, (Key, Key)>,
+	build_dir: &Path,
+) -> Result<(Vec<Key>, Vec<Key>, Vec<Key>), String> {
+	if generator_vars.is_some() {
+		return Err("generator_vars are not supported with Xcode generator".to_owned());
+	}
 
 	let mut dependencies = Vec::new();
 	let mut framework_build_files = Vec::new();
 
 	let mut physical_links = IndexSet::new();
-	for link in &exe.links {
+	for link in target.internal_links() {
 		match link {
-			LinkPtr::Interface(_) => {
-				for trans_link in link.public_links_recursive() {
-					if !matches!(trans_link, LinkPtr::Interface(_)) {
-						physical_links.insert(trans_link);
-					}
-				}
-			}
-			_ => physical_links.insert(link.clone()),
+			LinkPtr::Interface(_) => {}
+			_ => physical_links.insert(link),
 		}
 	}
 	for link in physical_links {
 		let dep_meta = match global_targets.get(&link_as_key(&link)) {
 			Some(k) => k,
-			None => return Err(format!("Could not find target for link '{}' in target '{}'", link.name(), exe.name)),
+			None => {
+				return Err(format!("Could not find target for link '{}' in target '{}'", link.name(), target.name()));
+			}
 		};
 
-		let is_local = Arc::ptr_eq(&dep_meta.project_info, &exe.project().info);
+		let is_local = Arc::ptr_eq(&dep_meta.project_info, &target.project().info);
 
 		if is_local {
 			let dep_target_key = dep_meta.local_key;
@@ -1299,7 +1413,7 @@ fn new_native_target_executable(
 		}
 	}
 
-	let mut build_phases = add_build_phases(&exe.sources, graph, id_gen);
+	let mut build_phase_keys = add_build_phases(sources, graph, id_gen);
 	if !framework_build_files.is_empty() {
 		let frameworks_build_phase_key = id_gen.next();
 		graph.frameworks_build_phases.insert(
@@ -1311,10 +1425,10 @@ fn new_native_target_executable(
 				run_only_for_deployment_postprocessing: false,
 			},
 		);
-		build_phases.push(frameworks_build_phase_key);
+		build_phase_keys.push(frameworks_build_phase_key);
 	}
 	let mut build_rule_keys = Vec::new();
-	if !exe.sources.nasm.is_empty() {
+	if !sources.nasm.is_empty() {
 		for platform in &toolchain.xcode_platforms {
 			if platform != "x86_64" {
 				return Err(format!("NASM sources can not be built for xcode platform {platform}"));
@@ -1337,17 +1451,13 @@ fn new_native_target_executable(
 				id: id_gen.new_id(),
 				compiler_spec: CompilerSpec::ProxyScript,
 				file_type: FileType::Nasm,
-				// inputFiles = ("$(SRCROOT)/submodules/nasmproj/nasmsrc.asm",);
-				// outputFiles = ("$(DERIVED_FILE_DIR)/$(INPUT_FILE_BASE).o",);
-				input_files: exe
-					.sources
+				input_files: sources
 					.nasm
 					.iter()
 					.map(|src| src.full.to_string_lossy().to_string())
 					.collect(),
 				is_editable: true,
-				output_files: exe
-					.sources
+				output_files: sources
 					.nasm
 					.iter()
 					.map(|src| format!("$(DERIVED_FILE_DIR)/{}.o", src.name))
@@ -1357,297 +1467,8 @@ fn new_native_target_executable(
 		);
 		build_rule_keys.push(build_rule_key);
 	}
-	let native_target_key = id_gen.next();
-	let native_target = PBXNativeTarget {
-		id: id_gen.new_id(),
-		build_configuration_list: clone_xc_with(
-			native_target_build_configs,
-			graph,
-			include_dirs,
-			defines,
-			exe.name.clone(),
-			id_gen,
-		),
-		build_phases,
-		build_rules: build_rule_keys,
-		dependencies,
-		name: exe.name.clone(),
-		product_name: exe.output_name().to_owned(),
-		product_reference,
-		product_type: ProductType::Tool,
-	};
-	graph.native_targets.insert(native_target_key, native_target);
-	Ok(native_target_key)
-}
 
-fn new_native_target_static_library(
-	lib: &Arc<StaticLibrary>,
-	native_target_build_configs: &[XCBuildConfiguration],
-	graph: &mut SubGraph,
-	id_gen: &mut IdGenerator,
-	global_targets: &HashMap<*const dyn Target, GlobalTargetMeta>,
-	external_projects: &mut HashMap<String, (Key, Key)>,
-	build_dir: &Path,
-) -> Result<Key, String> {
-	new_native_target_archive(
-		&lib.name,
-		lib.output_name(),
-		&lib.generator_vars,
-		lib.internal_includes(),
-		lib.internal_defines(),
-		lib.link_public.iter().chain(lib.link_private.iter()),
-		&lib.sources,
-		native_target_build_configs,
-		graph,
-		id_gen,
-		global_targets,
-		external_projects,
-		&lib.project().info,
-		build_dir,
-	)
-}
-
-fn new_native_target_object_library(
-	lib: &Arc<ObjectLibrary>,
-	native_target_build_configs: &[XCBuildConfiguration],
-	graph: &mut SubGraph,
-	id_gen: &mut IdGenerator,
-	global_targets: &HashMap<*const dyn Target, GlobalTargetMeta>,
-	external_projects: &mut HashMap<String, (Key, Key)>,
-	build_dir: &Path,
-) -> Result<Key, String> {
-	new_native_target_archive(
-		&lib.name,
-		lib.output_name(),
-		&lib.generator_vars,
-		lib.internal_includes(),
-		lib.internal_defines(),
-		lib.link_public.iter().chain(lib.link_private.iter()),
-		&lib.sources,
-		native_target_build_configs,
-		graph,
-		id_gen,
-		global_targets,
-		external_projects,
-		&lib.project().info,
-		build_dir,
-	)
-}
-
-fn new_native_target_archive<'a>(
-	name: &str,
-	output_name: &str,
-	generator_vars: &Option<OwnedFrozenValue>,
-	internal_includes: Vec<std::path::PathBuf>,
-	internal_defines: Vec<String>,
-	links: impl Iterator<Item = &'a LinkPtr>,
-	sources: &Sources,
-	native_target_build_configs: &[XCBuildConfiguration],
-	graph: &mut SubGraph,
-	id_gen: &mut IdGenerator,
-	global_targets: &HashMap<*const dyn Target, GlobalTargetMeta>,
-	external_projects: &mut HashMap<String, (Key, Key)>,
-	current_project_info: &Arc<ProjectInfo>,
-	build_dir: &Path,
-) -> Result<Key, String> {
-	let product_name = output_name.to_owned();
-	let product_reference = id_gen.next();
-	graph.file_references.insert(
-		product_reference,
-		PBXFileReference {
-			id: id_gen.new_id(),
-			file_type: FileRefType::Explicit(ExplicitFileType::Archive),
-			include_in_index: Some(false),
-			name: None,
-			path: format!("lib{}.a", product_name),
-			source_tree: "BUILT_PRODUCTS_DIR".to_owned(),
-		},
-	);
-
-	if generator_vars.is_some() {
-		return Err("generator_vars are not supported with Xcode generator".to_owned());
-	}
-	let include_dirs = internal_includes
-		.into_iter()
-		.map(|src| src.to_string_lossy().to_string())
-		.collect::<Vec<String>>();
-
-	let mut dependencies = Vec::new();
-	let mut framework_build_files = Vec::new();
-
-	let mut physical_links = IndexSet::new();
-	for link in links {
-		match link {
-			LinkPtr::Interface(_) => {
-				for trans_link in link.public_links_recursive() {
-					if !matches!(trans_link, LinkPtr::Interface(_)) {
-						physical_links.insert(trans_link);
-					}
-				}
-			}
-			_ => physical_links.insert(link.clone()),
-		}
-	}
-	for link in physical_links {
-		let dep_meta = match global_targets.get(&link_as_key(&link)) {
-			Some(k) => k,
-			None => return Err(format!("Could not find target for link '{}' in target '{}'", link.name(), name)),
-		};
-
-		let is_local = Arc::ptr_eq(&dep_meta.project_info, current_project_info);
-
-		if is_local {
-			let dep_target_key = dep_meta.local_key;
-			let dep_target = graph.native_targets.get(&dep_target_key).unwrap();
-
-			let container_item_proxy_key = id_gen.next();
-			graph.container_item_proxies.insert(
-				container_item_proxy_key,
-				PBXContainerItemProxy {
-					id: id_gen.new_id(),
-					container_portal: ContainerPortal::Project,
-					proxy_type: 1,
-					remote_global_id_string: dep_meta.native_target_id.clone(),
-					remote_info: dep_target.name.clone(),
-				},
-			);
-
-			let target_dependency_key = id_gen.next();
-			graph.target_dependencies.insert(
-				target_dependency_key,
-				PBXTargetDependency {
-					id: id_gen.new_id(),
-					target: Some(dep_target_key),
-					target_proxy: container_item_proxy_key,
-				},
-			);
-			dependencies.push(target_dependency_key);
-
-			let build_file_key = id_gen.next();
-			let dep_product_ref = graph.file_references.get(&dep_target.product_reference).unwrap();
-			graph.build_files.insert(
-				build_file_key,
-				PBXBuildFile {
-					id: id_gen.new_id(),
-					file_ref: Reference::File(dep_target.product_reference),
-					x_name: dep_product_ref.path.clone(),
-					x_build_phase: "Frameworks".to_owned(),
-				},
-			);
-			framework_build_files.push(build_file_key);
-		} else {
-			let (product_group_key, project_ref_key) =
-				get_or_create_external_project(&dep_meta.project_info, graph, id_gen, external_projects, build_dir);
-
-			let target_proxy_key = id_gen.next();
-			graph.container_item_proxies.insert(
-				target_proxy_key,
-				PBXContainerItemProxy {
-					id: id_gen.new_id(),
-					container_portal: ContainerPortal::FileReference(project_ref_key),
-					proxy_type: 1,
-					remote_global_id_string: dep_meta.native_target_id.clone(),
-					remote_info: dep_meta.target_name.clone(),
-				},
-			);
-
-			let target_dependency_key = id_gen.next();
-			graph.target_dependencies.insert(
-				target_dependency_key,
-				PBXTargetDependency {
-					id: id_gen.new_id(),
-					target: None,
-					target_proxy: target_proxy_key,
-				},
-			);
-			dependencies.push(target_dependency_key);
-
-			let file_proxy_key = id_gen.next();
-			graph.container_item_proxies.insert(
-				file_proxy_key,
-				PBXContainerItemProxy {
-					id: id_gen.new_id(),
-					container_portal: ContainerPortal::FileReference(project_ref_key),
-					proxy_type: 2,
-					remote_global_id_string: dep_meta.product_reference_id.clone(),
-					remote_info: dep_meta.target_name.clone(),
-				},
-			);
-
-			let reference_proxy_key = id_gen.next();
-			let ref_proxy_path = format!("lib{}.a", dep_meta.product_name);
-			graph.reference_proxies.insert(
-				reference_proxy_key,
-				PBXReferenceProxy {
-					id: id_gen.new_id(),
-					file_type: ExplicitFileType::Archive,
-					name: None,
-					path: ref_proxy_path.clone(),
-					remote_ref: file_proxy_key,
-					source_tree: "BUILT_PRODUCTS_DIR".to_owned(),
-				},
-			);
-
-			graph
-				.groups
-				.get_mut(&product_group_key)
-				.unwrap()
-				.children
-				.push(reference_proxy_key);
-
-			let build_file_key = id_gen.next();
-			graph.build_files.insert(
-				build_file_key,
-				PBXBuildFile {
-					id: id_gen.new_id(),
-					file_ref: Reference::Proxy(reference_proxy_key),
-					x_name: ref_proxy_path,
-					x_build_phase: "Frameworks".to_owned(),
-				},
-			);
-			framework_build_files.push(build_file_key);
-		}
-	}
-
-	let mut build_phases = add_build_phases(sources, graph, id_gen);
-
-	if !framework_build_files.is_empty() {
-		let frameworks_build_phase_key = id_gen.next();
-		graph.frameworks_build_phases.insert(
-			frameworks_build_phase_key,
-			PBXFrameworksBuildPhase {
-				id: id_gen.new_id(),
-				build_action_mask: 0x7F_FF_FF_FF,
-				files: framework_build_files,
-				run_only_for_deployment_postprocessing: false,
-			},
-		);
-		build_phases.push(frameworks_build_phase_key);
-	}
-
-	let build_rule_keys = Vec::new();
-	// TODO: nasm
-	let native_target_key = id_gen.next();
-	let native_target = PBXNativeTarget {
-		id: id_gen.new_id(),
-		build_configuration_list: clone_xc_with(
-			native_target_build_configs,
-			graph,
-			include_dirs,
-			internal_defines,
-			name.to_owned(),
-			id_gen,
-		),
-		build_phases,
-		build_rules: build_rule_keys,
-		dependencies,
-		name: name.to_owned(),
-		product_name,
-		product_reference,
-		product_type: ProductType::LibraryStatic,
-	};
-	graph.native_targets.insert(native_target_key, native_target);
-	Ok(native_target_key)
+	Ok((dependencies, build_phase_keys, build_rule_keys))
 }
 
 fn get_or_create_external_project(

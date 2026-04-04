@@ -443,11 +443,11 @@ impl Msvc {
 				sources: exe.sources.clone(),
 				// Visual Studio doesn't seem to support extended-length name syntax
 				includes: exe
-					.public_includes_recursive()
+					.internal_includes()
 					.into_iter()
 					.map(|x| x.to_string_lossy().trim_start_matches(r"\\?\").to_owned())
 					.collect::<Vec<String>>(),
-				defines: exe.public_defines_recursive(),
+				defines: exe.internal_defines(),
 				links: exe.links.clone(),
 				generator_vars: exe.generator_vars.clone(),
 			};

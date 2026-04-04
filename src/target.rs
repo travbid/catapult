@@ -17,16 +17,18 @@ pub trait Target: fmt::Debug + Send + Sync {
 	fn name(&self) -> &str;
 	fn output_name(&self) -> &str;
 	fn project(&self) -> Arc<Project>;
+
+	fn internal_includes(&self) -> Vec<PathBuf>;
+	fn internal_defines(&self) -> Vec<String>;
+	fn internal_link_flags(&self) -> Vec<String>;
+	fn internal_links(&self) -> Vec<LinkPtr>;
 }
 
 pub trait LinkTarget: Target {
-	fn public_includes(&self) -> Vec<PathBuf>;
 	fn public_includes_recursive(&self) -> Vec<PathBuf>;
 
-	fn public_defines(&self) -> Vec<String>;
 	fn public_defines_recursive(&self) -> Vec<String>;
 
-	fn public_link_flags(&self) -> Vec<String>;
 	fn public_link_flags_recursive(&self) -> Vec<String>;
 
 	fn public_links(&self) -> Vec<LinkPtr>;

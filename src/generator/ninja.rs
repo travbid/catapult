@@ -535,7 +535,7 @@ fn add_executable_target(
 	} else {
 		StarGeneratorVars::default()
 	};
-	let mut includes = exe.public_includes_recursive();
+	let mut includes = exe.internal_includes();
 	includes.extend(
 		generator_vars
 			.include_dirs
@@ -545,7 +545,7 @@ fn add_executable_target(
 	let sources = exe
 		.sources
 		.extended_with(Sources::from_slice(&generator_vars.sources, &exe.project().info.path)?);
-	let mut defines = exe.public_defines_recursive();
+	let mut defines = exe.internal_defines();
 	defines.extend_from_slice(&generator_vars.defines);
 
 	let source_data = SourceData { includes, defines };
@@ -691,7 +691,7 @@ fn add_executable_target(
 		}
 	}
 	let mut link_flags = link_exe_flags.clone();
-	link_flags.extend(exe.link_flags_recursive());
+	link_flags.extend(exe.internal_link_flags());
 	let out_name = output_path(build_dir, &exe.project().info.name, exe.name.as_ref(), &target_platform.exe_ext);
 	build_lines.push(NinjaBuild {
 		inputs,
