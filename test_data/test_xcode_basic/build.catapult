@@ -1,6 +1,7 @@
 multiplier = add_static_library(
     name = "multiplier",
     sources = ["multiplier/multiply.cpp"],
+    include_dirs_private = ["utils"],
     include_dirs_public = ["multiplier"],
 )
 

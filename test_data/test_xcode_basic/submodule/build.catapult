@@ -2,6 +2,7 @@
 adder = add_static_library(
     name = "adder",
     sources = ["adder/add.cpp"],
+    include_dirs_private = ["utils"],
     include_dirs_public = ["adder"],
 )
 
