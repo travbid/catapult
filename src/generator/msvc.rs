@@ -162,7 +162,16 @@ fn item_group_conditional(sources: &Sources, project_info: &ProjectInfo, platfor
 		ret += &item_group_tag;
 		for src in &sources.c {
 			let input = input_path(&src.full, &project_info.path);
-			ret += &format!("    <ClCompile Include=\"{input}\" />\n");
+			if src.full.ends_with(".c") {
+				ret += &format!("    <ClCompile Include=\"{input}\" />\n");
+			} else {
+				ret += &format!(
+					r#"    <ClCompile Include="{input}">
+      <CompileAs>CompileAsC</CompileAs>
+    </ClCompile>
+"#
+				);
+			}
 		}
 		ret += "  </ItemGroup>\n";
 	}
@@ -170,7 +179,16 @@ fn item_group_conditional(sources: &Sources, project_info: &ProjectInfo, platfor
 		ret += &item_group_tag;
 		for src in &sources.cpp {
 			let input = input_path(&src.full, &project_info.path);
-			ret += &format!("    <ClCompile Include=\"{input}\" />\n");
+			if src.full.ends_with(".cpp") {
+				ret += &format!("    <ClCompile Include=\"{input}\" />\n");
+			} else {
+				ret += &format!(
+					r#"    <ClCompile Include="{input}">
+      <CompileAs>CompileAsCpp</CompileAs>
+    </ClCompile>
+"#
+				);
+			}
 		}
 		ret += "  </ItemGroup>\n";
 	}
