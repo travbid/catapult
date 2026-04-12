@@ -2,6 +2,7 @@ c_compiler = ["gcc"]
 cpp_compiler = ["g++"]
 nasm_assembler = ["nasm", "-felf64"]
 static_linker = ["ar", "qc"]
+shared_linker = ["g++", "-shared"]
 exe_linker = ["g++"]
 
 [profile.Debug]

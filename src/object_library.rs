@@ -244,6 +244,7 @@ mod tests {
 				],
 				object_libraries: vec![main_lib],
 				interface_libraries: Vec::new(),
+				shared_libraries: Vec::new(),
 			}
 		});
 

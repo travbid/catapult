@@ -1,5 +1,5 @@
 
-adder = add_static_library(
+adder = add_shared_library(
     name = "adder",
     sources = ["adder/add.cpp"],
     include_dirs_private = ["utils"],

@@ -1,6 +1,7 @@
 c_compiler = ["emcc"]
 cpp_compiler = ["em++"]
 static_linker = ["emar", "qc"]
+shared_linker = ["em++", "-shared"]
 exe_linker = ["em++"]
 
 [profile.Debug]

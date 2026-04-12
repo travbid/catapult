@@ -1,7 +1,8 @@
 
-mylib = add_static_library(
+mylib = add_shared_library(
     name = "mylib",
     sources = ["mylib.cpp"],
+    defines_private = ["MYLIB_EXPORT"],
     include_dirs_public = ["."],
     link_private = [my_depend.my_depend_lib],
 )

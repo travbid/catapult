@@ -21,6 +21,7 @@ pub struct ToolchainFile {
 	cpp_compiler: Option<Vec<String>>,
 	nasm_assembler: Option<Vec<String>>,
 	static_linker: Option<Vec<String>>,
+	shared_linker: Option<Vec<String>>,
 	exe_linker: Option<Vec<String>>,
 	profile: Option<BTreeMap<String, Profile>>,
 	// env: Option<HashMap<String, String>>
@@ -34,6 +35,7 @@ pub struct Toolchain {
 	pub cpp_compiler: Option<Box<dyn Compiler>>,
 	pub nasm_assembler: Option<Box<dyn Assembler>>,
 	pub static_linker: Option<Vec<String>>,
+	pub shared_linker: Option<Vec<String>>,
 	pub exe_linker: Option<Box<dyn ExeLinker>>,
 	pub profile: BTreeMap<String, Profile>,
 }
@@ -147,6 +149,8 @@ pub fn get_toolchain(toolchain_path: &Path, for_msvc: bool) -> Result<Toolchain,
 	};
 	let static_linker = toolchain_file.static_linker;
 
+	let shared_linker = toolchain_file.shared_linker;
+
 	let exe_linker = match toolchain_file.exe_linker {
 		Some(x) => match identify_linker(x) {
 			Ok(linker) => Some(linker),
@@ -176,6 +180,7 @@ pub fn get_toolchain(toolchain_path: &Path, for_msvc: bool) -> Result<Toolchain,
 		c_compiler,
 		cpp_compiler,
 		static_linker,
+		shared_linker,
 		exe_linker,
 		profile,
 	};

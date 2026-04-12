@@ -209,9 +209,21 @@ jobs:
       - run: cargo build
       - run: ./target/debug/catapult generate --source-dir test_data/test_xcode_basic --build-dir build --generator Xcode --toolchain test_data/toolchain_xcode.toml
       - run: ls -R build
-      - run: xcodebuild -project build/basic/basic.xcodeproj -configuration Debug -target basic.exe SYMROOT=$PWD/build/basic/DerivedData build
+      - run: >
+          xcodebuild
+          -project build/basic/basic.xcodeproj
+          -configuration Debug
+          -scheme basic.exe
+          -derivedDataPath "$PWD/build/basic/DerivedData"
+          build
       - run: ls -R build
-      - run: ./build/basic/DerivedData/Debug/basic.exe
-      - run: xcodebuild -project build/basic/basic.xcodeproj -configuration Release -target basic.exe SYMROOT=$PWD/build/basic/DerivedData build
+      - run: ./build/basic/DerivedData/Build/Products/Debug/basic.exe
+      - run: >
+          xcodebuild
+          -project build/basic/basic.xcodeproj
+          -configuration Release
+          -scheme basic.exe
+          -derivedDataPath "$PWD/build/basic/DerivedData"
+          build
       - run: ls -R build
-      - run: ./build/basic/DerivedData/Release/basic.exe
+      - run: ./build/basic/DerivedData/Build/Products/Release/basic.exe

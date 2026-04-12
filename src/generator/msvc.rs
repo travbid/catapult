@@ -15,6 +15,7 @@ use crate::{
 	misc::{Sources, index_map, join_parent},
 	object_library::ObjectLibrary,
 	project::{Project, ProjectInfo},
+	shared_library::SharedLibrary,
 	starlark_context::{StarContext, StarContextCompiler},
 	starlark_generator::eval_vars,
 	starlark_object_library::StarGeneratorVars,
@@ -120,6 +121,11 @@ struct ProfileFragment {
 	nasm_assemble_flags: Vec<String>,
 }
 
+struct DynamicImportSettings {
+	import_library: Option<String>,
+	ignore_import_library: Option<bool>,
+}
+
 fn item_definition_group(
 	platform: &str,
 	profile_name: &str,
@@ -128,6 +134,7 @@ fn item_definition_group(
 	include_dirs: &[String],
 	defines: &[String],
 	opts: &Options,
+	dynamic_import_settings: Option<&DynamicImportSettings>,
 ) -> Result<String, String> {
 	let mut ret = format!(
 		r#"  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='{profile_name}|{platform}'">
@@ -140,10 +147,25 @@ fn item_definition_group(
 	if !sources.nasm.is_empty() {
 		ret += &nasm_compile(profile, platform, include_dirs, defines)?;
 	}
-	if !profile.vcxproj.link.is_empty() {
+	let has_dynamic_import_settings = match dynamic_import_settings {
+		Some(settings) => settings.import_library.is_some() || settings.ignore_import_library.is_some(),
+		None => false,
+	};
+	if !profile.vcxproj.link.is_empty() || has_dynamic_import_settings {
 		ret += "    <Link>\n";
 		for (key, val) in &profile.vcxproj.link {
 			ret += &format!("      <{key}>{val}</{key}>\n")
+		}
+		if let Some(import_settings) = dynamic_import_settings {
+			if let Some(import_library) = &import_settings.import_library {
+				ret += &format!("      <ImportLibrary>{import_library}</ImportLibrary>\n");
+			}
+			if let Some(ignore_import_library) = import_settings.ignore_import_library {
+				ret += &format!(
+					"      <IgnoreImportLibrary>{}</IgnoreImportLibrary>\n",
+					if ignore_import_library { "true" } else { "false" }
+				);
+			}
 		}
 		ret += "    </Link>\n";
 	}
@@ -295,8 +317,9 @@ struct TargetData {
 	sources: Sources,
 	includes: Vec<String>,
 	defines: Vec<String>,
-	links: Vec<LinkPtr>,
+	direct_links: Vec<LinkPtr>,
 	generator_vars: Option<OwnedFrozenValue>,
+	output_name: Option<String>,
 }
 
 struct VcxprojOpts {
@@ -455,6 +478,11 @@ impl Msvc {
 				add_object_lib(lib, proj_opts, targets)?;
 			}
 		}
+		for lib in &project.shared_libraries {
+			if !targets.contains_key(&as_key(lib)) {
+				add_shared_lib(lib, proj_opts, targets)?;
+			}
+		}
 		for exe in &project.executables {
 			let configuration_type = "Application";
 			let project_info = &exe.project().info;
@@ -468,8 +496,9 @@ impl Msvc {
 					.map(|x| x.to_string_lossy().trim_start_matches(r"\\?\").to_owned())
 					.collect::<Vec<String>>(),
 				defines: exe.internal_defines(),
-				links: exe.links.clone(),
+				direct_links: exe.links.clone(),
 				generator_vars: exe.generator_vars.clone(),
+				output_name: exe.output_name.clone(),
 			};
 			let vsproj = make_vcxproj(proj_opts, targets, configuration_type, project_info, &target_data)?;
 			targets.insert(as_key(exe), vsproj);
@@ -492,7 +521,7 @@ fn add_static_lib(
 		.map(|x| x.to_string_lossy().trim_start_matches(r"\\?\").to_owned())
 		.collect::<Vec<String>>();
 	let defines = lib.internal_defines();
-	let links = lib
+	let direct_links = lib
 		.link_private
 		.iter()
 		.cloned()
@@ -503,8 +532,9 @@ fn add_static_lib(
 		sources: lib.sources.clone(),
 		includes,
 		defines,
-		links,
+		direct_links,
 		generator_vars: lib.generator_vars.clone(),
+		output_name: lib.output_name.clone(),
 	};
 	let vsproj = make_vcxproj(proj_opts, targets, "StaticLibrary", project_info, &target_data)?;
 	targets.insert(as_key(lib), vsproj.clone());
@@ -525,7 +555,7 @@ fn add_object_lib<'a>(
 		.map(|x| x.to_string_lossy().trim_start_matches(r"\\?\").to_owned())
 		.collect::<Vec<String>>();
 	let defines = lib.internal_defines();
-	let links = lib
+	let direct_links = lib
 		.link_private
 		.iter()
 		.cloned()
@@ -536,10 +566,44 @@ fn add_object_lib<'a>(
 		sources: lib.sources.clone(),
 		includes,
 		defines,
-		links,
+		direct_links,
 		generator_vars: lib.generator_vars.clone(),
+		output_name: lib.output_name.clone(),
 	};
 	let vsproj = make_vcxproj(proj_opts, targets, "StaticLibrary", project_info, &target_data)?;
+	targets.insert(as_key(lib), vsproj.clone());
+	Ok(vsproj)
+}
+
+fn add_shared_lib(
+	lib: &Arc<SharedLibrary>,
+	proj_opts: &VcxprojOpts,
+	targets: &mut TargetProjects,
+) -> Result<VsProject, String> {
+	log::debug!("add_shared_lib: {}", lib.name);
+	let project_info = &lib.project().info;
+	let includes = lib
+		.internal_includes()
+		.into_iter()
+		.map(|x| x.to_string_lossy().trim_start_matches(r"\\?\").to_owned())
+		.collect::<Vec<String>>();
+	let defines = lib.internal_defines();
+	let direct_links = lib
+		.link_private
+		.iter()
+		.cloned()
+		.chain(lib.link_public.iter().cloned())
+		.collect();
+	let target_data = TargetData {
+		name: lib.name.clone(),
+		sources: lib.sources.clone(),
+		includes,
+		defines,
+		direct_links,
+		generator_vars: lib.generator_vars.clone(),
+		output_name: lib.output_name.clone(),
+	};
+	let vsproj = make_vcxproj(proj_opts, targets, "DynamicLibrary", project_info, &target_data)?;
 	targets.insert(as_key(lib), vsproj.clone());
 	Ok(vsproj)
 }
@@ -594,6 +658,9 @@ fn make_vcxproj(
     <PlatformToolset>{PLATFORM_TOOLSET}</PlatformToolset>
 "#
 			);
+			if let Some(out) = &target_data.output_name {
+				out_str += &format!("    <TargetName>{out}</TargetName>\n");
+			}
 			// <UseDebugLibraries>true</UseDebugLibraries>
 			// <CharacterSet>MultiByte</CharacterSet>
 			// <WholeProgramOptimization>true</WholeProgramOptimization>
@@ -642,6 +709,22 @@ fn make_vcxproj(
 			.chain(generator_vars.defines.clone())
 			.collect::<Vec<_>>();
 		for (profile_name, profile) in &proj_opts.profiles {
+			let dynamic_import_settings = if configuration_type != "DynamicLibrary" {
+				None
+			} else {
+				Some(DynamicImportSettings {
+					import_library: if !profile.vcxproj.link.contains_key("ImportLibrary") {
+						Some("$(OutDir)$(TargetName).lib".to_owned())
+					} else {
+						None
+					},
+					ignore_import_library: if !profile.vcxproj.link.contains_key("IgnoreImportLibrary") {
+						Some(false)
+					} else {
+						None
+					},
+				})
+			};
 			item_definition_groups.push(item_definition_group(
 				platform,
 				profile_name,
@@ -650,6 +733,7 @@ fn make_vcxproj(
 				&includes_gen,
 				&defines_gen,
 				&proj_opts.opts,
+				dynamic_import_settings.as_ref(),
 			)?);
 		}
 		item_groups.push(item_group_conditional(&generator_sources, project_info, platform));
@@ -712,9 +796,9 @@ fn make_vcxproj(
 	}
 
 	let mut dependencies = Vec::new();
-	if !target_data.links.is_empty() {
+	if !target_data.direct_links.is_empty() {
 		out_str += "  <ItemGroup>\n";
-		out_str += &add_project_references(&target_data.links, proj_opts, targets, &mut dependencies)?;
+		out_str += &add_project_references(&target_data.direct_links, proj_opts, targets, &mut dependencies)?;
 		out_str += "  </ItemGroup>\n";
 	}
 	out_str += r#"  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
@@ -797,6 +881,16 @@ fn add_project_references(
 			}
 			LinkPtr::Interface(_) => {
 				out_str += &add_project_references(&link.public_links(), proj_opts, targets, dependencies)?;
+			}
+			LinkPtr::Shared(shared_lib) => {
+				let proj_ref = match targets.get(&as_key(shared_lib)) {
+					Some(x) => x,
+					None => {
+						add_shared_lib(shared_lib, proj_opts, targets)?;
+						targets.get(&as_key(shared_lib)).unwrap()
+					}
+				};
+				add_dependency(proj_ref);
 			}
 		}
 	}
