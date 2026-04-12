@@ -2,6 +2,7 @@ c_compiler = ["clang"]
 cpp_compiler = ["clang++"]
 nasm_assembler = ["C:/Program Files/NASM/nasm", "-fwin64"]
 static_linker = ["llvm-ar", "qc"]
+shared_linker = ["clang++", "-shared"]
 exe_linker = ["clang++"]
 
 [profile.Debug]

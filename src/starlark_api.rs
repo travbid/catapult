@@ -22,6 +22,7 @@ use crate::{
 	starlark_link_target::StarLinkTarget,
 	starlark_object_library::{StarGeneratorVars, StarObjLibWrapper, StarObjectLibrary},
 	starlark_project::StarProject,
+	starlark_shared_library::{StarSharedLibWrapper, StarSharedLibrary},
 	starlark_static_library::{StarStaticLibWrapper, StarStaticLibrary},
 };
 
@@ -78,6 +79,10 @@ fn get_link_targets(links: Vec<Value>) -> Result<Vec<Arc<dyn StarLinkTarget>>, a
 				None => return err_msg(format!("Could not unpack \"link\" {}", link.get_type())),
 			},
 			"StaticLibrary" => match StarStaticLibWrapper::from_value(link) {
+				Some(x) => link_targets.push(x.0.clone()),
+				None => return err_msg(format!("Could not unpack \"link\" {}", link.get_type())),
+			},
+			"SharedLibrary" => match StarSharedLibWrapper::from_value(link) {
 				Some(x) => link_targets.push(x.0.clone()),
 				None => return err_msg(format!("Could not unpack \"link\" {}", link.get_type())),
 			},
@@ -166,6 +171,7 @@ pub(crate) fn build_api(builder: &mut GlobalsBuilder) {
 		project.object_libraries.push(lib.clone());
 		Ok(StarObjLibWrapper(lib))
 	}
+
 	fn add_interface_library<'v>(
 		name: String,
 		#[starlark(default = Default::default())] link: UnpackList<Value<'v>>,
@@ -193,6 +199,44 @@ pub(crate) fn build_api(builder: &mut GlobalsBuilder) {
 		project.interface_libraries.push(lib.clone());
 		Ok(StarIfaceLibWrapper(lib))
 	}
+
+	fn add_shared_library<'v>(
+		name: String,
+		sources: UnpackList<String>,
+		#[starlark(default = Default::default())] link_private: UnpackList<Value<'v>>,
+		#[starlark(default = Default::default())] link_public: UnpackList<Value<'v>>,
+		#[starlark(default = Default::default())] include_dirs_private: UnpackList<String>,
+		#[starlark(default = Default::default())] include_dirs_public: UnpackList<String>,
+		#[starlark(default = Default::default())] defines_private: UnpackList<String>,
+		#[starlark(default = Default::default())] defines_public: UnpackList<String>,
+		#[starlark(default = Default::default())] link_flags_public: UnpackList<String>,
+		generator_vars: Option<Value<'v>>,
+		eval: &mut Evaluator<'v, '_, '_>,
+	) -> anyhow::Result<StarSharedLibWrapper> {
+		let state = eval
+			.extra
+			.unwrap()
+			.downcast_ref::<ProjectState>()
+			.ok_or(anyhow::anyhow!("No state"))?;
+		let lib = Arc::new(StarSharedLibrary {
+			parent_project: Arc::downgrade(&state.project),
+			name,
+			sources: sources.items,
+			link_private: get_link_targets(link_private.items)?,
+			link_public: get_link_targets(link_public.items)?,
+			include_dirs_private: include_dirs_private.items,
+			include_dirs_public: include_dirs_public.items,
+			defines_private: defines_private.items,
+			defines_public: defines_public.items,
+			link_flags_public: link_flags_public.items,
+			generator_vars: generator_func(generator_vars, eval),
+			output_name: None, // TODO(Travers)
+		});
+		let mut project = state.project.lock().map_err(|e| anyhow::anyhow!(e.to_string()))?;
+		project.shared_libraries.push(lib.clone());
+		Ok(StarSharedLibWrapper(lib))
+	}
+
 	fn add_executable<'v>(
 		name: String,
 		sources: UnpackList<String>,

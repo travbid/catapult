@@ -10,7 +10,7 @@ add_subdirectory(submodules/blobject)
 add_subdirectory(submodules/my_depend)
 add_subdirectory(submodules/nasmproj)
 
-add_library(mylib STATIC mylib.cpp)
+add_library(mylib SHARED mylib.cpp)
 target_link_libraries(mylib PRIVATE my_depend_lib)
 
 add_executable(myexe main.cpp)
