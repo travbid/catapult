@@ -2,6 +2,7 @@ c_compiler = ["/opt/homebrew/opt/llvm/bin/clang"]
 cpp_compiler = ["/opt/homebrew/opt/llvm/bin/clang++"]
 nasm_assembler = ["nasm", "-fmacho64"]
 static_linker = ["/opt/homebrew/opt/llvm/bin/llvm-ar", "qc"]
+shared_linker = ["/opt/homebrew/opt/llvm/bin/clang++", "-shared"]
 exe_linker = ["/opt/homebrew/opt/llvm/bin/clang++"]
 
 [profile.Debug]

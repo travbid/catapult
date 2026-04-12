@@ -24,6 +24,7 @@ use crate::{
 		index_set::IndexSet,
 	},
 	project::{Project, ProjectInfo},
+	shared_library::SharedLibrary,
 	target::{LinkTarget, Target},
 	toolchain::{
 		PbxItem,
@@ -789,6 +790,32 @@ struct GlobalTargetMeta {
 	target_name: String,
 	product_name: String,
 	local_key: Key,
+	product_kind: XcodeProductKind,
+}
+
+#[derive(Clone, Copy)]
+enum XcodeProductKind {
+	StaticArchive,
+	DynamicLibrary,
+	Executable,
+}
+
+impl XcodeProductKind {
+	fn built_products_filename(self, output_basename: &str) -> String {
+		match self {
+			Self::StaticArchive => format!("lib{}.a", output_basename),
+			Self::DynamicLibrary => format!("lib{}.dylib", output_basename),
+			Self::Executable => output_basename.to_owned(),
+		}
+	}
+
+	fn reference_proxy_explicit_type(self) -> ExplicitFileType {
+		match self {
+			XcodeProductKind::StaticArchive => ExplicitFileType::Archive,
+			XcodeProductKind::DynamicLibrary => ExplicitFileType::Dylib,
+			XcodeProductKind::Executable => ExplicitFileType::Executable,
+		}
+	}
 }
 
 fn transform_build_graph_to_xcode_graphs(
@@ -1072,6 +1099,7 @@ fn link_as_key(link: &LinkPtr) -> *const dyn Target {
 		LinkPtr::Static(x) => as_key(x),
 		LinkPtr::Object(x) => as_key(x),
 		LinkPtr::Interface(x) => as_key(x),
+		LinkPtr::Shared(x) => as_key(x),
 	}
 }
 
@@ -1111,6 +1139,7 @@ fn project_targets(
 				target_name: nt.name.clone(),
 				product_name: nt.product_name.clone(),
 				local_key: key,
+				product_kind: XcodeProductKind::StaticArchive,
 			},
 		);
 		native_target_keys.push(key);
@@ -1140,6 +1169,35 @@ fn project_targets(
 				target_name: nt.name.clone(),
 				product_name: nt.product_name.clone(),
 				local_key: key,
+				product_kind: XcodeProductKind::StaticArchive,
+			},
+		);
+		native_target_keys.push(key);
+	}
+
+	for lib in &project.shared_libraries {
+		let key = new_native_target_shared(
+			lib,
+			native_target_build_configs,
+			toolchain,
+			graph,
+			id_gen,
+			global_targets,
+			&mut external_projects,
+			build_dir,
+		)?;
+		let nt = graph.native_targets.get(&key).unwrap();
+		let prod_ref = graph.file_references.get(&nt.product_reference).unwrap();
+		global_targets.insert(
+			as_key(lib),
+			GlobalTargetMeta {
+				project_info: project.info.clone(),
+				native_target_id: nt.id.clone(),
+				product_reference_id: prod_ref.id.clone(),
+				target_name: nt.name.clone(),
+				product_name: nt.product_name.clone(),
+				local_key: key,
+				product_kind: XcodeProductKind::DynamicLibrary,
 			},
 		);
 		native_target_keys.push(key);
@@ -1167,6 +1225,7 @@ fn project_targets(
 				target_name: nt.name.clone(),
 				product_name: nt.product_name.clone(),
 				local_key: key,
+				product_kind: XcodeProductKind::Executable,
 			},
 		);
 		native_target_keys.push(key);
@@ -1194,12 +1253,12 @@ fn new_native_target_archive(
 			file_type: FileRefType::Explicit(ExplicitFileType::Archive),
 			include_in_index: Some(false),
 			name: None,
-			path: format!("lib{}.a", target.output_name()),
+			path: XcodeProductKind::StaticArchive.built_products_filename(target.output_name()),
 			source_tree: "BUILT_PRODUCTS_DIR".to_owned(),
 		},
 	);
 
-	let (dependencies, build_phases, build_rules) = new_native_target_common(
+	let (dependencies, build_phases, build_rules, has_shared_runtime_deps) = new_native_target_common(
 		target,
 		sources,
 		generator_vars,
@@ -1227,6 +1286,9 @@ fn new_native_target_archive(
 			include_dirs,
 			defines,
 			target.name().to_owned(),
+			XcodeProductKind::StaticArchive,
+			target.output_name().to_owned(),
+			false,
 			id_gen,
 		),
 		build_phases,
@@ -1236,6 +1298,75 @@ fn new_native_target_archive(
 		product_name: target.output_name().to_owned(),
 		product_reference,
 		product_type: ProductType::LibraryStatic,
+	};
+	graph.native_targets.insert(native_target_key, native_target);
+	Ok(native_target_key)
+}
+
+fn new_native_target_shared(
+	lib: &Arc<SharedLibrary>,
+	native_target_build_configs: &[XCBuildConfiguration],
+	toolchain: &Toolchain,
+	graph: &mut SubGraph,
+	id_gen: &mut IdGenerator,
+	global_targets: &HashMap<*const dyn Target, GlobalTargetMeta>,
+	external_projects: &mut HashMap<String, (Key, Key)>,
+	build_dir: &Path,
+) -> Result<Key, String> {
+	let product_reference = id_gen.next();
+	let out_name = lib.output_name();
+	graph.file_references.insert(
+		product_reference,
+		PBXFileReference {
+			id: id_gen.new_id(),
+			file_type: FileRefType::Explicit(ExplicitFileType::Dylib),
+			include_in_index: Some(false),
+			name: None,
+			path: XcodeProductKind::DynamicLibrary.built_products_filename(out_name),
+			source_tree: "BUILT_PRODUCTS_DIR".to_owned(),
+		},
+	);
+
+	let (dependencies, build_phases, build_rules, has_shared_runtime_deps) = new_native_target_common(
+		lib.as_ref(),
+		&lib.sources,
+		&lib.generator_vars,
+		toolchain,
+		graph,
+		id_gen,
+		global_targets,
+		external_projects,
+		build_dir,
+	)?;
+
+	let include_dirs = lib
+		.internal_includes()
+		.into_iter()
+		.map(|src| src.to_string_lossy().to_string())
+		.collect::<Vec<String>>();
+	let defines = lib.internal_defines();
+
+	let native_target_key = id_gen.next();
+	let native_target = PBXNativeTarget {
+		id: id_gen.new_id(),
+		build_configuration_list: clone_xc_with(
+			native_target_build_configs,
+			graph,
+			include_dirs,
+			defines,
+			lib.name.clone(),
+			XcodeProductKind::DynamicLibrary,
+			lib.output_name().to_owned(),
+			has_shared_runtime_deps,
+			id_gen,
+		),
+		build_phases,
+		build_rules,
+		dependencies,
+		name: lib.name.clone(),
+		product_name: lib.output_name().to_owned(),
+		product_reference,
+		product_type: ProductType::LibraryDynamic,
 	};
 	graph.native_targets.insert(native_target_key, native_target);
 	Ok(native_target_key)
@@ -1259,12 +1390,12 @@ fn new_native_target_executable(
 			file_type: FileRefType::Explicit(ExplicitFileType::Executable),
 			include_in_index: Some(false),
 			name: None,
-			path: exe.name.clone(),
+			path: XcodeProductKind::Executable.built_products_filename(exe.name()),
 			source_tree: "BUILT_PRODUCTS_DIR".to_owned(),
 		},
 	);
 
-	let (dependencies, build_phases, build_rules) = new_native_target_common(
+	let (dependencies, build_phases, build_rules, needs_shared_runtime) = new_native_target_common(
 		exe,
 		&exe.sources,
 		&exe.generator_vars,
@@ -1292,6 +1423,9 @@ fn new_native_target_executable(
 			include_dirs,
 			defines,
 			exe.name.clone(),
+			XcodeProductKind::Executable,
+			exe.output_name().to_owned(),
+			needs_shared_runtime,
 			id_gen,
 		),
 		build_phases,
@@ -1316,7 +1450,7 @@ fn new_native_target_common(
 	global_targets: &HashMap<*const dyn Target, GlobalTargetMeta>,
 	external_projects: &mut HashMap<String, (Key, Key)>,
 	build_dir: &Path,
-) -> Result<(Vec<Key>, Vec<Key>, Vec<Key>), String> {
+) -> Result<(Vec<Key>, Vec<Key>, Vec<Key>, bool), String> {
 	if generator_vars.is_some() {
 		return Err("generator_vars are not supported with Xcode generator".to_owned());
 	}
@@ -1331,6 +1465,7 @@ fn new_native_target_common(
 			_ => physical_links.insert(link),
 		}
 	}
+	let has_shared_runtime_deps = physical_links.iter().any(|link| matches!(link, LinkPtr::Shared(_)));
 	for link in physical_links {
 		let dep_meta = match global_targets.get(&link_as_key(&link)) {
 			Some(k) => k,
@@ -1420,12 +1555,13 @@ fn new_native_target_common(
 			);
 
 			let reference_proxy_key = id_gen.next();
-			let ref_proxy_path = format!("lib{}.a", dep_meta.product_name);
+			let ref_proxy_path = dep_meta.product_kind.built_products_filename(&dep_meta.product_name);
+			let ref_proxy_file_type = dep_meta.product_kind.reference_proxy_explicit_type();
 			graph.reference_proxies.insert(
 				reference_proxy_key,
 				PBXReferenceProxy {
 					id: id_gen.new_id(),
-					file_type: ExplicitFileType::Archive,
+					file_type: ref_proxy_file_type,
 					name: None,
 					path: ref_proxy_path.clone(),
 					remote_ref: file_proxy_key,
@@ -1509,7 +1645,7 @@ fn new_native_target_common(
 		build_rule_keys.push(build_rule_key);
 	}
 
-	Ok((dependencies, build_phase_keys, build_rule_keys))
+	Ok((dependencies, build_phase_keys, build_rule_keys, has_shared_runtime_deps))
 }
 
 fn get_or_create_external_project(
@@ -1674,6 +1810,9 @@ fn clone_xc_with(
 	include_dirs: Vec<String>,
 	defines: Vec<String>,
 	target_name: String,
+	product_kind: XcodeProductKind,
+	product_output_name: String,
+	add_runtime_runpaths: bool,
 	id_gen: &mut IdGenerator,
 ) -> Key {
 	let mut build_configuration_keys = Vec::new();
@@ -1703,6 +1842,59 @@ fn clone_xc_with(
 			}
 		} else if !defines.is_empty() {
 			build_settings.insert("GCC_PREPROCESSOR_DEFINITIONS".to_owned(), BuildSetting::Array(defines.clone()));
+		}
+		match product_kind {
+			XcodeProductKind::DynamicLibrary => {
+				let dylib_name = product_kind.built_products_filename(&product_output_name);
+				build_settings
+					.entry("LD_DYLIB_INSTALL_NAME".to_owned())
+					.or_insert(BuildSetting::Single(format!("@rpath/{dylib_name}")));
+				if add_runtime_runpaths {
+					let mut runpaths = IndexSet::new();
+					match build_settings.get("LD_RUNPATH_SEARCH_PATHS") {
+						Some(BuildSetting::Single(existing)) => {
+							runpaths.insert(existing.clone());
+						}
+						Some(BuildSetting::Array(existing)) => {
+							for p in existing {
+								runpaths.insert(p.clone());
+							}
+						}
+						None => {}
+					}
+					runpaths.insert("@loader_path".to_owned());
+					build_settings.insert(
+						"LD_RUNPATH_SEARCH_PATHS".to_owned(),
+						BuildSetting::Array(runpaths.into_iter().collect()),
+					);
+				}
+			}
+			XcodeProductKind::Executable if add_runtime_runpaths => {
+				let mut runpaths = IndexSet::new();
+				match build_settings.get("LD_RUNPATH_SEARCH_PATHS") {
+					Some(BuildSetting::Single(existing)) => {
+						runpaths.insert(existing.clone());
+					}
+					Some(BuildSetting::Array(existing)) => {
+						for p in existing {
+							runpaths.insert(p.clone());
+						}
+					}
+					None => {}
+				}
+				// Xcode defaults normally resolve sibling products in BUILT_PRODUCTS_DIR.
+				// Add minimal runpaths for shared-library graphs while preserving user order.
+				runpaths.insert("@loader_path".to_owned());
+				if matches!(product_kind, XcodeProductKind::Executable) {
+					runpaths.insert("@executable_path".to_owned());
+				}
+				build_settings.insert(
+					"LD_RUNPATH_SEARCH_PATHS".to_owned(),
+					BuildSetting::Array(runpaths.into_iter().collect()),
+				);
+			}
+			XcodeProductKind::Executable => {}
+			XcodeProductKind::StaticArchive => {}
 		}
 
 		let build_cfg_key = id_gen.next();
@@ -1841,6 +2033,7 @@ impl core::fmt::Display for CompilerSpec {
 
 enum ProductType {
 	LibraryStatic,
+	LibraryDynamic,
 	Tool,
 }
 
@@ -1848,6 +2041,7 @@ impl core::fmt::Display for ProductType {
 	fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
 		match self {
 			ProductType::LibraryStatic => f.write_str("com.apple.product-type.library.static"),
+			ProductType::LibraryDynamic => f.write_str("com.apple.product-type.library.dynamic"),
 			ProductType::Tool => f.write_str("com.apple.product-type.tool"),
 		}
 	}
@@ -2004,6 +2198,7 @@ enum FileRefType {
 
 enum ExplicitFileType {
 	Archive,    // archive.ar
+	Dylib,      // compiled.mach-o.dylib
 	Executable, // compiled.mach-o.executable
 }
 
@@ -2012,6 +2207,7 @@ impl core::fmt::Display for ExplicitFileType {
 		match self {
 			// Why is only compiled.mach-o.executable surrounded in quotes?
 			ExplicitFileType::Executable => f.write_str("\"compiled.mach-o.executable\""),
+			ExplicitFileType::Dylib => f.write_str("\"compiled.mach-o.dylib\""),
 			ExplicitFileType::Archive => f.write_str("archive.ar"),
 		}
 	}
@@ -2255,6 +2451,7 @@ fn test_pbxproj_generation() {
 			static_libraries: vec![adder],
 			object_libraries: vec![subtracter],
 			interface_libraries: vec![arithmetic],
+			shared_libraries: Vec::new(),
 		}
 	});
 
@@ -2265,6 +2462,7 @@ fn test_pbxproj_generation() {
 		cpp_compiler: Some(Box::new(TestCompiler {})),
 		nasm_assembler: None,
 		static_linker: Some(vec!["llvm-ar".to_owned()]),
+		shared_linker: None,
 		exe_linker: Some(Box::new(TestCompiler {})),
 		profile: BTreeMap::<String, Profile>::from([(
 			"Debug".to_owned(),
@@ -2362,6 +2560,7 @@ fn test_xcode_transform() {
 			static_libraries: vec![adder],
 			object_libraries: Vec::new(),
 			interface_libraries: vec![iface],
+			shared_libraries: Vec::new(),
 		}
 	});
 

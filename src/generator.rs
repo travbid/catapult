@@ -42,12 +42,21 @@ impl Generator {
 					TargetPlatform {
 						obj_ext: ".obj".to_owned(),
 						static_lib_ext: ".lib".to_owned(),
+						shared_lib_ext: ".dll".to_owned(),
 						exe_ext: ".exe".to_owned(),
+					}
+				} else if target_triple.contains("-darwin-") || target_triple.ends_with("-darwin") {
+					TargetPlatform {
+						obj_ext: ".o".to_owned(),
+						static_lib_ext: ".a".to_owned(),
+						shared_lib_ext: ".dylib".to_owned(),
+						exe_ext: "".to_owned(),
 					}
 				} else {
 					TargetPlatform {
 						obj_ext: ".o".to_owned(),
 						static_lib_ext: ".a".to_owned(),
+						shared_lib_ext: ".so".to_owned(),
 						exe_ext: "".to_owned(),
 					}
 				};
@@ -61,5 +70,6 @@ impl Generator {
 pub struct TargetPlatform {
 	pub obj_ext: String,
 	pub static_lib_ext: String,
+	pub shared_lib_ext: String,
 	pub exe_ext: String,
 }

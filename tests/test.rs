@@ -54,7 +54,8 @@ fn test_01() {
 	let test_one = project;
 	println!("test_one: {:?}", *test_one);
 	assert_eq!(test_one.executables.len(), 1);
-	assert_eq!(test_one.static_libraries.len(), 1);
+	assert_eq!(test_one.static_libraries.len(), 0);
+	assert_eq!(test_one.shared_libraries.len(), 1);
 
 	let exe = test_one.executables.first().unwrap();
 	assert_eq!(exe.name, "myexe");
@@ -67,7 +68,7 @@ fn test_01() {
 	assert_eq!(exe.links[3].name(), "nasmobjs");
 	assert_eq!(exe.links[4].name(), "zstd");
 
-	let lib = test_one.static_libraries.first().unwrap();
+	let lib = test_one.shared_libraries.first().unwrap();
 	assert_eq!(lib.name, "mylib");
 	assert_eq!(lib.sources.cpp.len(), 1);
 	assert_eq!(lib.sources.cpp[0].full, cwd.join("mylib.cpp"));

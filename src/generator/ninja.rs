@@ -17,6 +17,7 @@ use crate::{
 	misc::{Sources, join_parent},
 	object_library::ObjectLibrary,
 	project::Project,
+	shared_library::SharedLibrary,
 	starlark_context::{StarContext, StarContextCompiler},
 	starlark_generator::eval_vars,
 	starlark_object_library::StarGeneratorVars,
@@ -166,6 +167,7 @@ struct NinjaRules {
 	compile_cpp_object: Option<NinjaRule>,
 	assemble_nasm_object: Option<NinjaRule>,
 	link_static_lib: Option<NinjaRule>,
+	link_shared: Option<NinjaRule>,
 	link_exe: Option<NinjaRule>,
 }
 
@@ -251,6 +253,22 @@ fn link_static_lib(static_linker: &[String]) -> NinjaRule {
 		..Default::default()
 	}
 }
+fn link_shared(shared_linker: &[String]) -> NinjaRule {
+	let mut command = shared_linker.to_owned();
+	command.extend(vec![
+		"$LINK_FLAGS".to_string(),
+		"$in".to_string(),
+		"-o".to_string(),
+		"$TARGET_FILE".to_string(),
+		"$LINK_PATH".to_string(),
+	]);
+	NinjaRule {
+		name: String::from("link_shared"),
+		command,
+		description: Some("Linking shared lib $out".to_owned()),
+		..Default::default()
+	}
+}
 fn link_exe(exe_linker: &dyn ExeLinker) -> NinjaRule {
 	let mut command = exe_linker.cmd();
 	command.extend(vec![
@@ -328,6 +346,9 @@ impl Ninja {
 		if let Some(c) = rules.link_static_lib {
 			rules_str += &c.as_string();
 		}
+		if let Some(c) = rules.link_shared {
+			rules_str += &c.as_string();
+		}
 		if let Some(c) = rules.link_exe {
 			rules_str += &c.as_string();
 		}
@@ -375,6 +396,10 @@ impl Ninja {
 		for lib in &project.interface_libraries {
 			let key = LinkPtr::Interface(lib.clone());
 			link_targets.entry(key).or_default();
+		}
+
+		for lib in &project.shared_libraries {
+			add_shared_lib_target(lib, generator_opts, rules, build_lines, link_targets)?;
 		}
 
 		for exe in &project.executables {
@@ -490,7 +515,7 @@ fn add_object_lib_target(
 
 	for link in &lib.public_links_recursive() {
 		match link {
-			LinkPtr::Static(_) => {
+			LinkPtr::Static(_) | LinkPtr::Shared(_) => {
 				let link_path = output_path(
 					build_dir,
 					&link.project().info.name,
@@ -508,6 +533,190 @@ fn add_object_lib_target(
 	link_targets.insert(LinkPtr::Object(lib.clone()), inputs.clone());
 	Ok(inputs)
 	// Omit phony rules for object libraries
+}
+
+fn add_shared_lib_target(
+	lib: &Arc<SharedLibrary>,
+	generator_opts: &GeneratorOpts,
+	rules: &mut NinjaRules,
+	build_lines: &mut Vec<NinjaBuild>,
+	link_targets: &mut HashMap<LinkPtr, Vec<String>>,
+) -> Result<(), String> {
+	let GeneratorOpts {
+		toolchain,
+		build_dir,
+		profile,
+		global_opts,
+		target_platform,
+		star_context,
+		..
+	} = generator_opts;
+
+	log::debug!("   shared lib target: {}", lib.name);
+	let mut inputs = Vec::<String>::new();
+
+	let generator_vars = if let Some(gen_func) = &lib.generator_vars {
+		eval_vars(gen_func, star_context.clone(), "generator_vars")?
+	} else {
+		StarGeneratorVars::default()
+	};
+	let mut includes = lib.internal_includes();
+	includes.extend(
+		generator_vars
+			.include_dirs
+			.iter()
+			.map(|x| join_parent(&lib.project().info.path, x).full),
+	);
+	let sources = lib
+		.sources
+		.extended_with(Sources::from_slice(&generator_vars.sources, &lib.project().info.path)?);
+	let mut defines = lib.internal_defines();
+	defines.extend_from_slice(&generator_vars.defines);
+
+	let source_data = SourceData { includes, defines };
+
+	if !sources.c.is_empty() {
+		let c_compiler = get_c_compiler(toolchain, lib.name())?;
+		let rule_compile_c = if let Some(rule) = &rules.compile_c_object {
+			rule
+		} else {
+			rules.compile_c_object = Some(compile_c_object(c_compiler));
+			rules.compile_c_object.as_ref().unwrap()
+		};
+		let mut c_compile_opts = profile.c_compile_flags.clone();
+		if let Some(c_std) = &global_opts.c_standard {
+			c_compile_opts.push(c_compiler.c_std_flag(c_std)?);
+		}
+		if let Some(true) = global_opts.position_independent_code {
+			if let Some(fpic_flag) = c_compiler.position_independent_executable_flag() {
+				c_compile_opts.push(fpic_flag);
+			}
+		}
+		for src in &sources.c {
+			build_lines.push(add_obj_source(
+				input_path(&src.full, &lib.project().info.path),
+				&source_data,
+				output_subfolder_path(
+					build_dir,
+					&lib.project().info.name,
+					&lib.name,
+					&src.name,
+					&target_platform.obj_ext,
+				),
+				rule_compile_c.name.clone(),
+				c_compile_opts.clone(),
+				&mut inputs,
+			));
+		}
+	}
+	if !sources.cpp.is_empty() {
+		let cpp_compiler = get_cpp_compiler(toolchain, lib.name())?;
+		let rule_compile_cpp = if let Some(rule) = &rules.compile_cpp_object {
+			rule
+		} else {
+			rules.compile_cpp_object = Some(compile_cpp_object(cpp_compiler));
+			rules.compile_cpp_object.as_ref().unwrap()
+		};
+		let mut cpp_compile_opts = profile.cpp_compile_flags.clone();
+		if let Some(cpp_std) = &global_opts.cpp_standard {
+			cpp_compile_opts.push(cpp_compiler.cpp_std_flag(cpp_std)?);
+		}
+		if let Some(true) = global_opts.position_independent_code {
+			if let Some(fpic_flag) = cpp_compiler.position_independent_executable_flag() {
+				cpp_compile_opts.push(fpic_flag);
+			}
+		}
+		for src in &sources.cpp {
+			build_lines.push(add_obj_source(
+				input_path(&src.full, &lib.project().info.path),
+				&source_data,
+				output_subfolder_path(
+					build_dir,
+					&lib.project().info.name,
+					&lib.name,
+					&src.name,
+					&target_platform.obj_ext,
+				),
+				rule_compile_cpp.name.clone(),
+				cpp_compile_opts.clone(),
+				&mut inputs,
+			));
+		}
+	}
+	if !sources.nasm.is_empty() {
+		let nasm_assembler = get_nasm_assembler(toolchain, lib.name())?;
+		let rule = if let Some(rule) = &rules.assemble_nasm_object {
+			rule
+		} else {
+			rules.assemble_nasm_object = Some(assemble_nasm_object(nasm_assembler));
+			rules.assemble_nasm_object.as_ref().unwrap()
+		};
+		let nasm_assemble_opts = &profile.nasm_assemble_flags;
+		for src in &sources.nasm {
+			build_lines.push(add_obj_source(
+				input_path(&src.full, &lib.project().info.path),
+				&source_data,
+				output_subfolder_path(
+					build_dir,
+					&lib.project().info.name,
+					&lib.name,
+					&src.name,
+					&target_platform.obj_ext,
+				),
+				rule.name.clone(),
+				nasm_assemble_opts.clone(),
+				&mut inputs,
+			));
+		}
+	}
+	for link in &lib.internal_links() {
+		let link_outputs = match link_targets.get(link) {
+			Some(x) => x,
+			None => return Err(format!("Output target not found: {} ({})", link.name(), lib.name())),
+		};
+		inputs.extend_from_slice(link_outputs);
+	}
+	// Prevent the same lib from being added to the command more than once.
+	let inputs = deduplicate(inputs);
+	let rule_name = match &rules.link_shared {
+		Some(x) => x.name.clone(),
+		None => {
+			let linker = match &toolchain.shared_linker {
+				Some(x) => x,
+				None => {
+					return Err(format!(
+						"No shared linker specified in toolchain. A shared linker is required to build \"{}\".",
+						lib.name()
+					));
+				}
+			};
+			let link_rule = link_shared(linker.as_ref());
+			let rule_name = link_rule.name.clone();
+			rules.link_shared = Some(link_rule);
+			rule_name
+		}
+	};
+	let mut link_flags = Vec::new();
+	link_flags.extend(lib.internal_link_flags());
+	link_flags.push(format!("-Wl,-soname,{}{}", lib.output_name(), target_platform.shared_lib_ext));
+	let out_name = output_path(build_dir, &lib.project().info.name, lib.name.as_ref(), &target_platform.shared_lib_ext);
+	link_targets.insert(LinkPtr::Shared(lib.clone()), vec![out_name.clone()]);
+	build_lines.push(NinjaBuild {
+		inputs,
+		output_targets: vec![out_name.clone()],
+		rule_name,
+		keyval_set: HashMap::from([
+			("TARGET_FILE".to_string(), vec![out_name.clone()]),
+			("LINK_FLAGS".to_string(), link_flags),
+		]),
+	});
+	build_lines.push(NinjaBuild {
+		inputs: vec![out_name],
+		output_targets: vec![lib.name.clone()],
+		rule_name: "phony".to_owned(),
+		keyval_set: HashMap::new(),
+	});
+	Ok(())
 }
 
 fn add_executable_target(
@@ -644,17 +853,32 @@ fn add_executable_target(
 			));
 		}
 	}
+
+	let mut rpaths = Vec::new();
 	for link in &exe.links {
 		let link_outputs = match link_targets.get(link) {
 			Some(x) => x,
-			None => return Err(format!("Output target not found: {}", link.name())),
+			None => return Err(format!("Output target not found1: {}", link.name())),
 		};
 		inputs.extend_from_slice(link_outputs);
+
+		match link {
+			LinkPtr::Shared(_) => {
+				rpaths.extend(link_outputs.iter().map(|p| {
+					std::path::PathBuf::from(p)
+						.parent()
+						.unwrap()
+						.to_string_lossy()
+						.into_owned()
+				}));
+			}
+			_ => {}
+		};
 
 		for translink in &link.public_links_recursive() {
 			let link_outputs = match link_targets.get(translink) {
 				Some(x) => x,
-				None => return Err(format!("Transitive output target not found: {}", translink.name())),
+				None => return Err(format!("Transitive output target not found: {} ({})", translink.name(), exe.name)),
 			};
 			inputs.extend_from_slice(link_outputs);
 		}
@@ -680,6 +904,10 @@ fn add_executable_target(
 		}
 	};
 	let mut link_exe_flags = Vec::new();
+	if !rpaths.is_empty() {
+		let combined_paths = rpaths.join(":");
+		link_exe_flags.push(format!("-Wl,-rpath,{}", combined_paths));
+	}
 	if let Some(true) = global_opts.position_independent_code {
 		if let Some(pie_flag) = toolchain
 			.exe_linker
@@ -1021,6 +1249,7 @@ fn test_position_independent_code() {
 		static_libraries: vec![create_lib(weak_parent)],
 		object_libraries: Vec::new(),
 		interface_libraries: Vec::new(),
+		shared_libraries: Vec::new(),
 	});
 	let toolchain = Toolchain {
 		msvc_platforms: vec!["x64".to_owned(), "Win32".to_owned(), "ARM64".to_owned()],
@@ -1040,6 +1269,7 @@ fn test_position_independent_code() {
 	let target_platform = TargetPlatform {
 		obj_ext: ".o".to_owned(),
 		static_lib_ext: ".a".to_owned(),
+		shared_lib_ext: ".so".to_owned(),
 		exe_ext: String::new(),
 	};
 	let mut rules = NinjaRules::default();

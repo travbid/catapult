@@ -7,6 +7,7 @@ use crate::{
 	executable::Executable, //
 	interface_library::InterfaceLibrary,
 	object_library::ObjectLibrary,
+	shared_library::SharedLibrary,
 	static_library::StaticLibrary,
 };
 
@@ -24,4 +25,5 @@ pub struct Project {
 	pub static_libraries: Vec<Arc<StaticLibrary>>,
 	pub object_libraries: Vec<Arc<ObjectLibrary>>,
 	pub interface_libraries: Vec<Arc<InterfaceLibrary>>,
+	pub shared_libraries: Vec<Arc<SharedLibrary>>,
 }

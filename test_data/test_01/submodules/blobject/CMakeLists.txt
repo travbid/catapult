@@ -4,4 +4,7 @@ add_library(blobject OBJECT
     blobject2.c
     blobject.h
 )
-target_include_directories(blobject PUBLIC .)
+target_include_directories(blobject
+  PRIVATE utils
+  PUBLIC .
+)
