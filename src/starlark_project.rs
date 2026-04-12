@@ -30,10 +30,12 @@ use crate::{
 	link_type::LinkPtr,
 	object_library::ObjectLibrary,
 	project::{Project, ProjectInfo},
+	shared_library::SharedLibrary,
 	starlark_executable::StarExecutable, //
 	starlark_interface_library::{StarIfaceLibWrapper, StarIfaceLibrary},
 	starlark_link_target::PtrLinkTarget,
 	starlark_object_library::{StarObjLibWrapper, StarObjectLibrary},
+	starlark_shared_library::{StarSharedLibWrapper, StarSharedLibrary},
 	starlark_static_library::{StarStaticLibWrapper, StarStaticLibrary},
 	static_library::StaticLibrary,
 };
@@ -47,6 +49,7 @@ pub(super) struct StarProject {
 	pub static_libraries: Vec<Arc<StarStaticLibrary>>,
 	pub object_libraries: Vec<Arc<StarObjectLibrary>>,
 	pub interface_libraries: Vec<Arc<StarIfaceLibrary>>,
+	pub shared_libraries: Vec<Arc<StarSharedLibrary>>,
 
 	pub generator_names: HashMap<String, OwnedFrozenValue>,
 }
@@ -84,6 +87,11 @@ impl<'v> StarlarkValue<'v> for StarProject {
 		for lib in &self.interface_libraries {
 			if lib.name == attribute {
 				return Some(heap.alloc(StarIfaceLibWrapper(lib.clone())));
+			}
+		}
+		for lib in &self.shared_libraries {
+			if lib.name == attribute {
+				return Some(heap.alloc(StarSharedLibWrapper(lib.clone())));
 			}
 		}
 		None
@@ -129,6 +137,7 @@ pub(super) struct StarLinkTargetCache {
 	static_libs: HashMap<PtrLinkTarget, Arc<StaticLibrary>>,
 	object_libs: HashMap<PtrLinkTarget, Arc<ObjectLibrary>>,
 	interface_libs: HashMap<PtrLinkTarget, Arc<InterfaceLibrary>>,
+	shared_libs: HashMap<PtrLinkTarget, Arc<SharedLibrary>>,
 }
 
 impl StarLinkTargetCache {
@@ -138,6 +147,7 @@ impl StarLinkTargetCache {
 			static_libs: HashMap::new(),
 			object_libs: HashMap::new(),
 			interface_libs: HashMap::new(),
+			shared_libs: HashMap::new(),
 		}
 	}
 	pub fn get_static(&self, key: &PtrLinkTarget) -> Option<&Arc<StaticLibrary>> {
@@ -161,6 +171,13 @@ impl StarLinkTargetCache {
 			None
 		}
 	}
+	pub fn get_shared(&self, key: &PtrLinkTarget) -> Option<&Arc<SharedLibrary>> {
+		if self.all_targets.contains(key) {
+			self.shared_libs.get(key)
+		} else {
+			None
+		}
+	}
 	pub fn get(&self, key: &PtrLinkTarget) -> Option<LinkPtr> {
 		if let Some(x) = self.get_static(key) {
 			return Some(LinkPtr::Static(x.clone()));
@@ -170,6 +187,9 @@ impl StarLinkTargetCache {
 		}
 		if let Some(x) = self.get_interface(key) {
 			return Some(LinkPtr::Interface(x.clone()));
+		}
+		if let Some(x) = self.get_shared(key) {
+			return Some(LinkPtr::Shared(x.clone()));
 		}
 		None
 	}
@@ -185,6 +205,10 @@ impl StarLinkTargetCache {
 		self.interface_libs.insert(key.clone(), value);
 		self.all_targets.insert(key);
 	}
+	pub fn insert_shared(&mut self, key: PtrLinkTarget, value: Arc<SharedLibrary>) {
+		self.shared_libs.insert(key.clone(), value);
+		self.all_targets.insert(key);
+	}
 }
 
 impl StarProject {
@@ -197,6 +221,7 @@ impl StarProject {
 			static_libraries: Vec::new(),
 			object_libraries: Vec::new(),
 			interface_libraries: Vec::new(),
+			shared_libraries: Vec::new(),
 
 			generator_names: HashMap::new(),
 		}
@@ -268,6 +293,21 @@ impl StarProject {
 					}
 				})
 				.collect::<Result<_,_>>()?,
+                shared_libraries: self
+				.shared_libraries
+				.iter()
+				.map(|x| -> Result<Arc<_>,String>{
+					let ptr = PtrLinkTarget(x.clone());
+					if let Some(lib) = link_map.get_shared(&ptr) {
+						Ok(lib.clone())
+					} else {
+						let data = x.as_library(Weak::new(), &self.path, link_map, &self.generator_names)?;
+						let arc = Arc::new(data);
+						link_map.insert_shared(ptr, arc.clone());
+						Ok(arc)
+					}
+				})
+				.collect::<Result<_,_>>()?,
 		}; //);
 
 		let ret = Arc::<Project>::new_cyclic(move |weak_parent: &Weak<Project>| -> Project {
@@ -286,6 +326,10 @@ impl StarProject {
 				lib_mut.set_parent(weak_parent.clone());
 			}
 			for lib in &mut project.interface_libraries {
+				let lib_mut = unsafe { &mut (*Arc::as_ptr(lib).cast_mut()) };
+				lib_mut.set_parent(weak_parent.clone());
+			}
+			for lib in &mut project.shared_libraries {
 				let lib_mut = unsafe { &mut (*Arc::as_ptr(lib).cast_mut()) };
 				lib_mut.set_parent(weak_parent.clone());
 			}

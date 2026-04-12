@@ -44,6 +44,19 @@ where
 		}
 	}
 
+	pub fn extend<I>(&mut self, iter: I)
+	where
+		I: IntoIterator<Item = T>,
+	{
+		for item in iter {
+			self.insert(item);
+		}
+	}
+
+	pub fn is_empty(&self) -> bool {
+		self.vec.is_empty()
+	}
+
 	pub fn iter<'a>(&'a self) -> core::slice::Iter<'a, T> {
 		self.vec.iter()
 	}
