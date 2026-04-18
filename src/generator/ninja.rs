@@ -385,25 +385,26 @@ impl Ninja {
 			Ninja::generate_inner(subproject, generator_opts, rules, build_lines, link_targets)?;
 		}
 
-		for lib in &project.static_libraries {
-			if !link_targets.contains_key(&LinkPtr::Static(lib.clone())) {
-				add_static_lib_target(lib, generator_opts, rules, build_lines, link_targets)?;
+		for lib in &project.link_targets {
+			match lib {
+				LinkPtr::Static(lib) => {
+					if !link_targets.contains_key(&LinkPtr::Static(lib.clone())) {
+						add_static_lib_target(lib, generator_opts, rules, build_lines, link_targets)?;
+					}
+				}
+				LinkPtr::Object(lib) => {
+					if !link_targets.contains_key(&LinkPtr::Object(lib.clone())) {
+						add_object_lib_target(lib, generator_opts, rules, build_lines, link_targets)?;
+					}
+				}
+				LinkPtr::Interface(lib) => {
+					let key = LinkPtr::Interface(lib.clone());
+					link_targets.entry(key).or_default();
+				}
+				LinkPtr::Shared(lib) => {
+					add_shared_lib_target(lib, generator_opts, rules, build_lines, link_targets)?;
+				}
 			}
-		}
-
-		for lib in &project.object_libraries {
-			if !link_targets.contains_key(&LinkPtr::Object(lib.clone())) {
-				add_object_lib_target(lib, generator_opts, rules, build_lines, link_targets)?;
-			}
-		}
-
-		for lib in &project.interface_libraries {
-			let key = LinkPtr::Interface(lib.clone());
-			link_targets.entry(key).or_default();
-		}
-
-		for lib in &project.shared_libraries {
-			add_shared_lib_target(lib, generator_opts, rules, build_lines, link_targets)?;
 		}
 
 		for exe in &project.executables {
@@ -1271,6 +1272,7 @@ fn test_position_independent_code() {
 			generator_vars: None,
 			output_name: None,
 		})],
+		link_targets: vec![LinkPtr::Static(create_lib(weak_parent))],
 		static_libraries: vec![create_lib(weak_parent)],
 		object_libraries: Vec::new(),
 		interface_libraries: Vec::new(),

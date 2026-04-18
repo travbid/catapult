@@ -38,6 +38,7 @@ use crate::{
 	starlark_shared_library::{StarSharedLibWrapper, StarSharedLibrary},
 	starlark_static_library::{StarStaticLibWrapper, StarStaticLibrary},
 	static_library::StaticLibrary,
+	target::Target,
 };
 
 #[derive(Clone, Debug, ProvidesStaticType, NoSerialize, Allocative)]
@@ -46,6 +47,7 @@ pub(super) struct StarProject {
 	pub path: PathBuf,
 	pub dependencies: Vec<Arc<StarProject>>,
 	pub executables: Vec<Arc<StarExecutable>>,
+	pub link_targets: Vec<PtrLinkTarget>,
 	pub static_libraries: Vec<Arc<StarStaticLibrary>>,
 	pub object_libraries: Vec<Arc<StarObjectLibrary>>,
 	pub interface_libraries: Vec<Arc<StarIfaceLibrary>>,
@@ -218,6 +220,7 @@ impl StarProject {
 			path,
 			dependencies,
 			executables: Vec::new(),
+			link_targets: Vec::new(),
 			static_libraries: Vec::new(),
 			object_libraries: Vec::new(),
 			interface_libraries: Vec::new(),
@@ -248,6 +251,7 @@ impl StarProject {
 				}
 			)
 				.collect::<Result<_,_>>()?,
+			link_targets: Vec::new(),
 			static_libraries: self
 				.static_libraries
 				.iter()
@@ -309,6 +313,16 @@ impl StarProject {
 				})
 				.collect::<Result<_,_>>()?,
 		}; //);
+		project.link_targets = self
+			.link_targets
+			.iter()
+			.map(|x| {
+				link_map
+					.get(x)
+					.ok_or_else(|| format!("Could not find target \"{}\" in link map", x.0.name()))
+			})
+			.collect::<Result<_, _>>()?;
+		validate_library_dependency_order(&project)?;
 
 		let ret = Arc::<Project>::new_cyclic(move |weak_parent: &Weak<Project>| -> Project {
 			// We need one of the following to set the Weak parent without using unsafe:
@@ -338,4 +352,28 @@ impl StarProject {
 
 		Ok(ret)
 	}
+}
+
+fn validate_library_dependency_order(project: &Project) -> Result<(), String> {
+	let mut all_targets = HashSet::new();
+	let mut seen_targets = HashSet::new();
+	for target in &project.link_targets {
+		all_targets.insert(target.clone());
+	}
+	for target in &project.link_targets {
+		for dependency in target.internal_links() {
+			if all_targets.contains(&dependency) && !seen_targets.contains(&dependency) {
+				return Err(format!(
+					"Library order violation in project \"{}\": target \"{}\" depends on \"{}\" which is declared later. Declare \"{}\" before \"{}\".",
+					project.info.name,
+					target.name(),
+					dependency.name(),
+					dependency.name(),
+					target.name()
+				));
+			}
+		}
+		seen_targets.insert(target.clone());
+	}
+	Ok(())
 }

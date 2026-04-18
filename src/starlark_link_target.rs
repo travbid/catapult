@@ -28,7 +28,7 @@ pub(super) trait StarLinkTarget: Send + Sync + fmt::Debug + Allocative {
 	fn public_includes_recursive(&self) -> Vec<String>;
 }
 
-#[derive(Clone)]
+#[derive(Allocative, Clone, Debug)]
 pub(super) struct PtrLinkTarget(pub Arc<dyn StarLinkTarget>);
 
 impl cmp::PartialEq for PtrLinkTarget {

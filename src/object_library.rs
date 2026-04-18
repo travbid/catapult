@@ -233,6 +233,7 @@ mod tests {
 				info: Arc::new(crate::project::ProjectInfo { name: "test".to_owned(), path: PathBuf::from(".") }),
 				dependencies: Vec::new(),
 				executables: Vec::new(),
+				link_targets: Vec::new(),
 				static_libraries: vec![
 					leaf_shared,
 					leaf_pub_pub,

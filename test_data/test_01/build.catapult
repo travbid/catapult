@@ -1,10 +1,15 @@
+mylib_helper = add_static_library(
+    name = "mylib_helper",
+    include_dirs_public = ["."],
+    sources = ["mylib_helper.cpp"],
+)
 
 mylib = add_shared_library(
     name = "mylib",
     sources = ["mylib.cpp"],
     defines_private = ["MYLIB_EXPORT"],
     include_dirs_public = ["."],
-    link_private = [my_depend.my_depend_lib],
+    link_private = [mylib_helper, my_depend.my_depend_lib],
 )
 
 print('--- ' + str(mylib))

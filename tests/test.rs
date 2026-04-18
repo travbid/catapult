@@ -54,7 +54,7 @@ fn test_01() {
 	let test_one = project;
 	println!("test_one: {:?}", *test_one);
 	assert_eq!(test_one.executables.len(), 1);
-	assert_eq!(test_one.static_libraries.len(), 0);
+	assert_eq!(test_one.static_libraries.len(), 1);
 	assert_eq!(test_one.shared_libraries.len(), 1);
 
 	let exe = test_one.executables.first().unwrap();
