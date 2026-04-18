@@ -97,8 +97,7 @@ impl StarLinkTarget for StarStaticLibrary {
 		gen_name_map: &HashMap<String, OwnedFrozenValue>,
 	) -> Result<LinkPtr, String> {
 		let arc = Arc::new(self.as_library(parent, parent_path, link_map, gen_name_map)?);
-		// let ptr = PtrLinkTarget(arc.clone());
-		link_map.insert_static(ptr, arc.clone());
+		link_map.insert(ptr, LinkPtr::Static(arc.clone()));
 		Ok(LinkPtr::Static(arc))
 	}
 

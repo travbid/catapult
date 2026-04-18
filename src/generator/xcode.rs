@@ -2451,10 +2451,6 @@ fn test_pbxproj_generation() {
 				LinkPtr::Static(adder.clone()),
 				LinkPtr::Interface(arithmetic.clone()),
 			],
-			static_libraries: vec![adder],
-			object_libraries: vec![subtracter],
-			interface_libraries: vec![arithmetic],
-			shared_libraries: Vec::new(),
 		}
 	});
 
@@ -2561,10 +2557,6 @@ fn test_xcode_transform() {
 			dependencies: Vec::new(),
 			executables: vec![exe],
 			link_targets: vec![LinkPtr::Static(adder.clone()), LinkPtr::Interface(iface.clone())],
-			static_libraries: vec![adder],
-			object_libraries: Vec::new(),
-			interface_libraries: vec![iface],
-			shared_libraries: Vec::new(),
 		}
 	});
 

@@ -233,24 +233,20 @@ mod tests {
 				info: Arc::new(crate::project::ProjectInfo { name: "test".to_owned(), path: PathBuf::from(".") }),
 				dependencies: Vec::new(),
 				executables: Vec::new(),
-				link_targets: Vec::new(),
-				static_libraries: vec![
-					leaf_shared,
-					leaf_pub_pub,
-					leaf_pub_priv,
-					leaf_priv_pub,
-					leaf_priv_priv,
-					mid_pub,
-					mid_priv,
-					main_lib,
+				link_targets: vec![
+					LinkPtr::Static(leaf_shared.clone()),
+					LinkPtr::Static(leaf_pub_pub.clone()),
+					LinkPtr::Static(leaf_pub_priv.clone()),
+					LinkPtr::Static(leaf_priv_pub.clone()),
+					LinkPtr::Static(leaf_priv_priv.clone()),
+					LinkPtr::Static(mid_pub.clone()),
+					LinkPtr::Static(mid_priv.clone()),
+					LinkPtr::Static(main_lib.clone()),
 				],
-				object_libraries: Vec::new(),
-				interface_libraries: Vec::new(),
-				shared_libraries: Vec::new(),
 			}
 		});
 
-		let main_lib = project.static_libraries.iter().find(|x| x.name == "main_lib").unwrap();
+		let main_lib = project.link_targets.iter().find(|x| x.name() == "main_lib").unwrap();
 
 		let internal_includes = main_lib.internal_includes();
 

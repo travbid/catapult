@@ -5,11 +5,7 @@ use std::{
 
 use crate::{
 	executable::Executable, //
-	interface_library::InterfaceLibrary,
 	link_type::LinkPtr,
-	object_library::ObjectLibrary,
-	shared_library::SharedLibrary,
-	static_library::StaticLibrary,
 };
 
 #[derive(Debug)]
@@ -24,8 +20,4 @@ pub struct Project {
 	pub dependencies: Vec<Arc<Project>>,
 	pub executables: Vec<Arc<Executable>>,
 	pub link_targets: Vec<LinkPtr>,
-	pub static_libraries: Vec<Arc<StaticLibrary>>,
-	pub object_libraries: Vec<Arc<ObjectLibrary>>,
-	pub interface_libraries: Vec<Arc<InterfaceLibrary>>,
-	pub shared_libraries: Vec<Arc<SharedLibrary>>,
 }

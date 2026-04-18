@@ -1273,10 +1273,6 @@ fn test_position_independent_code() {
 			output_name: None,
 		})],
 		link_targets: vec![LinkPtr::Static(create_lib(weak_parent))],
-		static_libraries: vec![create_lib(weak_parent)],
-		object_libraries: Vec::new(),
-		interface_libraries: Vec::new(),
-		shared_libraries: Vec::new(),
 	});
 	let toolchain = Toolchain {
 		msvc_platforms: vec!["x64".to_owned(), "Win32".to_owned(), "ARM64".to_owned()],

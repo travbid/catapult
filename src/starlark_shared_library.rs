@@ -97,8 +97,7 @@ impl StarLinkTarget for StarSharedLibrary {
 		gen_name_map: &HashMap<String, OwnedFrozenValue>,
 	) -> Result<LinkPtr, String> {
 		let arc = Arc::new(self.as_library(parent, parent_path, link_map, gen_name_map)?);
-		// let ptr = PtrLinkTarget(arc.clone());
-		link_map.insert_shared(ptr, arc.clone());
+		link_map.insert(ptr, LinkPtr::Shared(arc.clone()));
 		Ok(LinkPtr::Shared(arc))
 	}
 

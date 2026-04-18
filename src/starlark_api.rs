@@ -132,7 +132,6 @@ pub(crate) fn build_api(builder: &mut GlobalsBuilder) {
 		});
 		let mut project = state.project.lock().map_err(|e| anyhow::anyhow!(e.to_string()))?;
 		project.link_targets.push(StarLinkTargetRef::Static(lib.clone()));
-		project.static_libraries.push(lib.clone());
 		Ok(StarStaticLibWrapper(lib))
 	}
 
@@ -170,7 +169,6 @@ pub(crate) fn build_api(builder: &mut GlobalsBuilder) {
 		});
 		let mut project = state.project.lock().map_err(|e| anyhow::anyhow!(e.to_string()))?;
 		project.link_targets.push(StarLinkTargetRef::Object(lib.clone()));
-		project.object_libraries.push(lib.clone());
 		Ok(StarObjLibWrapper(lib))
 	}
 
@@ -199,7 +197,6 @@ pub(crate) fn build_api(builder: &mut GlobalsBuilder) {
 		});
 		let mut project = state.project.lock().map_err(|e| anyhow::anyhow!(e.to_string()))?;
 		project.link_targets.push(StarLinkTargetRef::Interface(lib.clone()));
-		project.interface_libraries.push(lib.clone());
 		Ok(StarIfaceLibWrapper(lib))
 	}
 
@@ -237,7 +234,6 @@ pub(crate) fn build_api(builder: &mut GlobalsBuilder) {
 		});
 		let mut project = state.project.lock().map_err(|e| anyhow::anyhow!(e.to_string()))?;
 		project.link_targets.push(StarLinkTargetRef::Shared(lib.clone()));
-		project.shared_libraries.push(lib.clone());
 		Ok(StarSharedLibWrapper(lib))
 	}
 
