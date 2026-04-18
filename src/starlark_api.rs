@@ -19,7 +19,7 @@ use starlark::{
 use crate::{
 	starlark_executable::{StarExecutable, StarExecutableWrapper},
 	starlark_interface_library::{StarIfaceLibWrapper, StarIfaceLibrary},
-	starlark_link_target::{PtrLinkTarget, StarLinkTarget},
+	starlark_link_target::{StarLinkTarget, StarLinkTargetRef},
 	starlark_object_library::{StarGeneratorVars, StarObjLibWrapper, StarObjectLibrary},
 	starlark_project::StarProject,
 	starlark_shared_library::{StarSharedLibWrapper, StarSharedLibrary},
@@ -131,7 +131,7 @@ pub(crate) fn build_api(builder: &mut GlobalsBuilder) {
 			output_name: None, // TODO(Travers)
 		});
 		let mut project = state.project.lock().map_err(|e| anyhow::anyhow!(e.to_string()))?;
-		project.link_targets.push(PtrLinkTarget(lib.clone()));
+		project.link_targets.push(StarLinkTargetRef::Static(lib.clone()));
 		project.static_libraries.push(lib.clone());
 		Ok(StarStaticLibWrapper(lib))
 	}
@@ -169,7 +169,7 @@ pub(crate) fn build_api(builder: &mut GlobalsBuilder) {
 			output_name: None, // TODO(Travers)
 		});
 		let mut project = state.project.lock().map_err(|e| anyhow::anyhow!(e.to_string()))?;
-		project.link_targets.push(PtrLinkTarget(lib.clone()));
+		project.link_targets.push(StarLinkTargetRef::Object(lib.clone()));
 		project.object_libraries.push(lib.clone());
 		Ok(StarObjLibWrapper(lib))
 	}
@@ -198,7 +198,7 @@ pub(crate) fn build_api(builder: &mut GlobalsBuilder) {
 			// generator_vars: generator_func(generator_vars, eval)?,
 		});
 		let mut project = state.project.lock().map_err(|e| anyhow::anyhow!(e.to_string()))?;
-		project.link_targets.push(PtrLinkTarget(lib.clone()));
+		project.link_targets.push(StarLinkTargetRef::Interface(lib.clone()));
 		project.interface_libraries.push(lib.clone());
 		Ok(StarIfaceLibWrapper(lib))
 	}
@@ -236,7 +236,7 @@ pub(crate) fn build_api(builder: &mut GlobalsBuilder) {
 			output_name: None, // TODO(Travers)
 		});
 		let mut project = state.project.lock().map_err(|e| anyhow::anyhow!(e.to_string()))?;
-		project.link_targets.push(PtrLinkTarget(lib.clone()));
+		project.link_targets.push(StarLinkTargetRef::Shared(lib.clone()));
 		project.shared_libraries.push(lib.clone());
 		Ok(StarSharedLibWrapper(lib))
 	}
