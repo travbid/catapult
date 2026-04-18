@@ -468,19 +468,24 @@ impl Msvc {
 			Self::generate_inner(subproject, proj_opts, targets)?;
 		}
 
-		for lib in &project.static_libraries {
-			if !targets.contains_key(&as_key(lib)) {
-				add_static_lib(lib, proj_opts, targets)?;
-			}
-		}
-		for lib in &project.object_libraries {
-			if !targets.contains_key(&as_key(lib)) {
-				add_object_lib(lib, proj_opts, targets)?;
-			}
-		}
-		for lib in &project.shared_libraries {
-			if !targets.contains_key(&as_key(lib)) {
-				add_shared_lib(lib, proj_opts, targets)?;
+		for lib in &project.link_targets {
+			match lib {
+				LinkPtr::Static(lib) => {
+					if !targets.contains_key(&as_key(lib)) {
+						add_static_lib(lib, proj_opts, targets)?;
+					}
+				}
+				LinkPtr::Object(lib) => {
+					if !targets.contains_key(&as_key(lib)) {
+						add_object_lib(lib, proj_opts, targets)?;
+					}
+				}
+				LinkPtr::Interface(_) => {}
+				LinkPtr::Shared(lib) => {
+					if !targets.contains_key(&as_key(lib)) {
+						add_shared_lib(lib, proj_opts, targets)?;
+					}
+				}
 			}
 		}
 		for exe in &project.executables {

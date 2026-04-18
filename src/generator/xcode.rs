@@ -1115,92 +1115,95 @@ fn project_targets(
 	let mut native_target_keys = Vec::new();
 	let mut external_projects = HashMap::<String, (Key, Key)>::new();
 
-	for lib in &project.object_libraries {
-		let key = new_native_target_archive(
-			lib.as_ref(),
-			&lib.sources,
-			&lib.generator_vars,
-			native_target_build_configs,
-			toolchain,
-			graph,
-			id_gen,
-			global_targets,
-			&mut external_projects,
-			build_dir,
-		)?;
-		let nt = graph.native_targets.get(&key).unwrap();
-		let prod_ref = graph.file_references.get(&nt.product_reference).unwrap();
-		global_targets.insert(
-			as_key(lib),
-			GlobalTargetMeta {
-				project_info: project.info.clone(),
-				native_target_id: nt.id.clone(),
-				product_reference_id: prod_ref.id.clone(),
-				target_name: nt.name.clone(),
-				product_name: nt.product_name.clone(),
-				local_key: key,
-				product_kind: XcodeProductKind::StaticArchive,
-			},
-		);
-		native_target_keys.push(key);
-	}
-
-	for lib in &project.static_libraries {
-		let key = new_native_target_archive(
-			lib.as_ref(),
-			&lib.sources,
-			&lib.generator_vars,
-			native_target_build_configs,
-			toolchain,
-			graph,
-			id_gen,
-			global_targets,
-			&mut external_projects,
-			build_dir,
-		)?;
-		let nt = graph.native_targets.get(&key).unwrap();
-		let prod_ref = graph.file_references.get(&nt.product_reference).unwrap();
-		global_targets.insert(
-			as_key(lib),
-			GlobalTargetMeta {
-				project_info: project.info.clone(),
-				native_target_id: nt.id.clone(),
-				product_reference_id: prod_ref.id.clone(),
-				target_name: nt.name.clone(),
-				product_name: nt.product_name.clone(),
-				local_key: key,
-				product_kind: XcodeProductKind::StaticArchive,
-			},
-		);
-		native_target_keys.push(key);
-	}
-
-	for lib in &project.shared_libraries {
-		let key = new_native_target_shared(
-			lib,
-			native_target_build_configs,
-			toolchain,
-			graph,
-			id_gen,
-			global_targets,
-			&mut external_projects,
-			build_dir,
-		)?;
-		let nt = graph.native_targets.get(&key).unwrap();
-		let prod_ref = graph.file_references.get(&nt.product_reference).unwrap();
-		global_targets.insert(
-			as_key(lib),
-			GlobalTargetMeta {
-				project_info: project.info.clone(),
-				native_target_id: nt.id.clone(),
-				product_reference_id: prod_ref.id.clone(),
-				target_name: nt.name.clone(),
-				product_name: nt.product_name.clone(),
-				local_key: key,
-				product_kind: XcodeProductKind::DynamicLibrary,
-			},
-		);
-		native_target_keys.push(key);
+	for lib in &project.link_targets {
+		match lib {
+			LinkPtr::Static(lib) => {
+				let key = new_native_target_archive(
+					lib.as_ref(),
+					&lib.sources,
+					&lib.generator_vars,
+					native_target_build_configs,
+					toolchain,
+					graph,
+					id_gen,
+					global_targets,
+					&mut external_projects,
+					build_dir,
+				)?;
+				let nt = graph.native_targets.get(&key).unwrap();
+				let prod_ref = graph.file_references.get(&nt.product_reference).unwrap();
+				global_targets.insert(
+					as_key(lib),
+					GlobalTargetMeta {
+						project_info: project.info.clone(),
+						native_target_id: nt.id.clone(),
+						product_reference_id: prod_ref.id.clone(),
+						target_name: nt.name.clone(),
+						product_name: nt.product_name.clone(),
+						local_key: key,
+						product_kind: XcodeProductKind::StaticArchive,
+					},
+				);
+				native_target_keys.push(key);
+			}
+			LinkPtr::Object(lib) => {
+				let key = new_native_target_archive(
+					lib.as_ref(),
+					&lib.sources,
+					&lib.generator_vars,
+					native_target_build_configs,
+					toolchain,
+					graph,
+					id_gen,
+					global_targets,
+					&mut external_projects,
+					build_dir,
+				)?;
+				let nt = graph.native_targets.get(&key).unwrap();
+				let prod_ref = graph.file_references.get(&nt.product_reference).unwrap();
+				global_targets.insert(
+					as_key(lib),
+					GlobalTargetMeta {
+						project_info: project.info.clone(),
+						native_target_id: nt.id.clone(),
+						product_reference_id: prod_ref.id.clone(),
+						target_name: nt.name.clone(),
+						product_name: nt.product_name.clone(),
+						local_key: key,
+						product_kind: XcodeProductKind::StaticArchive,
+					},
+				);
+				native_target_keys.push(key);
+			}
+			LinkPtr::Shared(lib) => {
+				let key = new_native_target_shared(
+					lib,
+					native_target_build_configs,
+					toolchain,
+					graph,
+					id_gen,
+					global_targets,
+					&mut external_projects,
+					build_dir,
+				)?;
+				let nt = graph.native_targets.get(&key).unwrap();
+				let prod_ref = graph.file_references.get(&nt.product_reference).unwrap();
+				global_targets.insert(
+					as_key(lib),
+					GlobalTargetMeta {
+						project_info: project.info.clone(),
+						native_target_id: nt.id.clone(),
+						product_reference_id: prod_ref.id.clone(),
+						target_name: nt.name.clone(),
+						product_name: nt.product_name.clone(),
+						local_key: key,
+						product_kind: XcodeProductKind::DynamicLibrary,
+					},
+				);
+				native_target_keys.push(key);
+			}
+			LinkPtr::Interface(_) => {}
+		}
 	}
 
 	for exe in &project.executables {
@@ -2443,6 +2446,11 @@ fn test_pbxproj_generation() {
 			}),
 			dependencies: Vec::new(),
 			executables: vec![exe],
+			link_targets: vec![
+				LinkPtr::Object(subtracter.clone()),
+				LinkPtr::Static(adder.clone()),
+				LinkPtr::Interface(arithmetic.clone()),
+			],
 			static_libraries: vec![adder],
 			object_libraries: vec![subtracter],
 			interface_libraries: vec![arithmetic],
@@ -2552,6 +2560,7 @@ fn test_xcode_transform() {
 			}),
 			dependencies: Vec::new(),
 			executables: vec![exe],
+			link_targets: vec![LinkPtr::Static(adder.clone()), LinkPtr::Interface(iface.clone())],
 			static_libraries: vec![adder],
 			object_libraries: Vec::new(),
 			interface_libraries: vec![iface],
