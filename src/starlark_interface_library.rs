@@ -76,8 +76,7 @@ impl StarLinkTarget for StarIfaceLibrary {
 	) -> Result<LinkPtr, String> {
 		let data = self.as_library(parent, parent_path, link_map, gen_name_map)?;
 		let arc = Arc::new(data);
-		// let ptr = PtrLinkTarget(arc.clone());
-		link_map.insert_interface(ptr, arc.clone());
+		link_map.insert(ptr, LinkPtr::Interface(arc.clone()));
 		Ok(LinkPtr::Interface(arc))
 	}
 

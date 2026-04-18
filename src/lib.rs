@@ -1,7 +1,7 @@
 mod executable;
 pub mod generator;
 mod interface_library;
-mod link_type;
+pub mod link_type;
 mod misc;
 mod object_library;
 pub mod project;
@@ -37,8 +37,7 @@ use reqwest::StatusCode;
 use serde::Deserialize;
 use starlark::{
 	environment::{
-		Globals, //
-		GlobalsBuilder,
+		GlobalsBuilder, //
 		Module,
 	},
 	eval::Evaluator,
