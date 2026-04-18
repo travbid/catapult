@@ -33,7 +33,7 @@ use crate::{
 	shared_library::SharedLibrary,
 	starlark_executable::StarExecutable, //
 	starlark_interface_library::{StarIfaceLibWrapper, StarIfaceLibrary},
-	starlark_link_target::PtrLinkTarget,
+	starlark_link_target::{PtrLinkTarget, StarLinkTargetRef},
 	starlark_object_library::{StarObjLibWrapper, StarObjectLibrary},
 	starlark_shared_library::{StarSharedLibWrapper, StarSharedLibrary},
 	starlark_static_library::{StarStaticLibWrapper, StarStaticLibrary},
@@ -47,7 +47,7 @@ pub(super) struct StarProject {
 	pub path: PathBuf,
 	pub dependencies: Vec<Arc<StarProject>>,
 	pub executables: Vec<Arc<StarExecutable>>,
-	pub link_targets: Vec<PtrLinkTarget>,
+	pub link_targets: Vec<StarLinkTargetRef>,
 	pub static_libraries: Vec<Arc<StarStaticLibrary>>,
 	pub object_libraries: Vec<Arc<StarObjectLibrary>>,
 	pub interface_libraries: Vec<Arc<StarIfaceLibrary>>,
@@ -76,59 +76,25 @@ impl<'v> StarlarkValue<'v> for StarProject {
 		project_methods()
 	}
 	fn get_attr(&self, attribute: &str, heap: &'v Heap) -> Option<Value<'v>> {
-		for lib in &self.static_libraries {
-			if lib.name == attribute {
-				return Some(heap.alloc(StarStaticLibWrapper(lib.clone())));
-			}
-		}
-		for lib in &self.object_libraries {
-			if lib.name == attribute {
-				return Some(heap.alloc(StarObjLibWrapper(lib.clone())));
-			}
-		}
-		for lib in &self.interface_libraries {
-			if lib.name == attribute {
-				return Some(heap.alloc(StarIfaceLibWrapper(lib.clone())));
-			}
-		}
-		for lib in &self.shared_libraries {
-			if lib.name == attribute {
-				return Some(heap.alloc(StarSharedLibWrapper(lib.clone())));
+		for link_target in &self.link_targets {
+			if link_target.name() == attribute {
+				let value = match link_target {
+					StarLinkTargetRef::Static(lib) => heap.alloc(StarStaticLibWrapper(lib.clone())),
+					StarLinkTargetRef::Object(lib) => heap.alloc(StarObjLibWrapper(lib.clone())),
+					StarLinkTargetRef::Interface(lib) => heap.alloc(StarIfaceLibWrapper(lib.clone())),
+					StarLinkTargetRef::Shared(lib) => heap.alloc(StarSharedLibWrapper(lib.clone())),
+				};
+				return Some(value);
 			}
 		}
 		None
 	}
 	fn has_attr(&self, attribute: &str, _: &'v Heap) -> bool {
-		for lib in &self.static_libraries {
-			if lib.name == attribute {
-				return true;
-			}
-		}
-		for lib in &self.object_libraries {
-			if lib.name == attribute {
-				return true;
-			}
-		}
-		for lib in &self.interface_libraries {
-			if lib.name == attribute {
-				return true;
-			}
-		}
-		false
+		self.link_targets.iter().any(|x| x.name() == attribute)
 	}
 
 	fn dir_attr(&self) -> Vec<String> {
-		let mut attrs = Vec::new();
-		for lib in &self.static_libraries {
-			attrs.push(lib.name.to_owned());
-		}
-		for lib in &self.object_libraries {
-			attrs.push(lib.name.to_owned());
-		}
-		for lib in &self.interface_libraries {
-			attrs.push(lib.name.to_owned());
-		}
-		attrs
+		self.link_targets.iter().map(|x| x.name().to_owned()).collect()
 	}
 }
 
@@ -317,9 +283,10 @@ impl StarProject {
 			.link_targets
 			.iter()
 			.map(|x| {
+				let ptr = x.as_ptr_link_target();
 				link_map
-					.get(x)
-					.ok_or_else(|| format!("Could not find target \"{}\" in link map", x.0.name()))
+					.get(&ptr)
+					.ok_or_else(|| format!("Could not find target \"{}\" in link map", x.name()))
 			})
 			.collect::<Result<_, _>>()?;
 		validate_library_dependency_order(&project)?;

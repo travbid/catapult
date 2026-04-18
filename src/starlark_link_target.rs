@@ -11,7 +11,11 @@ use starlark::values::OwnedFrozenValue;
 use super::{
 	link_type::LinkPtr,
 	project::Project, //
+	starlark_interface_library::StarIfaceLibrary,
+	starlark_object_library::StarObjectLibrary,
 	starlark_project::StarLinkTargetCache,
+	starlark_shared_library::StarSharedLibrary,
+	starlark_static_library::StarStaticLibrary,
 };
 
 pub(super) trait StarLinkTarget: Send + Sync + fmt::Debug + Allocative {
@@ -43,5 +47,33 @@ impl hash::Hash for PtrLinkTarget {
 		H: std::hash::Hasher,
 	{
 		(Arc::as_ptr(&self.0) as *const ()).hash(hasher)
+	}
+}
+
+#[derive(Clone, Debug, Allocative)]
+pub(super) enum StarLinkTargetRef {
+	Static(Arc<StarStaticLibrary>),
+	Object(Arc<StarObjectLibrary>),
+	Interface(Arc<StarIfaceLibrary>),
+	Shared(Arc<StarSharedLibrary>),
+}
+
+impl StarLinkTargetRef {
+	pub(super) fn name(&self) -> &str {
+		match self {
+			Self::Static(x) => &x.name,
+			Self::Object(x) => &x.name,
+			Self::Interface(x) => &x.name,
+			Self::Shared(x) => &x.name,
+		}
+	}
+
+	pub(super) fn as_ptr_link_target(&self) -> PtrLinkTarget {
+		match self {
+			Self::Static(x) => PtrLinkTarget(x.clone()),
+			Self::Object(x) => PtrLinkTarget(x.clone()),
+			Self::Interface(x) => PtrLinkTarget(x.clone()),
+			Self::Shared(x) => PtrLinkTarget(x.clone()),
+		}
 	}
 }
